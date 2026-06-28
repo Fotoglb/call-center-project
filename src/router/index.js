@@ -10,6 +10,26 @@ const routes = [
         name: 'Dashboard',
         component: () => import('@/pages/Dashboard.vue'),
       },
+      {
+        path: 'calls',
+        name: 'Calls',
+        component: () => import('@/pages/Calls.vue'),
+      },
+      {
+        path: 'agents',
+        name: 'Agents',
+        component: () => import('@/pages/Agents.vue'),
+      },
+      {
+        path: 'reports',
+        name: 'Reports',
+        component: () => import('@/pages/Reports.vue'),
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: () => import('@/pages/Settings.vue'),
+      },
     ],
   },
   {
