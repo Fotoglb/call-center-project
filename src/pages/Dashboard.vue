@@ -166,16 +166,14 @@
             </div>
 
             <!-- Countdown + status badge (LEFT in RTL = last in DOM) -->
-            <div class="flex flex-col items-center gap-1.5 shrink-0 min-w-14">
+            <div class="flex flex-col items-end justify-between self-stretch shrink-0">
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                 :class="visitStatusClass(visit.status)"
               >
                 {{ visit.status }}
               </span>
-              <div class="flex items-center justify-end gap-1.5 mt-1">
-                <span class="text-xs text-gray-500">{{ visit.agent }}</span>
-              </div>
+              <span class="text-xs text-gray-500">{{ visit.agent }}</span>
             </div>
           </li>
         </ul>
