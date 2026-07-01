@@ -16,7 +16,10 @@
           <Download :size="14" />
           تنزيل الملف
         </button>
-        <button class="flex items-center gap-1.5 text-xs text-white bg-gray-900 rounded-lg px-3 py-2 hover:bg-gray-700 cursor-pointer transition-colors">
+        <button
+          class="flex items-center gap-1.5 text-xs text-white bg-gray-900 rounded-lg px-3 py-2 hover:bg-gray-700 cursor-pointer transition-colors"
+          @click="router.push({ name: 'AddCustomer' })"
+        >
           <Plus :size="14" />
           إضافة عميل
         </button>
@@ -164,10 +167,13 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   Plus, Download, SlidersHorizontal, ChevronDown,
   ChevronLeft, ChevronRight, Pencil, Trash2,
 } from '@lucide/vue'
+
+const router = useRouter()
 
 const currentPage = ref(1)
 const pageSize = ref(10)
