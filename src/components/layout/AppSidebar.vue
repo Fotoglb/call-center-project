@@ -2,8 +2,14 @@
   <aside class="flex flex-col w-56 bg-white border-s border-gray-100 h-screen flex-shrink-0 shadow-sm">
 
     <!-- Logo -->
-    <div class="flex items-center justify-center h-16 border-b border-gray-100 flex-shrink-0">
-      <span class="text-xl font-black text-gray-900 tracking-[0.2em]">CRM</span>
+    <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-100 flex-shrink-0">
+      <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0">
+        <span class="text-xs font-black text-white tracking-widest">CRM</span>
+      </div>
+      <div class="leading-tight">
+        <p class="text-sm font-black text-gray-900 tracking-[0.15em]">CRM</p>
+        <p class="text-xs text-gray-400">منصة خدمة العملاء</p>
+      </div>
     </div>
 
     <!-- Nav -->
