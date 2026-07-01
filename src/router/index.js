@@ -7,6 +7,11 @@ const routes = [
     children: [
       {
         path: '',
+        name: 'Home',
+        component: () => import('@/pages/Dashboard.vue'),
+      },
+      {
+        path: 'dashboard',
         name: 'Dashboard',
         component: () => import('@/pages/Dashboard.vue'),
       },
@@ -30,18 +35,42 @@ const routes = [
         name: 'Settings',
         component: () => import('@/pages/Settings.vue'),
       },
+      {
+        path: 'customers',
+        name: 'Customers',
+        component: () => import('@/pages/Customers.vue'),
+      },
+      {
+        path: 'help',
+        name: 'Help',
+        component: () => import('@/pages/Help.vue'),
+      },
     ],
   },
   {
-    path: '/auth',
-    component: () => import('@/layouts/AuthLayout.vue'),
-    children: [
-      {
-        path: 'login',
-        name: 'Login',
-        component: () => import('@/pages/Login.vue'),
-      },
-    ],
+    path: '/auth/login',
+    name: 'Login',
+    component: () => import('@/pages/Login.vue'),
+  },
+  {
+    path: '/auth/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/pages/ForgotPassword.vue'),
+  },
+  {
+    path: '/auth/change-password',
+    name: 'ChangePassword',
+    component: () => import('@/pages/ChangePassword.vue'),
+  },
+  {
+    path: '/auth/otp',
+    name: 'OTP',
+    component: () => import('@/pages/OTP.vue'),
+  },
+  {
+    path: '/auth/register',
+    name: 'Register',
+    component: () => import('@/pages/Register.vue'),
   },
   {
     path: '/:pathMatch(.*)*',
