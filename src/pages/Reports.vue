@@ -42,13 +42,43 @@
     <!-- Period Toggle (left) + Filters (right) -->
     <div class="flex items-center justify-between gap-3 flex-wrap">
       <div class="flex items-center gap-2 flex-wrap">
-        <button
-          class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
-        >
-          <CalendarRange :size="14" />
-          <span dir="ltr">16/6/2026 - 10/6/2026</span>
-          <ChevronDown :size="12" />
-        </button>
+        <div ref="dateRangeRef" class="relative">
+          <button
+            class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+            @click="showDatePicker = !showDatePicker"
+          >
+            <CalendarRange :size="14" />
+            <span dir="ltr">{{ dateRangeLabel }}</span>
+            <ChevronDown :size="12" />
+          </button>
+          <div
+            v-if="showDatePicker"
+            class="absolute z-10 top-full mt-2 start-0 bg-white border border-gray-200 rounded-lg shadow-lg p-3 space-y-2 w-52"
+          >
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">من تاريخ</label>
+              <input
+                v-model="dateFrom"
+                type="date"
+                class="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-400"
+              />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">إلى تاريخ</label>
+              <input
+                v-model="dateTo"
+                type="date"
+                class="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-400"
+              />
+            </div>
+            <button
+              class="w-full text-xs text-white bg-gray-900 rounded-lg py-1.5 hover:bg-gray-700 cursor-pointer transition-colors"
+              @click="showDatePicker = false"
+            >
+              تطبيق
+            </button>
+          </div>
+        </div>
         <div class="relative">
           <select
             v-model="agentFilter"
@@ -278,7 +308,7 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue'
+  import { ref, computed, onMounted, onUnmounted } from 'vue'
   import { Line, Doughnut, Bar } from 'vue-chartjs'
   import {
     Chart as ChartJS,
@@ -309,6 +339,28 @@
   const exportFormat = ref('excel')
   const period = ref('daily')
   const agentFilter = ref('')
+
+  const showDatePicker = ref(false)
+  const dateRangeRef = ref(null)
+  const dateFrom = ref('2026-06-10')
+  const dateTo = ref('2026-06-16')
+
+  const dateRangeLabel = computed(() => {
+    const format = d => {
+      const [y, m, day] = d.split('-')
+      return `${Number(day)}/${Number(m)}/${y}`
+    }
+    return `${format(dateTo.value)} - ${format(dateFrom.value)}`
+  })
+
+  function handleClickOutside(e) {
+    if (dateRangeRef.value && !dateRangeRef.value.contains(e.target)) {
+      showDatePicker.value = false
+    }
+  }
+
+  onMounted(() => document.addEventListener('click', handleClickOutside))
+  onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   const sourceFilter = ref('')
 
   const stats = [
