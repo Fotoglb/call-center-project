@@ -54,7 +54,12 @@
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="w-10 px-4 py-3">
-                <input type="checkbox" class="rounded border-gray-300 cursor-pointer" @change="toggleAll" />
+                <input
+                  type="checkbox"
+                  class="rounded border-gray-300 cursor-pointer"
+                  :checked="allSelected"
+                  @change="toggleAll"
+                />
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">اسم العميل</th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">رقم الهاتف</th>
@@ -74,14 +79,22 @@
               class="hover:bg-gray-50 transition-colors"
             >
               <td class="px-4 py-3">
-                <input type="checkbox" class="rounded border-gray-300 cursor-pointer" />
+                <input
+                  type="checkbox"
+                  class="rounded border-gray-300 cursor-pointer"
+                  :checked="selectedIds.has(customer.id)"
+                  @change="toggleOne(customer.id)"
+                />
               </td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
+                <div
+                  class="flex items-center gap-2 cursor-pointer"
+                  @click="router.push({ name: 'CustomerProfile', params: { id: customer.id } })"
+                >
                   <div class="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0">
                     {{ customer.name.charAt(0) }}
                   </div>
-                  <span class="font-medium text-gray-800 whitespace-nowrap">{{ customer.name }}</span>
+                  <span class="font-medium text-gray-800 whitespace-nowrap hover:text-indigo-600 hover:underline transition-colors">{{ customer.name }}</span>
                 </div>
               </td>
               <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.phone }}</td>
@@ -265,6 +278,29 @@ const paginatedCustomers = computed(() =>
   filteredCustomers.value.slice(startIndex.value, endIndex.value)
 )
 
+const selectedIds = ref(new Set())
+
+const allSelected = computed(() =>
+  paginatedCustomers.value.length > 0 &&
+  paginatedCustomers.value.every(c => selectedIds.value.has(c.id))
+)
+
+function toggleAll(e) {
+  if (e.target.checked) {
+    paginatedCustomers.value.forEach(c => selectedIds.value.add(c.id))
+  } else {
+    paginatedCustomers.value.forEach(c => selectedIds.value.delete(c.id))
+  }
+}
+
+function toggleOne(id) {
+  if (selectedIds.value.has(id)) {
+    selectedIds.value.delete(id)
+  } else {
+    selectedIds.value.add(id)
+  }
+}
+
 function statusClass(status) {
   const map = {
     'منتظم':         'bg-emerald-50 text-emerald-600',
@@ -275,9 +311,5 @@ function statusClass(status) {
     'تم الإغلاق':    'bg-rose-50 text-rose-500',
   }
   return map[status] ?? 'bg-gray-100 text-gray-500'
-}
-
-function toggleAll(e) {
-  // placeholder for select-all logic
 }
 </script>

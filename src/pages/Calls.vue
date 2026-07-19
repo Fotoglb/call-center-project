@@ -126,7 +126,8 @@
               <span
                 class="text-xs font-semibold px-2 py-1 rounded-lg shrink-0"
                 :class="directionClass(call.direction)"
-              >{{ call.direction }}</span>
+                >{{ call.direction }}</span
+              >
               <!-- Countdown -->
               <div class="flex items-center gap-1 text-gray-400">
                 <Clock :size="11" />
@@ -202,6 +203,7 @@
               <div class="flex items-center gap-2 shrink-0">
                 <button
                   class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+                  @click="router.push({ name: 'CustomerProfile', params: { id: selectedCall.id } })"
                 >
                   <UserRound :size="13" />
                   عرض الملف
@@ -296,8 +298,12 @@
               <div v-if="activeTab === 'data'" class="space-y-3">
                 <dl class="grid grid-cols-2 gap-3">
                   <div class="bg-gray-50 rounded-xl p-3">
-                    <dt class="text-xs text-gray-400 mb-1.5">رقم الجوال <span class="text-red-400">*</span></dt>
-                    <dd class="flex items-center justify-between text-xs font-semibold text-gray-800">
+                    <dt class="text-xs text-gray-400 mb-1.5">
+                      رقم الجوال <span class="text-red-400">*</span>
+                    </dt>
+                    <dd
+                      class="flex items-center justify-between text-xs font-semibold text-gray-800"
+                    >
                       <span class="flex items-center gap-1.5">
                         <Phone :size="13" class="text-gray-400 shrink-0" />
                         <span dir="ltr">{{ selectedCall.phone }}</span>
@@ -306,7 +312,9 @@
                     </dd>
                   </div>
                   <div class="bg-gray-50 rounded-xl p-3">
-                    <dt class="text-xs text-gray-400 mb-1.5">الاسم بالكامل <span class="text-red-400">*</span></dt>
+                    <dt class="text-xs text-gray-400 mb-1.5">
+                      الاسم بالكامل <span class="text-red-400">*</span>
+                    </dt>
                     <dd class="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
                       <UserRound :size="13" class="text-gray-400 shrink-0" />
                       {{ selectedCall.name }}
@@ -314,15 +322,23 @@
                   </div>
                   <div class="bg-gray-50 rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">مصدر العميل</dt>
-                    <dd class="text-xs font-semibold text-gray-800">{{ selectedCall.source ?? '—' }}</dd>
+                    <dd class="text-xs font-semibold text-gray-800">
+                      {{ selectedCall.source ?? '—' }}
+                    </dd>
                   </div>
                   <div class="bg-gray-50 rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">نوع العمل</dt>
-                    <dd class="text-xs font-semibold text-gray-800">{{ selectedCall.workType ?? '—' }}</dd>
+                    <dd class="text-xs font-semibold text-gray-800">
+                      {{ selectedCall.workType ?? '—' }}
+                    </dd>
                   </div>
                   <div class="bg-gray-50 rounded-xl p-3">
-                    <dt class="text-xs text-gray-400 mb-1.5">نوع مشروع العميل <span class="text-red-400">*</span></dt>
-                    <dd class="text-xs font-semibold text-gray-800">{{ selectedCall.projectType ?? '—' }}</dd>
+                    <dt class="text-xs text-gray-400 mb-1.5">
+                      نوع مشروع العميل <span class="text-red-400">*</span>
+                    </dt>
+                    <dd class="text-xs font-semibold text-gray-800">
+                      {{ selectedCall.projectType ?? '—' }}
+                    </dd>
                   </div>
                   <div class="bg-gray-50 rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">تاريخ الإنشاء</dt>
@@ -333,7 +349,9 @@
                   </div>
                   <div class="bg-gray-50 rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">الأولوية</dt>
-                    <dd class="text-xs font-semibold text-gray-800">{{ selectedCall.priority ?? '—' }}</dd>
+                    <dd class="text-xs font-semibold text-gray-800">
+                      {{ selectedCall.priority ?? '—' }}
+                    </dd>
                   </div>
                   <div class="bg-gray-50 rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">محاولات الاتصال</dt>
@@ -362,22 +380,9 @@
                 >
                   <component :is="outcome.icon" :size="16" />
                   <span class="font-semibold">{{ outcome.label }}</span>
-                  <span class="text-[10px] text-gray-400 font-normal leading-tight text-center">{{ outcome.sub }}</span>
-                </button>
-              </div>
-
-              <!-- Last Result -->
-              <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                <p class="text-xs text-gray-400">
-                  آخر نتيجة:
-                  <span class="font-medium text-gray-600">{{ selectedCall.lastResult }}</span>
-                </p>
-                <button
-                  class="text-xs text-white bg-indigo-600 rounded-lg px-4 py-2 hover:bg-indigo-700 cursor-pointer transition-colors disabled:opacity-40"
-                  :disabled="!selectedOutcome"
-                  @click="submitResult"
-                >
-                  حفظ النتيجة
+                  <span class="text-[10px] text-gray-400 font-normal leading-tight text-center">{{
+                    outcome.sub
+                  }}</span>
                 </button>
               </div>
             </div>
@@ -390,6 +395,7 @@
 
 <script setup>
   import { ref, computed } from 'vue'
+  import { useRouter } from 'vue-router'
   import {
     Search,
     Phone,
@@ -437,6 +443,8 @@
       iconColor: 'text-purple-500'
     }
   ]
+
+  const router = useRouter()
 
   const todayLabel = 'الثلاثاء 16 يونيو 2026'
 
@@ -650,9 +658,9 @@
   }
 
   function directionClass(direction) {
-    if (direction === 'وارد')  return 'bg-emerald-50 text-emerald-600'
-    if (direction === 'صادر')  return 'bg-indigo-50 text-indigo-600'
-    if (direction === 'تمت')   return 'bg-gray-100 text-gray-500'
+    if (direction === 'وارد') return 'bg-emerald-50 text-emerald-600'
+    if (direction === 'صادر') return 'bg-indigo-50 text-indigo-600'
+    if (direction === 'تمت') return 'bg-gray-100 text-gray-500'
     return 'bg-gray-100 text-gray-500'
   }
 
@@ -700,17 +708,5 @@
       'إعادة جدولة': 'bg-indigo-50 text-indigo-600'
     }
     return map[result] ?? 'bg-gray-100 text-gray-500'
-  }
-
-  function submitResult() {
-    if (!selectedOutcome.value || !selectedCall.value) return
-    const labels = {
-      interested: 'مهتم',
-      not_interested: 'غير مهتم',
-      no_answer: 'لا يرد',
-      reschedule: 'إعادة جدولة'
-    }
-    selectedCall.value.lastResult = labels[selectedOutcome.value]
-    selectedOutcome.value = ''
   }
 </script>
