@@ -78,6 +78,7 @@
         </div>
         <button
           class="text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 cursor-pointer"
+          @click="router.push({ name: 'Reports' })"
         >
           عرض التقرير الكامل
         </button>
@@ -101,28 +102,36 @@
       <!-- Activity Log — col-span-1 → RIGHT in RTL -->
       <div class="bg-white col-span-2 rounded-xl border border-gray-200 p-5">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-gray-900">سجل النشاطات الأخيرة</h3>
-          <button class="text-xs text-indigo-600 hover:text-indigo-700 cursor-pointer font-medium">
-            عرض الكل
-          </button>
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900">سجل النشاطات الأخيرة</h3>
+            <p class="text-xs text-gray-400 mt-0.5">آخر التحديثات في الوقت الفعلي</p>
+          </div>
+          <span
+            class="flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-md px-3 py-1.5"
+          >
+            مباشر
+          </span>
         </div>
         <ul class="space-y-4">
-          <li v-for="activity in activities" :key="activity.id" class="flex items-start gap-3">
+          <li v-for="activity in activities" :key="activity.id" class="flex items-center gap-3">
             <div
-              class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0"
+              class="w-11 h-11 rounded-md bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0"
             >
-              {{ activity.initials }}
+              {{ initials(activity.user) }}
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-xs text-gray-700 leading-relaxed">
                 <span class="font-semibold">{{ activity.user }}</span>
                 {{ activity.action }}
                 <span v-if="activity.target" class="font-semibold text-gray-900">
-                  {{ activity.target }}</span
+                  [ {{ activity.target }} ]</span
                 >
               </p>
             </div>
-            <span class="text-xs text-gray-400 shrink-0 tabular-nums">{{ activity.time }}</span>
+            <div class="flex items-center gap-1 text-gray-400 shrink-0">
+              <Clock :size="11" />
+              <span class="text-xs tabular-nums">{{ activity.time }}</span>
+            </div>
           </li>
         </ul>
       </div>
@@ -183,6 +192,7 @@
 </template>
 
 <script setup>
+  import { useRouter } from 'vue-router'
   import { Clock } from '@lucide/vue'
   import { Line, Doughnut } from 'vue-chartjs'
   import {
@@ -207,6 +217,8 @@
     Legend,
     ArcElement
   )
+
+  const router = useRouter()
 
   const stats = [
     { value: '92%', label: 'أداء الفريق', sub: 'موسمية الأسبوع' },
@@ -291,20 +303,18 @@
         label: 'المكالمات',
         data: [30, 55, 45, 70, 85, 75, 90],
         borderColor: '#14B8A6',
-        backgroundColor: 'rgba(20,184,166,0.15)',
         borderWidth: 2,
         tension: 0.5,
-        fill: true,
+        fill: false,
         pointRadius: 0
       },
       {
         label: 'التحويلات',
         data: [20, 35, 30, 50, 60, 55, 65],
         borderColor: '#F472B6',
-        backgroundColor: 'rgba(244,114,182,0.12)',
         borderWidth: 2,
         tension: 0.5,
-        fill: true,
+        fill: false,
         pointRadius: 0
       }
     ]
@@ -374,43 +384,42 @@
   const activities = [
     {
       id: 1,
-      initials: 'أح',
       user: 'أحمد محمد',
-      action: 'أضاف عميلاً جديداً |',
-      target: 'عبد الله الخالدي',
+      action: 'أضاف عميلاً جديداً',
+      target: 'عبد الله الخالدي - إعلانات',
       time: '5 د'
     },
     {
       id: 2,
-      initials: 'سا',
       user: 'سارة أحمد',
-      action: 'أجرت مكالمة ناجحة مع |',
+      action: 'أجرت مكالمة ناجحة مع',
       target: 'نورا المحمد',
       time: '24 د'
     },
     {
       id: 3,
-      initials: 'مح',
-      user: 'محمد على',
-      action: 'أكمل زيارة مبدأية 1 |',
-      target: 'فيصل المثنى',
-      time: '40 ث'
+      user: 'محمد علي',
+      action: 'أكمل زيارة ميدانية لـ',
+      target: 'فيصل العتيبي',
+      time: '40 د'
     },
     {
       id: 4,
-      initials: 'فا',
       user: 'فاطمة حسن',
-      action: 'جدولت زيارة جديدة |',
+      action: 'جدولت زيارة جديدة لـ',
       target: 'مني الشمري',
-      time: '55 ث'
+      time: '55 د'
     },
     {
       id: 5,
-      initials: 'سا',
       user: 'سارة أحمد',
-      action: 'توشر الوصول إلى |',
+      action: 'تعذّر الوصول إلى',
       target: 'خالد الزهراني',
       time: '1 س'
     }
   ]
+
+  function initials(name) {
+    return `${name.slice(0, 1)} ${name.slice(1, 2)}`
+  }
 </script>
