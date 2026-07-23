@@ -1,6 +1,6 @@
 <template>
   <header
-    class="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-100 shrink-0"
+    class="flex items-center justify-between h-20 px-6 bg-white border-b border-gray-100 shrink-0"
   >
     <!-- Search bar -->
     <div class="flex-1 max-w-md relative">
