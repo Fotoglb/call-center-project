@@ -155,6 +155,21 @@
     <!-- Charts Row 1: Donut + Conversion Trend -->
     <div class="grid grid-cols-2 gap-4">
       <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-gray-900">معدل التحويل – الاتجاه الزمني</h3>
+          <div class="flex items-center gap-3 text-xs text-gray-500">
+            <span class="flex items-center gap-1"
+              ><span class="w-2 h-2 rounded-full bg-indigo-500"></span>الزيارات</span
+            >
+            <span class="flex items-center gap-1"
+              ><span class="w-2 h-2 rounded-full bg-purple-400"></span>المكالمات</span
+            >
+          </div>
+        </div>
+        <Line :data="conversionTrendData" :options="lineOptions" class="max-h-44" />
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
         <h3 class="text-sm font-semibold text-gray-900 mb-4">توزيع مصادر العملاء</h3>
         <div class="flex items-center gap-4">
           <div class="w-32 h-32 shrink-0">
@@ -178,21 +193,6 @@
           </ul>
         </div>
       </div>
-
-      <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-gray-900">معدل التحويل – الاتجاه الزمني</h3>
-          <div class="flex items-center gap-3 text-xs text-gray-500">
-            <span class="flex items-center gap-1"
-              ><span class="w-2 h-2 rounded-full bg-indigo-500"></span>الزيارات</span
-            >
-            <span class="flex items-center gap-1"
-              ><span class="w-2 h-2 rounded-full bg-purple-400"></span>المكالمات</span
-            >
-          </div>
-        </div>
-        <Line :data="conversionTrendData" :options="lineOptions" class="max-h-44" />
-      </div>
     </div>
 
     <!-- Charts Row 2: Visit Success + Employee Performance Trend -->
@@ -211,7 +211,6 @@
         </div>
         <Bar :data="visitSuccessData" :options="barOptions" class="max-h-44" />
       </div>
-
       <div class="bg-white rounded-xl border border-gray-200 p-5">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-sm font-semibold text-gray-900">أداء الموظفين</h3>
