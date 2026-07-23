@@ -11,7 +11,7 @@
       </div>
       <div class="leading-tight">
         <p class="text-sm font-black text-gray-900 tracking-[0.15em]">CRM</p>
-        <p class="text-xs text-gray-400">**منصة خدمة العملاء</p>
+        <p class="text-xs text-gray-400">منصة خدمة العملاء</p>
       </div>
     </div>
 
