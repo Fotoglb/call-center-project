@@ -1,5 +1,5 @@
 <template>
-  <div class="min-w-0 space-y-5 overflow-x-hidden" dir="rtl">
+  <div ref="reportRoot" class="min-w-0 space-y-5 overflow-x-hidden" dir="rtl">
     <!-- Page Header -->
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -9,7 +9,7 @@
       </div>
 
       <!-- Export Actions -->
-      <div class="flex flex-wrap items-center justify-end gap-2">
+      <div v-if="!isExportingPdf" class="flex flex-wrap items-center justify-end gap-2">
         <button
           type="button"
           class="cursor-pointer rounded-lg px-4 py-2 text-xs font-medium transition-colors"
@@ -18,7 +18,7 @@
               ? 'bg-gray-900 text-white'
               : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
           "
-          @click="exportFormat = 'excel'"
+          @click="exportExcel"
         >
           Excel
         </button>
@@ -31,9 +31,10 @@
               ? 'bg-gray-900 text-white'
               : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
           "
-          @click="exportFormat = 'pdf'"
+          :disabled="isExportingPdf"
+          @click="exportPdf"
         >
-          PDF
+          {{ isExportingPdf ? '...جاري التجهيز' : 'PDF' }}
         </button>
 
         <button
@@ -47,7 +48,7 @@
     </div>
 
     <!-- Filters and Period -->
-    <div class="flex flex-wrap items-center justify-between gap-3">
+    <div v-if="!isExportingPdf" class="flex flex-wrap items-center justify-between gap-3">
       <!-- Filters -->
       <div class="flex flex-wrap items-center gap-2">
         <!-- Date Range -->
@@ -185,7 +186,7 @@
       <div
         v-for="stat in stats"
         :key="stat.label"
-        class="min-w-0 space-y-1 rounded-xl border border-gray-200 bg-white p-4"
+        class="min-w-0 space-y-1 rounded-xl bg-gray-50 p-4"
       >
         <p class="text-2xl font-bold text-gray-900">
           {{ stat.value }}
@@ -201,7 +202,7 @@
     <div class="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-4">
       <!-- Conversion Trend -->
       <div
-        class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 xl:col-span-3"
+        class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5 xl:col-span-3"
       >
         <!-- Header like Figma -->
         <div class="mb-5 flex flex-wrap items-start justify-between gap-x-8 gap-y-4" dir="rtl">
@@ -239,7 +240,7 @@
 
       <!-- Sources Doughnut -->
       <div
-        class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 xl:col-span-1"
+        class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5 xl:col-span-1"
       >
         <h3 class="text-sm font-semibold text-gray-900">توزيع مصادر العملاء</h3>
 
@@ -277,7 +278,7 @@
     <!-- Secondary Charts -->
     <div class="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
       <!-- Employee Performance Chart -->
-      <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-5">
+      <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5">
         <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 class="text-sm font-semibold text-gray-900">أداء الموظفين</h3>
@@ -304,7 +305,7 @@
       </div>
 
       <!-- Visit Success -->
-      <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-5">
+      <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5">
         <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 class="text-sm font-semibold text-gray-900">معدل نجاح الزيارات</h3>
@@ -332,8 +333,8 @@
     </div>
 
     <!-- Employee Performance Table -->
-    <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white">
-      <div class="border-b border-gray-100 px-5 py-4">
+    <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50">
+      <div class="border-b border-gray-200 px-5 py-4">
         <h3 class="text-sm font-semibold text-gray-900">تقرير الأداء الوظيفي</h3>
 
         <p class="mt-0.5 text-xs text-gray-400">مقارنة شاملة لجميع الموظفين خلال هذا الأسبوع</p>
@@ -341,9 +342,9 @@
 
       <div class="overflow-x-auto">
         <table class="w-full min-w-262.5 text-xs">
-          <thead class="border-b border-gray-200 bg-gray-50">
+          <thead class="border-b border-gray-200 bg-gray-100">
             <tr>
-              <th class="w-10 px-4 py-3">
+              <th v-if="!isExportingPdf" class="w-10 px-4 py-3">
                 <input
                   type="checkbox"
                   class="cursor-pointer"
@@ -388,17 +389,17 @@
                 الأداء
               </th>
 
-              <th class="w-16 px-4 py-3"></th>
+              <th v-if="!isExportingPdf" class="w-16 px-4 py-3"></th>
             </tr>
           </thead>
 
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-200">
             <tr
               v-for="employee in employeePerformance"
               :key="employee.name"
-              class="transition-colors hover:bg-gray-50"
+              class="transition-colors hover:bg-gray-100"
             >
-              <td class="px-4 py-3">
+              <td v-if="!isExportingPdf" class="px-4 py-3">
                 <input
                   type="checkbox"
                   class="cursor-pointer"
@@ -454,7 +455,7 @@
                 </span>
               </td>
 
-              <td class="px-4 py-3">
+              <td v-if="!isExportingPdf" class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
@@ -482,7 +483,7 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, onUnmounted, ref } from 'vue'
+  import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 
   import { Bar, Doughnut, Line } from 'vue-chartjs'
 
@@ -499,6 +500,9 @@
   } from 'chart.js'
 
   import { CalendarRange, ChevronDown, Pencil, Share2, Trash2 } from '@lucide/vue'
+  import html2canvas from 'html2canvas-pro'
+  import jsPDF from 'jspdf'
+  import * as XLSX from 'xlsx'
 
   ChartJS.register(
     CategoryScale,
@@ -1091,6 +1095,87 @@
     selectedEmployees.value = allSelected.value
       ? []
       : employeePerformance.map(employee => employee.name)
+  }
+
+  /* ----------------------------------------
+   * Export
+   * -------------------------------------- */
+
+  const reportRoot = ref(null)
+  const isExportingPdf = ref(false)
+
+  function exportExcel() {
+    exportFormat.value = 'excel'
+
+    const statsSheet = XLSX.utils.json_to_sheet(
+      stats.map(stat => ({ المؤشر: stat.label, القيمة: stat.value }))
+    )
+
+    const employeesSheet = XLSX.utils.json_to_sheet(
+      employeePerformance.map(employee => ({
+        الموظف: employee.name,
+        'عدد المكالمات': employee.calls,
+        'عملاء جدد': employee.newCustomers,
+        التحويلات: employee.conversions,
+        'معدل التحويل': `${employee.conversionRate}%`,
+        الزيارات: employee.visits,
+        'نجاح الزيارات': `${employee.visitSuccessRate}%`,
+        'نقاط الأداء': employee.score,
+        الأداء: employee.performance
+      }))
+    )
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, statsSheet, 'الإحصائيات')
+    XLSX.utils.book_append_sheet(workbook, employeesSheet, 'أداء الموظفين')
+
+    XLSX.writeFile(workbook, `تقرير-التحليلات-${dateFrom.value}-${dateTo.value}.xlsx`)
+  }
+
+  async function exportPdf() {
+    if (!reportRoot.value || isExportingPdf.value) {
+      return
+    }
+
+    exportFormat.value = 'pdf'
+    isExportingPdf.value = true
+    await nextTick()
+
+    try {
+      const backgroundColor = '#F9FAFB'
+      const padding = 48
+
+      const canvas = await html2canvas(reportRoot.value, {
+        scale: 1.5,
+        backgroundColor,
+        useCORS: true
+      })
+
+      const pageWidth = canvas.width + padding * 2
+      const pageHeight = canvas.height + padding * 2
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [pageWidth, pageHeight],
+        compress: true
+      })
+
+      pdf.setFillColor(backgroundColor)
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+
+      pdf.addImage(
+        canvas.toDataURL('image/jpeg', 0.85),
+        'JPEG',
+        padding,
+        padding,
+        canvas.width,
+        canvas.height
+      )
+      pdf.save(`تقرير-التحليلات-${dateFrom.value}-${dateTo.value}.pdf`)
+    } finally {
+      isExportingPdf.value = false
+    }
   }
 </script>
 
