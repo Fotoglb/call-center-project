@@ -4,9 +4,7 @@
   >
     <!-- Logo -->
     <div class="flex items-center gap-3 px-4 py-5 border-b border-gray-100 flex-shrink-0">
-      <div
-        class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0"
-      >
+      <div class="w-10 h-10 rounded-xl bg-black flex items-center justify-center flex-shrink-0">
         <span class="text-xs font-black text-white tracking-widest">CRM</span>
       </div>
       <div class="leading-tight">
@@ -23,8 +21,8 @@
         :to="item.path"
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors"
         :class="{ 'exact-active': item.exact }"
-        active-class="!text-indigo-600 !bg-indigo-50 font-semibold"
-        :exact-active-class="item.exact ? '!text-indigo-600 !bg-indigo-50 font-semibold' : ''"
+        active-class="!text-black !bg-indigo-50 font-semibold"
+        :exact-active-class="item.exact ? '!text-black !bg-indigo-50 font-semibold' : ''"
       >
         <component :is="item.icon" :size="16" class="shrink-0" />
         <span>{{ item.label }}</span>
