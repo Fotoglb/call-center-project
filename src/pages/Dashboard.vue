@@ -5,7 +5,7 @@
       <div
         v-for="stat in stats"
         :key="stat.label"
-        class="bg-white rounded-xl border border-gray-200 p-4 space-y-1"
+        class="bg-gray-50 rounded-xl p-4 space-y-1"
       >
         <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
         <p class="text-sm font-medium text-gray-700">{{ stat.label }}</p>
@@ -16,7 +16,7 @@
     <!-- Charts Row 1 -->
     <div class="grid grid-cols-3 gap-4">
       <!-- Line Chart -->
-      <div class="col-span-2 bg-white rounded-xl border border-gray-200 p-5">
+      <div class="col-span-2 bg-gray-50 rounded-xl p-5">
         <div class="mb-4">
           <h3 class="text-sm font-semibold text-gray-900">أداء المبيعات الأسبوعي</h3>
           <p class="text-xs text-gray-400 mt-0.5">المكالمات والتحويلات - هذا الأسبوع</p>
@@ -28,18 +28,18 @@
       <div class="flex flex-col gap-4">
         <!-- Mini Stats -->
         <div class="grid grid-cols-2 gap-3">
-          <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <div class="bg-gray-50 rounded-xl p-4">
             <p class="text-xl font-bold text-gray-900">250</p>
             <p class="text-xs text-gray-500 mt-1">عملاء جدد</p>
           </div>
-          <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <div class="bg-gray-50 rounded-xl p-4">
             <p class="text-xl font-bold text-gray-900">1,290</p>
             <p class="text-xs text-gray-500 mt-1">المكالمات</p>
           </div>
         </div>
 
         <!-- Donut Chart -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5 flex-1">
+        <div class="bg-gray-50 rounded-xl p-5 flex-1">
           <div class="mb-3">
             <h3 class="text-sm font-semibold text-gray-900">توزيع مصادر العملاء</h3>
             <p class="text-xs text-gray-400 mt-0.5">هذا الأسبوع</p>
@@ -70,14 +70,14 @@
     </div>
 
     <!-- Charts Row 2 — Area Chart full width -->
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="bg-gray-50 rounded-xl p-5">
       <div class="flex items-start justify-between mb-4">
         <div>
           <h3 class="text-sm font-semibold text-gray-900">أداء فريق المبيعات</h3>
           <p class="text-xs text-gray-400 mt-0.5">المكالمات والتحويلات أول موظف - هذا الأسبوع</p>
         </div>
         <button
-          class="text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 cursor-pointer"
+          class="text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-white cursor-pointer"
           @click="router.push({ name: 'Reports' })"
         >
           عرض التقرير الكامل
@@ -100,7 +100,7 @@
     <!-- Bottom Row: Activity Log (RIGHT in RTL) + Upcoming Visits (LEFT in RTL) -->
     <div class="grid grid-cols-3 gap-4">
       <!-- Activity Log — col-span-1 → RIGHT in RTL -->
-      <div class="bg-white col-span-2 rounded-xl border border-gray-200 p-5">
+      <div class="bg-gray-50 col-span-2 rounded-xl p-5">
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-sm font-semibold text-gray-900">سجل النشاطات الأخيرة</h3>
@@ -137,7 +137,7 @@
       </div>
 
       <!-- Upcoming Visits — col-span-2 → LEFT in RTL -->
-      <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <div class="bg-gray-50 rounded-xl p-5">
         <!-- Section header -->
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
@@ -160,7 +160,7 @@
           <li
             v-for="visit in upcomingVisits"
             :key="visit.id"
-            class="flex items-center gap-3 py-3 bg-gray-50 mb-2 px-2 rounded-lg transition-colors"
+            class="flex items-center gap-3 py-3 bg-white mb-2 px-2 rounded-lg transition-colors"
           >
             <!-- Customer info (RIGHT in RTL = first in DOM) -->
             <div class="flex-1">

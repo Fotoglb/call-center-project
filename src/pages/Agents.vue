@@ -30,11 +30,11 @@
       <button
         v-for="stat in stats"
         :key="stat.key"
-        class="bg-white rounded-xl border p-4 text-start transition-colors cursor-pointer"
+        class="bg-gray-50 rounded-xl border p-4 text-start transition-colors cursor-pointer"
         :class="
           statusFilter === stat.key
             ? 'border-indigo-400 ring-2 ring-indigo-100'
-            : 'border-gray-200 hover:border-gray-300'
+            : 'border-transparent hover:border-gray-300'
         "
         @click="toggleStatusFilter(stat.key)"
       >
@@ -47,16 +47,16 @@
     </div>
 
     <!-- Table Card -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="bg-gray-50 rounded-xl overflow-hidden">
       <!-- Toolbar: search + filters (rightmost in RTL) beside Excel/PDF export (leftmost) -->
-      <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-100 flex-wrap">
+      <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 flex-wrap">
         <div class="flex items-center gap-2 flex-wrap">
           <div class="relative flex-1 min-w-48">
             <input
               v-model="searchQuery"
               type="text"
               placeholder="ابحث عن عميل، رقم هاتف، موظف..."
-              class="w-full h-9 ps-3 pe-8 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-indigo-300"
+              class="w-full h-9 ps-3 pe-8 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-indigo-300"
             />
             <Search
               :size="13"
@@ -106,13 +106,13 @@
 
         <div class="flex items-center gap-2 shrink-0">
           <button
-            class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+            class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors"
           >
             <FileSpreadsheet :size="14" />
             Excel
           </button>
           <button
-            class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+            class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors"
           >
             <FileText :size="14" />
             PDF
@@ -122,7 +122,7 @@
 
       <div class="overflow-x-auto">
         <table class="w-full text-xs">
-          <thead class="bg-gray-50 border-b border-gray-200">
+          <thead class="bg-gray-100 border-b border-gray-200">
             <tr>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 اسم العميل
@@ -147,11 +147,11 @@
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-200">
             <tr
               v-for="call in paginatedCalls"
               :key="call.id"
-              class="hover:bg-gray-50 transition-colors"
+              class="hover:bg-gray-100 transition-colors"
             >
               <td class="px-4 py-3">
                 <div
@@ -200,7 +200,7 @@
       </div>
 
       <!-- Pagination -->
-      <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+      <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
         <p class="text-xs text-gray-400">
           عرض {{ filteredCalls.length === 0 ? 0 : startIndex + 1 }}-{{ endIndex }} من أصل
           {{ filteredCalls.length }} مكالمة

@@ -48,10 +48,10 @@
     </div>
 
     <!-- Table Card -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="bg-gray-50 rounded-xl overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-xs">
-          <thead class="bg-gray-50 border-b border-gray-200">
+          <thead class="bg-gray-100 border-b border-gray-200">
             <tr>
               <th class="w-10 px-4 py-3">
                 <input
@@ -72,11 +72,11 @@
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">الإجراءات</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-200">
             <tr
               v-for="customer in paginatedCustomers"
               :key="customer.id"
-              class="hover:bg-gray-50 transition-colors"
+              class="hover:bg-gray-100 transition-colors"
             >
               <td class="px-4 py-3">
                 <input
@@ -131,7 +131,7 @@
       </div>
 
       <!-- Pagination -->
-      <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+      <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
         <p class="text-xs text-gray-400">
           عرض {{ startIndex + 1 }}-{{ endIndex }} من أصل {{ filteredCustomers.length }} سجل
         </p>

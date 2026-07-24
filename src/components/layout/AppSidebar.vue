@@ -1,9 +1,9 @@
 <template>
   <aside
-    class="flex flex-col w-56 bg-white border-s border-gray-100 h-screen flex-shrink-0 shadow-sm"
+    class="flex flex-col w-56 bg-gray-50 border-s border-gray-200 h-screen flex-shrink-0 shadow-sm"
   >
     <!-- Logo -->
-    <div class="flex items-center gap-3 px-4 py-5 border-b border-gray-100 flex-shrink-0">
+    <div class="flex items-center gap-3 px-4 py-5 border-b border-gray-200 flex-shrink-0">
       <div class="w-10 h-10 rounded-xl bg-black flex items-center justify-center flex-shrink-0">
         <span class="text-xs font-black text-white tracking-widest">CRM</span>
       </div>
@@ -19,7 +19,7 @@
         v-for="item in navItems"
         :key="item.path"
         :to="item.path"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition-colors"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-500 hover:text-gray-800 hover:bg-white transition-colors"
         :class="{ 'exact-active': item.exact }"
         active-class="!text-black !bg-indigo-50 font-semibold"
         :exact-active-class="item.exact ? '!text-black !bg-indigo-50 font-semibold' : ''"
@@ -30,7 +30,7 @@
     </nav>
 
     <!-- Logout -->
-    <div class="border-t border-gray-100 p-3 flex-shrink-0">
+    <div class="border-t border-gray-200 p-3 flex-shrink-0">
       <button
         class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
         @click="handleLogout"

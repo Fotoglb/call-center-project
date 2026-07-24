@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col h-full gap-4">
     <!-- Top Stats Bar -->
-    <div class="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-5 py-3">
+    <div class="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-3">
       <!-- Online Status -->
-      <div class="flex items-center gap-2 pe-4 border-e border-gray-100">
+      <div class="flex items-center gap-2 pe-4 border-e border-gray-200">
         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 animate-pulse"></span>
         <span class="text-xs font-semibold text-emerald-600">متصل</span>
       </div>
@@ -12,7 +12,7 @@
       <div
         v-for="stat in topStats"
         :key="stat.label"
-        class="flex items-center gap-2.5 px-4 border-e border-gray-100 last:border-0"
+        class="flex items-center gap-2.5 px-4 border-e border-gray-200 last:border-0"
       >
         <div
           class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -30,9 +30,9 @@
     <!-- Main Content -->
     <div class="grid grid-cols-3 gap-4 flex-1 min-h-0">
       <!-- LEFT: Calls List -->
-      <div class="bg-white rounded-xl border border-gray-200 flex flex-col min-h-0">
+      <div class="bg-gray-50 rounded-xl flex flex-col min-h-0">
         <!-- Header -->
-        <div class="px-4 pt-4 pb-3 border-b border-gray-100 shrink-0">
+        <div class="px-4 pt-4 pb-3 border-b border-gray-200 shrink-0">
           <h3 class="text-sm font-bold text-gray-900">مركز الاتصالات</h3>
           <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">
             قائمة مكالمات العملاء المخصصة لك اليوم – مرتبة تلقائياً حسب الأولوية
@@ -41,13 +41,13 @@
         </div>
 
         <!-- Search -->
-        <div class="px-4 py-2.5 border-b border-gray-100 shrink-0">
+        <div class="px-4 py-2.5 border-b border-gray-200 shrink-0">
           <div class="relative">
             <input
               v-model="searchQuery"
               type="text"
               placeholder="ابحث عن عميل، رقم هاتف، موظف..."
-              class="w-full h-9 ps-3 pe-8 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-indigo-300"
+              class="w-full h-9 ps-3 pe-8 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-indigo-300"
             />
             <Search
               :size="13"
@@ -57,7 +57,7 @@
         </div>
 
         <!-- Filter Tabs -->
-        <div class="flex items-center gap-1 px-4 py-2 border-b border-gray-100 shrink-0">
+        <div class="flex items-center gap-1 px-4 py-2 border-b border-gray-200 shrink-0">
           <button
             v-for="f in filterTabs"
             :key="f.key"
@@ -82,7 +82,7 @@
             :class="
               selectedCallId === call.id
                 ? 'bg-indigo-50 border-r-2  border-indigo-500'
-                : 'hover:bg-gray-50'
+                : 'hover:bg-white'
             "
             @click="selectCall(call)"
           >
@@ -147,7 +147,7 @@
         <!-- No Selection State -->
         <div
           v-if="!selectedCall"
-          class="flex-1 bg-white rounded-xl border border-gray-200 flex items-center justify-center"
+          class="flex-1 bg-gray-50 rounded-xl flex items-center justify-center"
         >
           <div class="text-center">
             <div
@@ -162,7 +162,7 @@
         <!-- Selected Customer -->
         <template v-else>
           <!-- Customer Header Card -->
-          <div class="bg-white rounded-xl border border-gray-200 p-5 shrink-0">
+          <div class="bg-gray-50 rounded-xl p-5 shrink-0">
             <div class="flex items-start justify-between">
               <!-- Info -->
               <div class="flex items-start gap-3">
@@ -202,7 +202,7 @@
               <!-- Actions -->
               <div class="flex items-center gap-2 shrink-0">
                 <button
-                  class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+                  class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors"
                   @click="router.push({ name: 'CustomerProfile', params: { id: selectedCall.id } })"
                 >
                   <UserRound :size="13" />
@@ -219,9 +219,9 @@
           </div>
 
           <!-- Tabs + History + Result -->
-          <div class="flex-1 bg-white rounded-xl border border-gray-200 flex flex-col min-h-0">
+          <div class="flex-1 bg-gray-50 rounded-xl flex flex-col min-h-0">
             <!-- Tabs -->
-            <div class="flex items-center gap-1 px-5 pt-4 border-b border-gray-100 shrink-0">
+            <div class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0">
               <button
                 v-for="tab in tabs"
                 :key="tab.key"
@@ -256,7 +256,7 @@
                   </div>
 
                   <!-- Body -->
-                  <div class="flex-1 min-w-0 bg-gray-50 rounded-xl p-3">
+                  <div class="flex-1 min-w-0 bg-white rounded-xl p-3">
                     <div class="flex items-center justify-between gap-2 mb-1">
                       <div class="flex items-center gap-2">
                         <span class="text-xs font-semibold text-gray-800">{{ entry.type }}</span>
@@ -285,7 +285,7 @@
                   v-model="noteText"
                   rows="5"
                   placeholder="أضف ملاحظة حول هذا العميل..."
-                  class="w-full ps-4 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 focus:bg-white transition-colors resize-none"
+                  class="w-full ps-4 pe-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors resize-none"
                 ></textarea>
                 <button
                   class="text-xs text-white bg-gray-900 rounded-lg px-4 py-2 hover:bg-gray-700 cursor-pointer transition-colors"
@@ -297,7 +297,7 @@
               <!-- Customer Data Tab -->
               <div v-if="activeTab === 'data'" class="space-y-3">
                 <dl class="grid grid-cols-2 gap-3">
-                  <div class="bg-gray-50 rounded-xl p-3">
+                  <div class="bg-white rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">
                       رقم الجوال <span class="text-red-400">*</span>
                     </dt>
@@ -311,7 +311,7 @@
                       <span class="text-gray-400 font-normal">+966</span>
                     </dd>
                   </div>
-                  <div class="bg-gray-50 rounded-xl p-3">
+                  <div class="bg-white rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">
                       الاسم بالكامل <span class="text-red-400">*</span>
                     </dt>
@@ -320,19 +320,19 @@
                       {{ selectedCall.name }}
                     </dd>
                   </div>
-                  <div class="bg-gray-50 rounded-xl p-3">
+                  <div class="bg-white rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">مصدر العميل</dt>
                     <dd class="text-xs font-semibold text-gray-800">
                       {{ selectedCall.source ?? '—' }}
                     </dd>
                   </div>
-                  <div class="bg-gray-50 rounded-xl p-3">
+                  <div class="bg-white rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">نوع العمل</dt>
                     <dd class="text-xs font-semibold text-gray-800">
                       {{ selectedCall.workType ?? '—' }}
                     </dd>
                   </div>
-                  <div class="bg-gray-50 rounded-xl p-3">
+                  <div class="bg-white rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">
                       نوع مشروع العميل <span class="text-red-400">*</span>
                     </dt>
@@ -340,20 +340,20 @@
                       {{ selectedCall.projectType ?? '—' }}
                     </dd>
                   </div>
-                  <div class="bg-gray-50 rounded-xl p-3">
+                  <div class="bg-white rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">تاريخ الإنشاء</dt>
                     <dd class="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
                       <Calendar :size="13" class="text-gray-400 shrink-0" />
                       {{ selectedCall.createdAt ?? '—' }}
                     </dd>
                   </div>
-                  <div class="bg-gray-50 rounded-xl p-3">
+                  <div class="bg-white rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">الأولوية</dt>
                     <dd class="text-xs font-semibold text-gray-800">
                       {{ selectedCall.priority ?? '—' }}
                     </dd>
                   </div>
-                  <div class="bg-gray-50 rounded-xl p-3">
+                  <div class="bg-white rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">محاولات الاتصال</dt>
                     <dd class="text-xs font-semibold text-gray-800">
                       {{ selectedCall.callAttempts ? selectedCall.callAttempts + ' اتصالات' : '—' }}
@@ -364,7 +364,7 @@
             </div>
 
             <!-- Call Result Section -->
-            <div class="border-t border-gray-100 p-5 shrink-0">
+            <div class="border-t border-gray-200 p-5 shrink-0">
               <p class="text-xs font-semibold text-gray-700 mb-3">نتيجة المكالمة</p>
               <div class="grid grid-cols-4 gap-2">
                 <button
@@ -374,7 +374,7 @@
                   :class="
                     selectedOutcome === outcome.key
                       ? outcome.activeClass
-                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      : 'border-gray-200 text-gray-600 hover:bg-white'
                   "
                   @click="selectedOutcome = outcome.key"
                 >

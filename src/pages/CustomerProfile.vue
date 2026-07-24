@@ -35,7 +35,7 @@
       <!-- RIGHT: Sidebar -->
       <div class="space-y-5">
         <!-- Customer Card -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-gray-50 rounded-xl p-5">
           <div class="flex items-center gap-3 mb-4">
             <div
               class="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600 shrink-0"
@@ -69,7 +69,7 @@
         </div>
 
         <!-- Customer Details -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-gray-50 rounded-xl p-5">
           <h3 class="text-sm font-semibold text-gray-900 mb-3">تفاصيل العميل</h3>
           <dl class="space-y-3">
             <div class="flex items-center justify-between text-xs">
@@ -118,7 +118,7 @@
         </div>
 
         <!-- Assigned Agent -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-gray-50 rounded-xl p-5">
           <h3 class="text-sm font-semibold text-gray-900 mb-3">الموظف المسؤول</h3>
           <div class="flex items-center gap-3">
             <div
@@ -138,7 +138,7 @@
           <div
             v-for="stat in statCards"
             :key="stat.label"
-            class="bg-white rounded-xl border border-gray-200 p-4 text-center"
+            class="bg-gray-50 rounded-xl p-4 text-center"
           >
             <p class="text-lg font-bold text-gray-900">{{ stat.value }}</p>
             <p class="text-xs text-gray-400 mt-1">{{ stat.label }}</p>
@@ -149,7 +149,7 @@
       <!-- LEFT: col-span-2 -->
       <div class="col-span-2 space-y-5">
         <!-- Interest Score Card -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-5">
+        <div class="bg-gray-50 rounded-xl p-5 flex items-center gap-5">
           <div>
             <div class="flex items-baseline gap-1">
               <p class="text-sm font-bold text-gray-900">نقاط الاهتمام</p>
@@ -184,9 +184,9 @@
         </div>
 
         <!-- Activity Timeline -->
-        <div class="bg-white rounded-xl border border-gray-200 flex flex-col">
+        <div class="bg-gray-50 rounded-xl flex flex-col">
           <!-- Tabs -->
-          <div class="flex items-center gap-1 px-5 pt-4 border-b border-gray-100 shrink-0">
+          <div class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0">
             <button
               v-for="tab in activityTabs"
               :key="tab.key"
@@ -206,7 +206,7 @@
           <div class="p-5 space-y-3">
             <div v-for="entry in filteredActivity" :key="entry.id" class="flex gap-3">
               <span class="w-5 h-5 rounded-md border border-gray-300 shrink-0 mt-0.5"></span>
-              <div class="flex-1 min-w-0 bg-gray-50 rounded-xl p-3">
+              <div class="flex-1 min-w-0 bg-white rounded-xl p-3">
                 <div class="flex items-center justify-between gap-2 mb-1">
                   <div class="flex items-center gap-2">
                     <span class="text-xs font-semibold text-gray-800">{{ entry.title }}</span>

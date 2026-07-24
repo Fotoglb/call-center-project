@@ -19,7 +19,7 @@
     <div class="grid grid-cols-3 gap-5">
       <!-- Form — col-span-2 -->
       <div class="col-span-2 space-y-5">
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <div class="bg-gray-50 rounded-xl p-6">
           <h2 class="text-sm font-semibold text-gray-900 mb-5">معلومات العميل</h2>
 
           <div class="space-y-4">
@@ -34,7 +34,7 @@
                     v-model="form.name"
                     type="text"
                     placeholder="أدخل الاسم الكامل"
-                    class="w-full h-10 ps-4 pe-9 bg-gray-50 border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 focus:bg-white transition-colors"
+                    class="w-full h-10 ps-4 pe-9 bg-white border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                     :class="errors.name ? 'border-red-300' : 'border-gray-200'"
                   />
                   <User :size="14" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -49,7 +49,7 @@
                     v-model="form.email"
                     type="email"
                     placeholder="أدخل بريدك الإلكتروني"
-                    class="w-full h-10 ps-4 pe-9 bg-gray-50 border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 focus:bg-white transition-colors"
+                    class="w-full h-10 ps-4 pe-9 bg-white border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                     :class="errors.email ? 'border-red-300' : 'border-gray-200'"
                   />
                   <Mail :size="14" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -68,7 +68,7 @@
                   <div class="relative shrink-0">
                     <select
                       v-model="form.countryCode"
-                      class="appearance-none h-10 ps-3 pe-7 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer"
+                      class="appearance-none h-10 ps-3 pe-7 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer"
                     >
                       <option value="+966">+966</option>
                       <option value="+971">+971</option>
@@ -82,7 +82,7 @@
                       v-model="form.phone"
                       type="tel"
                       placeholder="أدخل رقم الجوال"
-                      class="w-full h-10 ps-4 pe-9 bg-gray-50 border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 focus:bg-white transition-colors"
+                      class="w-full h-10 ps-4 pe-9 bg-white border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                       :class="errors.phone ? 'border-red-300' : 'border-gray-200'"
                     />
                     <Phone :size="14" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -98,7 +98,7 @@
                 <div class="relative">
                   <select
                     v-model="form.source"
-                    class="w-full appearance-none h-10 ps-4 pe-9 bg-gray-50 border rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer transition-colors"
+                    class="w-full appearance-none h-10 ps-4 pe-9 bg-white border rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer transition-colors"
                     :class="errors.source ? 'border-red-300' : 'border-gray-200'"
                   >
                     <option value="">اختر المصدر</option>
@@ -117,7 +117,7 @@
                 <div class="relative">
                   <select
                     v-model="form.projectType"
-                    class="w-full appearance-none h-10 ps-4 pe-9 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer transition-colors"
+                    class="w-full appearance-none h-10 ps-4 pe-9 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer transition-colors"
                   >
                     <option value="">اختر نوع المشروع</option>
                     <option v-for="t in projectTypes" :key="t" :value="t">{{ t }}</option>
@@ -132,7 +132,7 @@
                   <input
                     v-model="form.createdAt"
                     type="date"
-                    class="w-full h-10 ps-4 pe-9 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 focus:bg-white transition-colors"
+                    class="w-full h-10 ps-4 pe-9 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                   />
                   <CalendarDays :size="14" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
@@ -147,7 +147,7 @@
                   v-model="form.requirements"
                   rows="3"
                   placeholder="موجز الشراء المتوقع تقارب مقارنة سابقة"
-                  class="w-full ps-4 pe-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 focus:bg-white transition-colors resize-none"
+                  class="w-full ps-4 pe-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors resize-none"
                 ></textarea>
               </div>
 
@@ -159,7 +159,7 @@
                 <div class="relative">
                   <select
                     v-model="form.city"
-                    class="w-full appearance-none h-10 ps-4 pe-9 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer transition-colors"
+                    class="w-full appearance-none h-10 ps-4 pe-9 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer transition-colors"
                   >
                     <option value="">اختر المدينة</option>
                     <option v-for="c in cityOptions" :key="c" :value="c">{{ c }}</option>
@@ -176,7 +176,7 @@
                 v-model="form.notes"
                 rows="3"
                 placeholder="موجز الشراء المتوقع تقارب مقارنة سابقة"
-                class="w-full ps-4 pe-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 focus:bg-white transition-colors resize-none"
+                class="w-full ps-4 pe-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors resize-none"
               ></textarea>
             </div>
           </div>
@@ -215,7 +215,7 @@
       <!-- Sidebar -->
       <div class="space-y-4">
         <!-- Duplicate Detection -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-gray-50 rounded-xl p-5">
           <h3 class="text-sm font-semibold text-gray-900 mb-3">الكشف عن النسخ المكررة</h3>
           <p class="text-xs text-gray-500 leading-relaxed">
             ستظهر أرقام الهاتف من السجل، ستظهر بيانات المتطابقين المحتملين ما يجب أن تتجنب إنشاء نسخ مكررة
@@ -247,7 +247,7 @@
         </div>
 
         <!-- Important Rules -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <div class="bg-gray-50 rounded-xl p-5">
           <h3 class="text-sm font-semibold text-gray-900 mb-3">القواعد المهمة</h3>
           <ul class="space-y-3">
             <li v-for="(rule, i) in importantRules" :key="i" class="flex items-start gap-2">

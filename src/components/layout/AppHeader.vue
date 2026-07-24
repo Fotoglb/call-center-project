@@ -1,13 +1,13 @@
 <template>
   <header
-    class="flex items-center justify-between h-20 px-6 bg-white border-b border-gray-100 shrink-0"
+    class="flex items-center justify-between h-20 px-6 bg-gray-50 border-b border-gray-200 shrink-0"
   >
     <!-- Search bar -->
     <div class="flex-1 max-w-md relative">
       <input
         type="text"
         placeholder="ابحث عن عميل بالرقم هاتفه..."
-        class="w-full h-10 ps-4 pe-10 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 focus:bg-white transition-colors"
+        class="w-full h-10 ps-4 pe-10 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
       />
       <span
         class="absolute inset-y-0 inset-e-3.5 flex items-center text-gray-400 pointer-events-none"
@@ -19,7 +19,7 @@
     <!-- User info + Bell -->
     <div class="flex items-center gap-2 shrink-0">
       <button
-        class="flex items-center gap-2.5 hover:bg-gray-50 rounded-xl px-2 py-1.5 transition-colors cursor-pointer group"
+        class="flex items-center gap-2.5 hover:bg-white rounded-xl px-2 py-1.5 transition-colors cursor-pointer group"
       >
         <div
           class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm shrink-0 overflow-hidden"
