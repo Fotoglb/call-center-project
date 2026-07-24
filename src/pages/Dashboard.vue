@@ -5,11 +5,14 @@
       <div
         v-for="stat in stats"
         :key="stat.label"
-        class="bg-gray-50 rounded-xl p-4 space-y-1"
+        class="bg-gray-50 rounded-xl p-4 h-37.25 flex flex-col justify-between"
       >
-        <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
-        <p class="text-sm font-medium text-gray-700">{{ stat.label }}</p>
-        <p class="text-xs text-gray-400">{{ stat.sub }}</p>
+        <div class="w-9 h-9 rounded-lg bg-gray-200"></div>
+        <div class="space-y-1">
+          <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
+          <p class="text-sm font-medium text-gray-700">{{ stat.label }}</p>
+          <p class="text-xs text-gray-400">{{ stat.sub }}</p>
+        </div>
       </div>
     </div>
 
@@ -17,9 +20,21 @@
     <div class="grid grid-cols-3 gap-4">
       <!-- Line Chart -->
       <div class="col-span-2 bg-gray-50 rounded-xl p-5">
-        <div class="mb-4">
-          <h3 class="text-sm font-semibold text-gray-900">أداء المبيعات الأسبوعي</h3>
-          <p class="text-xs text-gray-400 mt-0.5">المكالمات والتحويلات - هذا الأسبوع</p>
+        <div class="mb-4 flex items-start justify-between">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900">أداء المبيعات الأسبوعي</h3>
+            <p class="text-xs text-gray-400 mt-0.5">العملاء الجدد و المكالمات - آخر 7 أيام</p>
+          </div>
+          <div class="flex items-center gap-4 text-xs text-gray-500" dir="ltr">
+            <span class="flex items-center gap-1.5" dir="rtl">
+              <span class="h-1 w-7 rounded-full bg-indigo-500"></span>
+              المكالمات
+            </span>
+            <span class="flex items-center gap-1.5" dir="rtl">
+              <span class="h-1 w-7 rounded-full bg-pink-400"></span>
+              عملاء جدد
+            </span>
+          </div>
         </div>
         <Line :data="lineChartData" :options="lineChartOptions" class="max-h-52" />
       </div>
@@ -27,28 +42,18 @@
       <!-- Right Column -->
       <div class="flex flex-col gap-4">
         <!-- Mini Stats -->
-        <div class="grid grid-cols-2 gap-3">
-          <div class="bg-gray-50 rounded-xl p-4">
-            <p class="text-xl font-bold text-gray-900">250</p>
-            <p class="text-xs text-gray-500 mt-1">عملاء جدد</p>
-          </div>
-          <div class="bg-gray-50 rounded-xl p-4">
-            <p class="text-xl font-bold text-gray-900">1,290</p>
-            <p class="text-xs text-gray-500 mt-1">المكالمات</p>
-          </div>
-        </div>
 
         <!-- Donut Chart -->
         <div class="bg-gray-50 rounded-xl p-5 flex-1">
           <div class="mb-3">
             <h3 class="text-sm font-semibold text-gray-900">توزيع مصادر العملاء</h3>
-            <p class="text-xs text-gray-400 mt-0.5">هذا الأسبوع</p>
+            <p class="text-xs text-gray-400 mt-0.5">هذا الشهر</p>
           </div>
-          <div class="flex items-center gap-4">
+          <div class="flex flex-col items-center gap-4">
             <div class="w-28 h-28 shrink-0">
               <Doughnut :data="donutChartData" :options="donutChartOptions" />
             </div>
-            <ul class="space-y-1.5 text-xs flex-1">
+            <ul class="space-y-2.5 text-xs flex-1">
               <li
                 v-for="(item, i) in donutLegend"
                 :key="i"
@@ -84,17 +89,6 @@
         </button>
       </div>
       <Line :data="areaChartData" :options="areaChartOptions" class="max-h-44" />
-      <div class="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
-        <div class="text-end">
-          <p class="text-xs font-semibold text-gray-800">أحمد الراشد</p>
-          <p class="text-xs text-gray-400">أفضل موظف</p>
-        </div>
-        <div
-          class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0"
-        >
-          أ
-        </div>
-      </div>
     </div>
 
     <!-- Bottom Row: Activity Log (RIGHT in RTL) + Upcoming Visits (LEFT in RTL) -->
@@ -221,12 +215,12 @@
   const router = useRouter()
 
   const stats = [
-    { value: '92%', label: 'أداء الفريق', sub: 'موسمية الأسبوع' },
-    { value: '18.5%', label: 'معدل التحويل', sub: 'من الأسبوع' },
-    { value: '40', label: 'زيارة مجدولة', sub: 'خلال 7 أيام' },
-    { value: '90', label: 'عملاء مهتمون', sub: 'مشاركة في الأسبوع' },
+    { value: '250', label: 'عملاء جدد', sub: 'هدف الأسبوع' },
     { value: '1,290', label: 'مكالمات اليوم', sub: 'من أصل 1400 مستهدف' },
-    { value: '250', label: 'عملاء جدد', sub: 'هدف الأسبوع' }
+    { value: '90', label: 'عملاء مهتمون', sub: 'مشاركة في الأسبوع' },
+    { value: '40', label: 'زيارة مجدولة', sub: 'خلال 7 أيام' },
+    { value: '18.5%', label: 'معدل التحويل', sub: 'من الأسبوع' },
+    { value: '92%', label: 'أداء الفريق', sub: 'موسمية الأسبوع' }
   ]
 
   const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
@@ -236,25 +230,35 @@
     datasets: [
       {
         label: 'المكالمات',
-        data: [65, 72, 68, 85, 90, 88, 95],
+        data: [80, 73, 76, 91, 113, 120, 110],
         borderColor: '#6366F1',
-        backgroundColor: 'rgba(99,102,241,0.1)',
-        borderWidth: 2,
+        backgroundColor: '#6366F1',
+        borderWidth: 1.5,
         tension: 0.4,
-        fill: true,
-        pointRadius: 4,
-        pointBackgroundColor: '#6366F1'
+        fill: false,
+        pointRadius: 6,
+        pointHoverRadius: 7,
+        pointHitRadius: 12,
+        pointBackgroundColor: '#6366F1',
+        pointBorderColor: '#6366F1',
+        pointBorderWidth: 0,
+        clip: false
       },
       {
-        label: 'التحويلات',
-        data: [40, 55, 48, 60, 72, 65, 78],
-        borderColor: '#C084FC',
-        backgroundColor: 'rgba(192,132,252,0.08)',
-        borderWidth: 2,
+        label: 'عملاء جدد',
+        data: [44, 56, 64, 68, 71, 74, 77],
+        borderColor: '#F472B6',
+        backgroundColor: '#F472B6',
+        borderWidth: 1.5,
         tension: 0.4,
-        fill: true,
-        pointRadius: 4,
-        pointBackgroundColor: '#C084FC'
+        fill: false,
+        pointRadius: 6,
+        pointHoverRadius: 7,
+        pointHitRadius: 12,
+        pointBackgroundColor: '#F472B6',
+        pointBorderColor: '#F472B6',
+        pointBorderWidth: 0,
+        clip: false
       }
     ]
   }
@@ -264,17 +268,30 @@
     maintainAspectRatio: true,
     plugins: { legend: { display: false } },
     scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9CA3AF' } },
-      y: { grid: { color: '#F3F4F6' }, ticks: { font: { size: 11 }, color: '#9CA3AF' } }
+      x: {
+        offset: false,
+        bounds: 'ticks',
+        grid: { display: true, color: '#ECEEF2', lineWidth: 1, drawTicks: false },
+        border: { display: false },
+        ticks: { autoSkip: false, maxRotation: 0, minRotation: 0, font: { size: 11 }, color: '#9CA3AF' }
+      },
+      y: {
+        min: 0,
+        max: 120,
+        beginAtZero: true,
+        grid: { display: true, color: '#ECEEF2', lineWidth: 1, drawTicks: false },
+        border: { display: false },
+        ticks: { stepSize: 40, font: { size: 11 }, color: '#9CA3AF' }
+      }
     }
   }
 
   const donutLegend = [
-    { label: 'جوجل الويب', percent: 30, color: '#3B82F6' },
-    { label: 'سوشيال ميديا', percent: 27, color: '#06B6D4' },
-    { label: 'إعلان عميل', percent: 18, color: '#10B981' },
-    { label: 'تسويق حول', percent: 12, color: '#F59E0B' },
-    { label: 'الأخرى', percent: 9, color: '#EF4444' }
+    { label: 'مواقع الويب', percent: 38, color: '#3B82F6' },
+    { label: 'إعلانات سوشيال ميديا', percent: 27, color: '#A855F7' },
+    { label: 'توصية عميل', percent: 18, color: '#10B981' },
+    { label: 'إعلانات جوجل', percent: 12, color: '#F59E0B' },
+    { label: 'أخرى', percent: 5, color: '#EF4444' }
   ]
 
   const donutChartData = {
