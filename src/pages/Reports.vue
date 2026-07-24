@@ -201,9 +201,7 @@
     <!-- Main Charts -->
     <div class="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-4">
       <!-- Conversion Trend -->
-      <div
-        class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5 xl:col-span-3"
-      >
+      <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5 xl:col-span-3">
         <!-- Header like Figma -->
         <div class="mb-5 flex flex-wrap items-start justify-between gap-x-8 gap-y-4" dir="rtl">
           <!-- Title on the right -->
@@ -239,9 +237,7 @@
       </div>
 
       <!-- Sources Doughnut -->
-      <div
-        class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5 xl:col-span-1"
-      >
+      <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5 xl:col-span-1">
         <h3 class="text-sm font-semibold text-gray-900">توزيع مصادر العملاء</h3>
 
         <p class="mb-4 mt-1 text-xs text-gray-400">هذا الشهر</p>
@@ -410,12 +406,6 @@
 
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
-                  <div
-                    class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600"
-                  >
-                    {{ employee.name.charAt(0) }}
-                  </div>
-
                   <span class="whitespace-nowrap font-medium text-gray-800">
                     {{ employee.name }}
                   </span>
@@ -448,7 +438,7 @@
 
               <td class="px-4 py-3">
                 <span
-                  class="inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium"
+                  class="inline-flex items-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium"
                   :class="performanceClass(employee.performance)"
                 >
                   {{ employee.performance }}
