@@ -3,7 +3,7 @@
     class="flex flex-col w-56 bg-white border-s border-gray-100 h-screen flex-shrink-0 shadow-sm"
   >
     <!-- Logo -->
-    <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-100 flex-shrink-0">
+    <div class="flex items-center gap-3 px-4 py-5 border-b border-gray-100 flex-shrink-0">
       <div
         class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0"
       >
