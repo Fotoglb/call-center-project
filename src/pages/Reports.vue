@@ -12,15 +12,21 @@
       <div v-if="!isExportingPdf" class="flex flex-wrap items-center justify-end gap-2">
         <button
           type="button"
-          class="cursor-pointer rounded-lg px-4 py-2 text-xs font-medium transition-colors"
+          class="cursor-pointer rounded-lg px-4 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60"
           :class="
             exportFormat === 'excel'
               ? 'bg-gray-900 text-white'
               : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
           "
+          :disabled="isExportingExcel"
           @click="exportExcel"
         >
-          Excel
+          <span v-if="isExportingExcel" class="flex items-center gap-1.5">
+            <Loader2 :size="14" class="animate-spin" />
+            ...جاري التصدير
+          </span>
+
+          <span v-else>Excel</span>
         </button>
 
         <button
@@ -232,7 +238,7 @@
 
         <!-- Chart -->
         <div class="chart-container relative h-[250px] w-full min-w-0" dir="ltr">
-          <Line :data="conversionTrendData" :options="lineOptions" />
+          <Line ref="conversionChartRef" :data="conversionTrendData" :options="lineOptions" />
         </div>
       </div>
 
@@ -244,7 +250,7 @@
 
         <div class="flex min-w-0 flex-col items-center gap-4">
           <div class="relative h-32 w-32 shrink-0">
-            <Doughnut :data="sourceChartData" :options="donutOptions" />
+            <Doughnut ref="sourceChartRef" :data="sourceChartData" :options="donutOptions" />
           </div>
 
           <ul class="w-full min-w-0 space-y-3 text-xs">
@@ -296,7 +302,7 @@
         </div>
 
         <div class="chart-container relative h-52 w-full min-w-0" dir="ltr">
-          <Bar :data="employeeTrendData" :options="barOptions" />
+          <Bar ref="employeeChartRef" :data="employeeTrendData" :options="barOptions" />
         </div>
       </div>
 
@@ -323,7 +329,7 @@
         </div>
 
         <div class="chart-container relative h-52 w-full min-w-0" dir="ltr">
-          <Bar :data="visitSuccessData" :options="barOptions" />
+          <Bar ref="visitChartRef" :data="visitSuccessData" :options="barOptions" />
         </div>
       </div>
     </div>
@@ -489,10 +495,12 @@
     Tooltip
   } from 'chart.js'
 
-  import { CalendarRange, ChevronDown, Pencil, Share2, Trash2 } from '@lucide/vue'
+  import { CalendarRange, ChevronDown, Loader2, Pencil, Share2, Trash2 } from '@lucide/vue'
   import html2canvas from 'html2canvas-pro'
   import jsPDF from 'jspdf'
-  import * as XLSX from 'xlsx'
+  import ExcelJS from 'exceljs'
+
+  import { useNotification } from '@/composables/useNotification'
 
   ChartJS.register(
     CategoryScale,
@@ -513,6 +521,14 @@
   const period = ref('daily')
   const agentFilter = ref('')
   const sourceFilter = ref('')
+
+  const periodLabels = {
+    daily: 'يومي',
+    weekly: 'أسبوعي',
+    monthly: 'شهري'
+  }
+
+  const periodLabel = computed(() => periodLabels[period.value] ?? period.value)
 
   /* ----------------------------------------
    * Date range
@@ -1094,32 +1110,450 @@
   const reportRoot = ref(null)
   const isExportingPdf = ref(false)
 
-  function exportExcel() {
-    exportFormat.value = 'excel'
+  const conversionChartRef = ref(null)
+  const sourceChartRef = ref(null)
+  const employeeChartRef = ref(null)
+  const visitChartRef = ref(null)
 
-    const statsSheet = XLSX.utils.json_to_sheet(
-      stats.map(stat => ({ المؤشر: stat.label, القيمة: stat.value }))
-    )
+  const isExportingExcel = ref(false)
+  const notification = useNotification()
 
-    const employeesSheet = XLSX.utils.json_to_sheet(
-      employeePerformance.map(employee => ({
-        الموظف: employee.name,
-        'عدد المكالمات': employee.calls,
-        'عملاء جدد': employee.newCustomers,
-        التحويلات: employee.conversions,
-        'معدل التحويل': `${employee.conversionRate}%`,
-        الزيارات: employee.visits,
-        'نجاح الزيارات': `${employee.visitSuccessRate}%`,
-        'نقاط الأداء': employee.score,
-        الأداء: employee.performance
+  /* ----------------------------------------
+   * Excel export helpers
+   * -------------------------------------- */
+
+  function safeCell(value) {
+    if (value === null || value === undefined || value === '') {
+      return '-'
+    }
+
+    if (typeof value === 'number' && Number.isNaN(value)) {
+      return '-'
+    }
+
+    return value
+  }
+
+  function formatFileDate(date) {
+    if (!date) {
+      return ''
+    }
+
+    const [year, month, day] = date.split('-')
+
+    return `${day}-${month}-${year}`
+  }
+
+  function newRtlSheet(workbook, name) {
+    return workbook.addWorksheet(name, {
+      views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }]
+    })
+  }
+
+  function styleHeaderRow(row) {
+    row.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF1F2937' }
+      }
+
+      cell.alignment = { vertical: 'middle', horizontal: 'center', readingOrder: 'rtl' }
+
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+      }
+    })
+
+    row.height = 22
+  }
+
+  function styleDataRows(worksheet) {
+    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+      worksheet.getRow(rowNumber).eachCell({ includeEmpty: true }, cell => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+        }
+
+        cell.alignment = { vertical: 'middle', horizontal: 'center', readingOrder: 'rtl' }
+      })
+    }
+  }
+
+  function autoSizeColumns(worksheet, minWidth = 12) {
+    worksheet.columns.forEach(column => {
+      let maxLength = minWidth
+
+      column.eachCell({ includeEmpty: true }, cell => {
+        const length = String(cell.value ?? '').length
+
+        if (length > maxLength) {
+          maxLength = length
+        }
+      })
+
+      column.width = Math.min(maxLength + 4, 45)
+    })
+  }
+
+  function addSeriesTableSheet(workbook, name, chartData, firstColumnHeader) {
+    const sheet = newRtlSheet(workbook, name)
+
+    sheet.columns = [
+      { header: firstColumnHeader, key: 'label' },
+      ...chartData.datasets.map((dataset, index) => ({
+        header: dataset.label ?? `سلسلة ${index + 1}`,
+        key: `series${index}`
       }))
-    )
+    ]
 
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, statsSheet, 'الإحصائيات')
-    XLSX.utils.book_append_sheet(workbook, employeesSheet, 'أداء الموظفين')
+    chartData.labels.forEach((label, rowIndex) => {
+      const row = { label: safeCell(label) }
 
-    XLSX.writeFile(workbook, `تقرير-التحليلات-${dateFrom.value}-${dateTo.value}.xlsx`)
+      chartData.datasets.forEach((dataset, index) => {
+        row[`series${index}`] = safeCell(dataset.data[rowIndex])
+      })
+
+      sheet.addRow(row)
+    })
+
+    styleHeaderRow(sheet.getRow(1))
+    styleDataRows(sheet)
+    sheet.autoFilter = { from: 'A1', to: `${sheet.getColumn(sheet.columnCount).letter}1` }
+    autoSizeColumns(sheet)
+
+    return sheet
+  }
+
+  function getChartInstance(componentRef) {
+    const canvas = componentRef?.value?.$el
+
+    return canvas instanceof HTMLCanvasElement ? ChartJS.getChart(canvas) : null
+  }
+
+  function addChartImage(workbook, worksheet, title, chartInstance, startRow) {
+    worksheet.getCell(`A${startRow}`).value = title
+    worksheet.getCell(`A${startRow}`).font = { bold: true, size: 13, color: { argb: 'FF111827' } }
+    worksheet.getCell(`A${startRow}`).alignment = { horizontal: 'right', readingOrder: 'rtl' }
+
+    if (!chartInstance || !chartInstance.canvas) {
+      worksheet.getCell(`A${startRow + 1}`).value = 'الرسم غير متاح للتصدير'
+
+      return startRow + 3
+    }
+
+    const canvas = chartInstance.canvas
+    const dpr = window.devicePixelRatio || 1
+    const widthPx = canvas.width / dpr
+    const heightPx = canvas.height / dpr
+
+    const base64 = chartInstance.toBase64Image('image/png', 1)
+    const imageId = workbook.addImage({ base64, extension: 'png' })
+
+    worksheet.addImage(imageId, {
+      tl: { col: 0.3, row: startRow + 0.3 },
+      ext: { width: widthPx, height: heightPx }
+    })
+
+    const rowsUsed = Math.ceil(heightPx / 20) + 2
+
+    return startRow + rowsUsed
+  }
+
+  function addLegendRows(worksheet, startRow, items) {
+    let row = startRow
+
+    items.forEach(item => {
+      worksheet.getCell(`A${row}`).value = item.label
+      worksheet.getCell(`A${row}`).alignment = { horizontal: 'right', readingOrder: 'rtl' }
+
+      worksheet.getCell(`B${row}`).value = ' '
+
+      worksheet.getCell(`B${row}`).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: `FF${item.color.replace('#', '')}` }
+      }
+
+      row++
+    })
+
+    return row + 1
+  }
+
+  /* ----------------------------------------
+   * Excel export
+   * -------------------------------------- */
+
+  async function exportExcel() {
+    if (isExportingExcel.value) {
+      return
+    }
+
+    exportFormat.value = 'excel'
+    isExportingExcel.value = true
+
+    try {
+      await nextTick()
+
+      const workbook = new ExcelJS.Workbook()
+      workbook.creator = 'نظام مركز الاتصال'
+      workbook.created = new Date()
+
+      /* ---------- Sheet 1: ملخص التقرير ---------- */
+
+      const summarySheet = newRtlSheet(workbook, 'ملخص التقرير')
+
+      summarySheet.columns = [
+        { header: 'المؤشر', key: 'label' },
+        { header: 'القيمة', key: 'value' }
+      ]
+
+      stats.forEach(stat => {
+        summarySheet.addRow({ label: safeCell(stat.label), value: safeCell(stat.value) })
+      })
+
+      summarySheet.addRow({
+        label: 'الفترة الزمنية',
+        value: `${dateFrom.value} إلى ${dateTo.value}`
+      })
+
+      summarySheet.addRow({
+        label: 'الموظف المحدد',
+        value: safeCell(agentFilter.value || 'جميع الموظفين')
+      })
+
+      summarySheet.addRow({
+        label: 'المصدر المحدد',
+        value: safeCell(sourceFilter.value || 'جميع المصادر')
+      })
+
+      summarySheet.addRow({ label: 'نوع التجميع الحالي', value: periodLabel.value })
+
+      styleHeaderRow(summarySheet.getRow(1))
+      styleDataRows(summarySheet)
+      summarySheet.autoFilter = 'A1:B1'
+      autoSizeColumns(summarySheet, 18)
+
+      /* ---------- Sheet 2: الاتجاه الزمني ---------- */
+
+      const trendSheet = newRtlSheet(workbook, 'الاتجاه الزمني')
+
+      const trendDatasetByLabel = Object.fromEntries(
+        conversionTrendData.datasets.map(dataset => [dataset.label, dataset.data])
+      )
+
+      trendSheet.columns = [
+        { header: 'اليوم', key: 'day' },
+        { header: 'الزيارات', key: 'visits' },
+        { header: 'المكالمات', key: 'calls' },
+        { header: 'عملاء جدد', key: 'newCustomers' }
+      ]
+
+      conversionTrendData.labels.forEach((label, index) => {
+        trendSheet.addRow({
+          day: safeCell(label),
+          visits: safeCell(trendDatasetByLabel['الزيارات']?.[index]),
+          calls: safeCell(trendDatasetByLabel['المكالمات']?.[index]),
+          newCustomers: safeCell(trendDatasetByLabel['عملاء جدد']?.[index])
+        })
+      })
+
+      styleHeaderRow(trendSheet.getRow(1))
+      styleDataRows(trendSheet)
+      trendSheet.autoFilter = 'A1:D1'
+      autoSizeColumns(trendSheet)
+
+      /* ---------- Sheet 3: مصادر العملاء ---------- */
+
+      const sourcesSheet = newRtlSheet(workbook, 'مصادر العملاء')
+
+      sourcesSheet.columns = [
+        { header: 'المصدر', key: 'label' },
+        { header: 'النسبة المئوية', key: 'percent' },
+        { header: 'اللون', key: 'color' }
+      ]
+
+      sourceLegend.forEach(item => {
+        sourcesSheet.addRow({
+          label: safeCell(item.label),
+          percent: item.percent / 100,
+          color: safeCell(item.color)
+        })
+      })
+
+      sourcesSheet.getColumn('percent').numFmt = '0%'
+
+      styleHeaderRow(sourcesSheet.getRow(1))
+      styleDataRows(sourcesSheet)
+
+      sourceLegend.forEach((item, index) => {
+        sourcesSheet.getCell(`C${index + 2}`).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: `FF${item.color.replace('#', '')}` }
+        }
+
+        sourcesSheet.getCell(`C${index + 2}`).font = { color: { argb: 'FFFFFFFF' } }
+      })
+
+      sourcesSheet.autoFilter = 'A1:C1'
+      autoSizeColumns(sourcesSheet)
+
+      /* ---------- Sheet 4: البيانات التفصيلية ---------- */
+
+      const detailSheet = newRtlSheet(workbook, 'البيانات التفصيلية')
+
+      detailSheet.columns = [
+        { header: 'الموظف', key: 'name' },
+        { header: 'عدد المكالمات', key: 'calls' },
+        { header: 'عملاء جدد', key: 'newCustomers' },
+        { header: 'التحويلات', key: 'conversions' },
+        { header: 'معدل التحويل', key: 'conversionRate' },
+        { header: 'الزيارات', key: 'visits' },
+        { header: 'نجاح الزيارات', key: 'visitSuccessRate' },
+        { header: 'نقاط الأداء', key: 'score' },
+        { header: 'الأداء', key: 'performance' }
+      ]
+
+      employeePerformance.forEach(employee => {
+        detailSheet.addRow({
+          name: safeCell(employee.name),
+          calls: safeCell(employee.calls),
+          newCustomers: safeCell(employee.newCustomers),
+          conversions: safeCell(employee.conversions),
+          conversionRate: employee.conversionRate / 100,
+          visits: safeCell(employee.visits),
+          visitSuccessRate: employee.visitSuccessRate / 100,
+          score: safeCell(employee.score),
+          performance: safeCell(employee.performance)
+        })
+      })
+
+      detailSheet.getColumn('conversionRate').numFmt = '0%'
+      detailSheet.getColumn('visitSuccessRate').numFmt = '0%'
+
+      styleHeaderRow(detailSheet.getRow(1))
+      styleDataRows(detailSheet)
+      detailSheet.autoFilter = 'A1:I1'
+      autoSizeColumns(detailSheet)
+
+      /* ---------- Sheet 5: أداء الموظفين (رسم المقارنة اليومي) ---------- */
+
+      addSeriesTableSheet(workbook, 'أداء الموظفين', employeeTrendData, 'اليوم')
+
+      /* ---------- Sheet 6: نجاح الزيارات (رسم المقارنة اليومي) ---------- */
+
+      addSeriesTableSheet(workbook, 'نجاح الزيارات', visitSuccessData, 'اليوم')
+
+      /* ---------- Sheet 7: الرسوم البيانية ---------- */
+
+      const chartsSheet = newRtlSheet(workbook, 'الرسوم البيانية')
+      chartsSheet.views = [{ rightToLeft: true }]
+      chartsSheet.getColumn(1).width = 90
+      chartsSheet.getColumn(2).width = 14
+
+      let row = 1
+
+      row = addChartImage(
+        workbook,
+        chartsSheet,
+        'معدل التحويل – الاتجاه الزمني',
+        getChartInstance(conversionChartRef),
+        row
+      )
+
+      row = addLegendRows(
+        chartsSheet,
+        row,
+        conversionTrendData.datasets.map(dataset => ({
+          label: dataset.label,
+          color: dataset.backgroundColor
+        }))
+      )
+
+      row = addChartImage(
+        workbook,
+        chartsSheet,
+        'توزيع مصادر العملاء',
+        getChartInstance(sourceChartRef),
+        row
+      )
+
+      row = addLegendRows(
+        chartsSheet,
+        row,
+        sourceLegend.map(item => ({ label: `${item.label} (${item.percent}%)`, color: item.color }))
+      )
+
+      row = addChartImage(
+        workbook,
+        chartsSheet,
+        'أداء الموظفين',
+        getChartInstance(employeeChartRef),
+        row
+      )
+
+      row = addLegendRows(
+        chartsSheet,
+        row,
+        employeeTrendData.datasets.map(dataset => ({
+          label: dataset.label,
+          color: dataset.backgroundColor
+        }))
+      )
+
+      row = addChartImage(
+        workbook,
+        chartsSheet,
+        'معدل نجاح الزيارات',
+        getChartInstance(visitChartRef),
+        row
+      )
+
+      addLegendRows(
+        chartsSheet,
+        row,
+        visitSuccessData.datasets.map(dataset => ({
+          label: dataset.label,
+          color: dataset.backgroundColor
+        }))
+      )
+
+      /* ---------- Save ---------- */
+
+      const buffer = await workbook.xlsx.writeBuffer()
+
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      })
+
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+
+      link.href = url
+      link.download = `تقرير_التحليلات_من_${formatFileDate(dateFrom.value)}_إلى_${formatFileDate(dateTo.value)}.xlsx`
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      notification.success('تم تصدير التقرير إلى Excel بنجاح')
+    } catch (error) {
+      console.error('Excel export failed:', error)
+      notification.error('حدث خطأ أثناء تصدير التقرير، حاول مرة أخرى')
+    } finally {
+      isExportingExcel.value = false
+    }
   }
 
   async function exportPdf() {
