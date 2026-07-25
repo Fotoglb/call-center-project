@@ -1,13 +1,13 @@
 <template>
   <div class="space-y-5">
     <!-- Page Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center items-start justify-between gap-3">
       <div>
         <p class="text-xs text-gray-400 mb-1">إدارة العملاء / {{ customer.name }}</p>
         <h1 class="text-xl font-bold text-gray-900">{{ customer.name }}</h1>
         <p class="text-xs text-gray-400 mt-0.5">ملف العميل الكامل</p>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <button
           class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
           @click="router.back()"
@@ -31,7 +31,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="grid grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <!-- RIGHT: Sidebar -->
       <div class="space-y-5">
         <!-- Customer Card -->
@@ -147,9 +147,9 @@
       </div>
 
       <!-- LEFT: col-span-2 -->
-      <div class="col-span-2 space-y-5">
+      <div class="lg:col-span-2 space-y-5">
         <!-- Interest Score Card -->
-        <div class="bg-gray-50 rounded-xl p-5 flex items-center gap-5">
+        <div class="bg-gray-50 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-5">
           <div>
             <div class="flex items-baseline gap-1">
               <p class="text-sm font-bold text-gray-900">نقاط الاهتمام</p>
@@ -186,11 +186,13 @@
         <!-- Activity Timeline -->
         <div class="bg-gray-50 rounded-xl flex flex-col">
           <!-- Tabs -->
-          <div class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0">
+          <div
+            class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0 overflow-x-auto"
+          >
             <button
               v-for="tab in activityTabs"
               :key="tab.key"
-              class="px-4 py-2 text-xs font-medium rounded-t-lg transition-colors cursor-pointer"
+              class="px-4 py-2 text-xs font-medium rounded-t-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
               :class="
                 activeActivityTab === tab.key
                   ? 'text-indigo-600 border-b-2 border-indigo-500 bg-indigo-50/40'
@@ -207,8 +209,8 @@
             <div v-for="entry in filteredActivity" :key="entry.id" class="flex gap-3">
               <span class="w-5 h-5 rounded-md border border-gray-300 shrink-0 mt-0.5"></span>
               <div class="flex-1 min-w-0 bg-white rounded-xl p-3">
-                <div class="flex items-center justify-between gap-2 mb-1">
-                  <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-xs font-semibold text-gray-800">{{ entry.title }}</span>
                     <span
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
