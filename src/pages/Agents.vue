@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-5">
     <!-- Page Header -->
-    <div class="flex items-start justify-between">
+    <div class="md:flex md:space-y-0 space-y-3 items-start justify-between">
       <div>
         <h1 class="text-xl font-bold text-gray-900">مركز الاتصالات</h1>
         <p class="text-xs text-gray-400 mt-1">
@@ -11,22 +11,23 @@
       <div class="flex items-center gap-2">
         <button
           class="flex items-center gap-1.5 text-xs text-white bg-gray-900 rounded-lg px-3 py-2 hover:bg-gray-700 cursor-pointer transition-colors"
+          @click="resetToDefaultView"
         >
           <ListChecks :size="14" />
           قائمة المكالمات
         </button>
         <button
           class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
-          @click="router.push({ name: 'Reports' })"
+          @click="router.push({ name: 'Calls' })"
         >
-          <BarChart2 :size="14" />
-          تحليل المكالمات
+          <PhoneCall :size="14" />
+          سجل المكالمات
         </button>
       </div>
     </div>
 
     <!-- Stats Row -->
-    <div class="grid grid-cols-6 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
       <button
         v-for="stat in stats"
         :key="stat.key"
@@ -49,7 +50,9 @@
     <!-- Table Card -->
     <div class="bg-gray-50 rounded-xl overflow-hidden">
       <!-- Toolbar: search + filters (rightmost in RTL) beside Excel/PDF export (leftmost) -->
-      <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 flex-wrap">
+      <div
+        class="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 flex-wrap"
+      >
         <div class="flex items-center gap-2 flex-wrap">
           <div class="relative flex-1 min-w-48">
             <input
@@ -258,7 +261,6 @@
     ChevronLeft,
     ChevronRight,
     ListChecks,
-    BarChart2,
     FileSpreadsheet,
     FileText,
     Calendar,
@@ -274,11 +276,19 @@
   const searchQuery = ref('')
   const typeFilter = ref('')
   const agentFilter = ref('')
-  const statusFilter = ref('غير مهتم')
+  const statusFilter = ref('')
   const currentPage = ref(1)
   const pageSize = ref(10)
 
   const callTypes = ['وارد', 'صادر']
+
+  function resetToDefaultView() {
+    searchQuery.value = ''
+    typeFilter.value = ''
+    agentFilter.value = ''
+    statusFilter.value = ''
+    currentPage.value = 1
+  }
 
   const callsList = [
     {
@@ -288,8 +298,8 @@
       agent: 'سارة أحمد',
       type: 'وارد',
       date: '10/6/2026',
-      status: 'زيارة مجدولة',
-      note: 'تم الاتفاق على موعد الزيارة الميدانية للمشروع'
+      status: 'مهتم',
+      note: 'تمت الموافقة على صفقة العميل'
     },
     {
       id: 2,
@@ -298,38 +308,38 @@
       agent: 'محمد علي',
       type: 'صادر',
       date: '14/6/2026',
-      status: 'إعادة الجدولة',
-      note: 'طلب العميل تأجيل الموعد لظروف طارئة'
+      status: 'عميل جديد',
+      note: 'تمت الموافقة على صفقة العميل'
     },
     {
       id: 3,
       name: 'فاطمة علي',
       phone: '0555569876',
       agent: 'هند الفضل',
-      type: 'وارد',
+      type: 'صادر',
       date: '16/6/2026',
-      status: 'لا يرد',
-      note: 'لم يتم الرد، تم ترك رسالة صوتية'
+      status: 'زيارة مجدولة',
+      note: 'تمت الموافقة على صفقة العميل'
     },
     {
       id: 4,
       name: 'سالم سعيد',
       phone: '0555564321',
       agent: 'إبراهيم أحمد',
-      type: 'صادر',
+      type: 'وارد',
       date: '17/6/2026',
-      status: 'غير مهتم',
-      note: 'أفاد العميل بعدم رغبته في المتابعة حالياً'
+      status: 'قيد المعالجة',
+      note: 'تمت الموافقة على صفقة العميل'
     },
     {
       id: 5,
       name: 'علي حسن',
       phone: '0555565078',
       agent: 'فاطمة حسن',
-      type: 'وارد',
+      type: 'صادر',
       date: '18/6/2026',
-      status: 'مهتم',
-      note: 'أبدى اهتماماً كبيراً وطلب إرسال عرض السعر'
+      status: 'تم التحويل',
+      note: 'تمت الموافقة على صفقة العميل'
     },
     {
       id: 6,
@@ -453,21 +463,37 @@
     مهتم: { icon: CheckCircle2, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' }
   }
 
+  /*
+   * القيم زي فيجما بالظبط، والترتيب معكوس عشان أول عنصر في الـ DOM
+   * يظهر أقصى الشمال مع RTL (بيرجع يمين).
+   */
+  const statValues = {
+    'زيارة مجدولة': '40',
+    'إعادة الجدولة': '9',
+    'لا يرد': '40',
+    'غير مهتم': '12',
+    مهتم: '120'
+  }
+
   const stats = computed(() => {
-    const entries = Object.keys(statConfig).map(key => ({
-      key,
-      label: key,
-      value: String(callsList.filter(c => c.status === key).length),
-      ...statConfig[key]
-    }))
-    entries.push({
-      key: '',
-      label: 'إجمالي المكالمات',
-      value: String(callsList.length),
-      icon: PhoneCall,
-      iconBg: 'bg-purple-50',
-      iconColor: 'text-purple-500'
-    })
+    const entries = [
+      {
+        key: '',
+        label: 'إجمالي المكالمات',
+        value: '250',
+        icon: PhoneCall,
+        iconBg: 'bg-purple-50',
+        iconColor: 'text-purple-500'
+      },
+      ...Object.keys(statConfig)
+        .reverse()
+        .map(key => ({
+          key,
+          label: key,
+          value: statValues[key],
+          ...statConfig[key]
+        }))
+    ]
     return entries
   })
 
@@ -510,11 +536,15 @@
 
   function statusClass(status) {
     const map = {
-      'زيارة مجدولة': 'bg-amber-50 text-amber-600',
+      'زيارة مجدولة': 'bg-sky-50 text-sky-600',
       'إعادة الجدولة': 'bg-indigo-50 text-indigo-600',
       'لا يرد': 'bg-gray-100 text-gray-500',
       'غير مهتم': 'bg-red-50 text-red-500',
-      مهتم: 'bg-emerald-50 text-emerald-600'
+      مهتم: 'bg-emerald-50 text-emerald-600',
+      'عميل جديد': 'bg-blue-50 text-blue-600',
+      'قيد المعالجة': 'bg-amber-50 text-amber-600',
+      'تم التحويل': 'bg-emerald-50 text-emerald-600',
+      محتمل: 'bg-teal-50 text-teal-600'
     }
     return map[status] ?? 'bg-gray-100 text-gray-500'
   }

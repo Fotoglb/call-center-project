@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="flex flex-col w-56 bg-gray-50 border-s border-gray-200 h-screen flex-shrink-0 shadow-sm"
+    class="hidden lg:flex flex-col w-56 bg-gray-50 border-s border-gray-200 h-screen flex-shrink-0 shadow-sm"
   >
     <!-- Logo -->
     <div class="flex items-center gap-3 px-4 py-5 border-b border-gray-200 flex-shrink-0">

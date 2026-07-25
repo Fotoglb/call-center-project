@@ -1,13 +1,13 @@
 <template>
   <div class="space-y-6">
     <!-- Stats Row -->
-    <div class="grid grid-cols-6 gap-4">
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-6">
       <div
         v-for="stat in stats"
         :key="stat.label"
-        class="bg-gray-50 rounded-xl p-4 h-37.25 flex flex-col justify-between"
+        class="flex flex-col items-center justify-center gap-1 rounded-xl bg-gray-50 p-4 text-center h-37.25 lg:items-stretch lg:justify-between lg:gap-0 lg:text-start"
       >
-        <div class="w-9 h-9 rounded-lg bg-gray-200"></div>
+        <div class="hidden w-9 h-9 rounded-lg bg-gray-200 lg:block"></div>
         <div class="space-y-1">
           <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
           <p class="text-sm font-medium text-gray-700">{{ stat.label }}</p>
@@ -17,9 +17,9 @@
     </div>
 
     <!-- Charts Row 1 -->
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <!-- Line Chart -->
-      <div class="col-span-2 bg-gray-50 rounded-xl p-5">
+      <div class="order-2 bg-gray-50 rounded-xl p-5 lg:order-0 lg:col-span-2">
         <div class="mb-4 flex items-start justify-between">
           <div>
             <h3 class="text-sm font-semibold text-gray-900">أداء المبيعات الأسبوعي</h3>
@@ -40,16 +40,14 @@
       </div>
 
       <!-- Right Column -->
-      <div class="flex flex-col gap-4">
-        <!-- Mini Stats -->
-
+      <div class="order-1 flex flex-col gap-4 lg:order-0">
         <!-- Donut Chart -->
         <div class="bg-gray-50 rounded-xl p-5 flex-1">
           <div class="mb-3">
             <h3 class="text-sm font-semibold text-gray-900">توزيع مصادر العملاء</h3>
             <p class="text-xs text-gray-400 mt-0.5">هذا الشهر</p>
           </div>
-          <div class="flex flex-col items-center gap-4">
+          <div class="flex flex-row items-center justify-between gap-4 lg:flex-col">
             <div class="w-28 h-28 shrink-0">
               <Doughnut :data="donutChartData" :options="donutChartOptions" />
             </div>
@@ -92,9 +90,9 @@
     </div>
 
     <!-- Bottom Row: Activity Log (RIGHT in RTL) + Upcoming Visits (LEFT in RTL) -->
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <!-- Activity Log — col-span-1 → RIGHT in RTL -->
-      <div class="bg-gray-50 col-span-2 rounded-xl p-5">
+      <div class="bg-gray-50 rounded-xl p-5 lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-sm font-semibold text-gray-900">سجل النشاطات الأخيرة</h3>

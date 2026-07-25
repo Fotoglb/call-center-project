@@ -1,9 +1,9 @@
 <template>
   <header
-    class="flex items-center justify-between h-20 px-6 bg-gray-50 border-b border-gray-200 shrink-0"
+    class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200 shrink-0 lg:h-20 lg:flex-nowrap lg:px-6 lg:py-0"
   >
     <!-- Search bar -->
-    <div class="flex-1 max-w-md relative">
+    <div class="order-3 w-full relative lg:order-1 lg:w-auto lg:flex-1 lg:max-w-md">
       <input
         type="text"
         placeholder="ابحث عن عميل بالرقم هاتفه..."
@@ -16,8 +16,19 @@
       </span>
     </div>
 
+    <!-- Logo (mobile only, shown in sidebar on desktop) -->
+    <div class="order-1 flex items-center gap-2 shrink-0 lg:hidden">
+      <div class="w-9 h-9 rounded-xl bg-black flex items-center justify-center shrink-0">
+        <span class="text-[10px] font-black text-white tracking-widest">CRM</span>
+      </div>
+      <div class="leading-tight">
+        <p class="text-xs font-black text-gray-900 tracking-[0.15em]">CRM</p>
+        <p class="text-[11px] text-gray-400">منصة خدمة العملاء</p>
+      </div>
+    </div>
+
     <!-- User info + Bell -->
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="order-2 flex items-center gap-2 shrink-0 lg:order-2">
       <button
         class="flex items-center gap-2.5 hover:bg-white rounded-xl px-2 py-1.5 transition-colors cursor-pointer group"
       >

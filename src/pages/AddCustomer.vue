@@ -16,7 +16,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="grid grid-cols-3 gap-5">
+    <div class="lg:grid grid-cols-3 gap-5">
       <!-- Form — col-span-2 -->
       <div class="col-span-2 space-y-5">
         <div class="bg-gray-50 rounded-xl p-6">
@@ -37,7 +37,10 @@
                     class="w-full h-10 ps-4 pe-9 bg-white border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                     :class="errors.name ? 'border-red-300' : 'border-gray-200'"
                   />
-                  <User :size="14" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <User
+                    :size="14"
+                    class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
                 </div>
                 <p v-if="errors.name" class="text-xs text-red-500">{{ errors.name }}</p>
               </div>
@@ -52,7 +55,10 @@
                     class="w-full h-10 ps-4 pe-9 bg-white border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                     :class="errors.email ? 'border-red-300' : 'border-gray-200'"
                   />
-                  <Mail :size="14" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Mail
+                    :size="14"
+                    class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
                 </div>
                 <p v-if="errors.email" class="text-xs text-red-500">{{ errors.email }}</p>
               </div>
@@ -75,7 +81,10 @@
                       <option value="+965">+965</option>
                       <option value="+973">+973</option>
                     </select>
-                    <ChevronDown :size="12" class="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <ChevronDown
+                      :size="12"
+                      class="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                    />
                   </div>
                   <div class="relative flex-1">
                     <input
@@ -85,7 +94,10 @@
                       class="w-full h-10 ps-4 pe-9 bg-white border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                       :class="errors.phone ? 'border-red-300' : 'border-gray-200'"
                     />
-                    <Phone :size="14" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <Phone
+                      :size="14"
+                      class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                    />
                   </div>
                 </div>
                 <p v-if="errors.phone" class="text-xs text-red-500">{{ errors.phone }}</p>
@@ -104,7 +116,10 @@
                     <option value="">اختر المصدر</option>
                     <option v-for="src in sourceOptions" :key="src" :value="src">{{ src }}</option>
                   </select>
-                  <ChevronDown :size="12" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <ChevronDown
+                    :size="12"
+                    class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
                 </div>
                 <p v-if="errors.source" class="text-xs text-red-500">{{ errors.source }}</p>
               </div>
@@ -122,7 +137,10 @@
                     <option value="">اختر نوع المشروع</option>
                     <option v-for="t in projectTypes" :key="t" :value="t">{{ t }}</option>
                   </select>
-                  <ChevronDown :size="12" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <ChevronDown
+                    :size="12"
+                    class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
                 </div>
               </div>
 
@@ -134,7 +152,10 @@
                     type="date"
                     class="w-full h-10 ps-4 pe-9 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                   />
-                  <CalendarDays :size="14" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <CalendarDays
+                    :size="14"
+                    class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
                 </div>
               </div>
             </div>
@@ -164,7 +185,10 @@
                     <option value="">اختر المدينة</option>
                     <option v-for="c in cityOptions" :key="c" :value="c">{{ c }}</option>
                   </select>
-                  <ChevronDown :size="12" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <ChevronDown
+                    :size="12"
+                    class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
                 </div>
               </div>
             </div>
@@ -185,7 +209,9 @@
         <!-- Action Buttons -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0">
+            <div
+              class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0"
+            >
               أح
             </div>
             <div class="text-end leading-tight">
@@ -218,7 +244,8 @@
         <div class="bg-gray-50 rounded-xl p-5">
           <h3 class="text-sm font-semibold text-gray-900 mb-3">الكشف عن النسخ المكررة</h3>
           <p class="text-xs text-gray-500 leading-relaxed">
-            ستظهر أرقام الهاتف من السجل، ستظهر بيانات المتطابقين المحتملين ما يجب أن تتجنب إنشاء نسخ مكررة
+            ستظهر أرقام الهاتف من السجل، ستظهر بيانات المتطابقين المحتملين ما يجب أن تتجنب إنشاء نسخ
+            مكررة
           </p>
 
           <div v-if="duplicates.length > 0" class="mt-4 space-y-2">
@@ -227,7 +254,9 @@
               :key="d.id"
               class="flex items-center gap-2.5 p-2.5 bg-amber-50 border border-amber-100 rounded-lg"
             >
-              <div class="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-600 shrink-0">
+              <div
+                class="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-600 shrink-0"
+              >
                 {{ d.name.charAt(0) }}
               </div>
               <div class="flex-1 min-w-0">
@@ -251,7 +280,9 @@
           <h3 class="text-sm font-semibold text-gray-900 mb-3">القواعد المهمة</h3>
           <ul class="space-y-3">
             <li v-for="(rule, i) in importantRules" :key="i" class="flex items-start gap-2">
-              <span class="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs shrink-0 mt-0.5">
+              <span
+                class="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs shrink-0 mt-0.5"
+              >
                 {{ i + 1 }}
               </span>
               <p class="text-xs text-gray-500 leading-relaxed">{{ rule }}</p>
@@ -264,81 +295,103 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import {
-  ArrowRight, User, Mail, Phone, ChevronDown,
-  CalendarDays, CheckCircle,
-} from '@lucide/vue'
+  import { ref, watch } from 'vue'
+  import { useRouter } from 'vue-router'
+  import {
+    ArrowRight,
+    User,
+    Mail,
+    Phone,
+    ChevronDown,
+    CalendarDays,
+    CheckCircle
+  } from '@lucide/vue'
 
-const router = useRouter()
+  const router = useRouter()
 
-const form = ref({
-  name: '',
-  email: '',
-  countryCode: '+966',
-  phone: '',
-  source: '',
-  projectType: '',
-  createdAt: new Date().toISOString().split('T')[0],
-  requirements: '',
-  city: '',
-  notes: '',
-})
+  const form = ref({
+    name: '',
+    email: '',
+    countryCode: '+966',
+    phone: '',
+    source: '',
+    projectType: '',
+    createdAt: new Date().toISOString().split('T')[0],
+    requirements: '',
+    city: '',
+    notes: ''
+  })
 
-const errors = ref({})
-const isSubmitting = ref(false)
-const duplicates = ref([])
+  const errors = ref({})
+  const isSubmitting = ref(false)
+  const duplicates = ref([])
 
-const sourceOptions = [
-  'جوجل أدز', 'وسائل التواصل', 'الاتصال المباشر',
-  'إعلانات تويتر', 'التسويق الخارجي', 'مجتمع ميتا', 'تسويق الشبكات',
-]
+  const sourceOptions = [
+    'جوجل أدز',
+    'وسائل التواصل',
+    'الاتصال المباشر',
+    'إعلانات تويتر',
+    'التسويق الخارجي',
+    'مجتمع ميتا',
+    'تسويق الشبكات'
+  ]
 
-const projectTypes = [
-  'B2B', 'B2C', 'Enterprise', 'SME', 'Startup',
-  'E-commerce', 'Retail', 'Manufacturing', 'Service', 'Non-profit', 'Education',
-]
+  const projectTypes = [
+    'B2B',
+    'B2C',
+    'Enterprise',
+    'SME',
+    'Startup',
+    'E-commerce',
+    'Retail',
+    'Manufacturing',
+    'Service',
+    'Non-profit',
+    'Education'
+  ]
 
-const cityOptions = ['الرياض', 'جدة', 'الطائف', 'المدينة المنورة', 'أبها', 'الدمام']
+  const cityOptions = ['الرياض', 'جدة', 'الطائف', 'المدينة المنورة', 'أبها', 'الدمام']
 
-const importantRules = [
-  'السيناريو الأول: أرقام الهاتف من السجل، ستظهر بيانات المتطابقين المحتملين ما يجب أن تتجنب إنشاء نسخ مكررة.',
-  'الحالة الثانية: حسب نسبة إدخال الجوال.',
-  'الضرورة أن يكون البريد الإلكتروني (الثانوي) صالحاً.',
-]
+  const importantRules = [
+    'السيناريو الأول: أرقام الهاتف من السجل، ستظهر بيانات المتطابقين المحتملين ما يجب أن تتجنب إنشاء نسخ مكررة.',
+    'الحالة الثانية: حسب نسبة إدخال الجوال.',
+    'الضرورة أن يكون البريد الإلكتروني (الثانوي) صالحاً.'
+  ]
 
-const mockCustomers = [
-  { id: 1, name: 'عبد الله المطيري', phone: '0551234567' },
-  { id: 2, name: 'نورا المحمد',      phone: '0569801234' },
-  { id: 3, name: 'خالد الزهراني',    phone: '0533456789' },
-]
+  const mockCustomers = [
+    { id: 1, name: 'عبد الله المطيري', phone: '0551234567' },
+    { id: 2, name: 'نورا المحمد', phone: '0569801234' },
+    { id: 3, name: 'خالد الزهراني', phone: '0533456789' }
+  ]
 
-watch(() => form.value.phone, (val) => {
-  if (val.length >= 7) {
-    duplicates.value = mockCustomers.filter(c => c.phone.includes(val.slice(0, 7)))
-  } else {
-    duplicates.value = []
+  watch(
+    () => form.value.phone,
+    val => {
+      if (val.length >= 7) {
+        duplicates.value = mockCustomers.filter(c => c.phone.includes(val.slice(0, 7)))
+      } else {
+        duplicates.value = []
+      }
+    }
+  )
+
+  function validate() {
+    const e = {}
+    if (!form.value.name.trim()) e.name = 'الاسم مطلوب'
+    if (!form.value.phone.trim()) e.phone = 'رقم الجوال مطلوب'
+    if (!form.value.source) e.source = 'المصدر مطلوب'
+    if (form.value.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+      e.email = 'بريد إلكتروني غير صالح'
+    }
+    errors.value = e
+    return Object.keys(e).length === 0
   }
-})
 
-function validate() {
-  const e = {}
-  if (!form.value.name.trim()) e.name = 'الاسم مطلوب'
-  if (!form.value.phone.trim()) e.phone = 'رقم الجوال مطلوب'
-  if (!form.value.source) e.source = 'المصدر مطلوب'
-  if (form.value.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    e.email = 'بريد إلكتروني غير صالح'
+  async function handleSubmit() {
+    if (!validate()) return
+    isSubmitting.value = true
+    await new Promise(r => setTimeout(r, 800))
+    isSubmitting.value = false
+    router.push({ name: 'Customers' })
   }
-  errors.value = e
-  return Object.keys(e).length === 0
-}
-
-async function handleSubmit() {
-  if (!validate()) return
-  isSubmitting.value = true
-  await new Promise(r => setTimeout(r, 800))
-  isSubmitting.value = false
-  router.push({ name: 'Customers' })
-}
 </script>

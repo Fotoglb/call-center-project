@@ -30,3 +30,13 @@ body {
 #app {
   min-height: 100vh;
 }
+
+/* إخفاء شريط التمرير في كل الموقع مع إبقاء إمكانية التمرير شغالة */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}

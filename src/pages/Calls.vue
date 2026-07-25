@@ -1,11 +1,11 @@
 <template>
-  <div class="flex flex-col h-full gap-4">
+  <div class="flex flex-col lg:h-full gap-4">
     <!-- Top Stats Bar -->
-    <div class="flex items-center gap-3 bg-gray-50 rounded-xl px-5 py-3">
+    <div class="flex flex-wrap items-center gap-3 bg-gray-50 rounded-xl px-5 py-3">
       <!-- Online Status -->
       <div class="flex items-center gap-2 pe-4 border-e border-gray-200">
         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 animate-pulse"></span>
-        <span class="text-xs font-semibold text-emerald-600">متصل</span>
+        <span class="text-xs font-semibold text-emerald-600 whitespace-nowrap">متصل</span>
       </div>
 
       <!-- Stats -->
@@ -21,14 +21,16 @@
           <component :is="stat.icon" :size="14" :class="stat.iconColor" />
         </div>
         <div>
-          <p class="text-sm font-bold text-gray-900 leading-none">{{ stat.value }}</p>
-          <p class="text-xs text-gray-400 mt-0.5">{{ stat.label }}</p>
+          <p class="text-sm font-bold text-gray-900 leading-none whitespace-nowrap">
+            {{ stat.value }}
+          </p>
+          <p class="text-xs text-gray-400 mt-0.5 whitespace-nowrap">{{ stat.label }}</p>
         </div>
       </div>
     </div>
 
     <!-- Main Content -->
-    <div class="grid grid-cols-3 gap-4 flex-1 min-h-0">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
       <!-- LEFT: Calls List -->
       <div class="bg-gray-50 rounded-xl flex flex-col min-h-0">
         <!-- Header -->
@@ -57,11 +59,11 @@
         </div>
 
         <!-- Filter Tabs -->
-        <div class="flex items-center gap-1 px-4 py-2 border-b border-gray-200 shrink-0">
+        <div class="flex items-center gap-1 px-4 py-2 border-b border-gray-200 shrink-0 overflow-x-auto">
           <button
             v-for="f in filterTabs"
             :key="f.key"
-            class="px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+            class="px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
             :class="
               activeFilter === f.key
                 ? 'bg-indigo-600 text-white'
@@ -143,7 +145,7 @@
       </div>
 
       <!-- RIGHT: Customer Detail -->
-      <div class="col-span-2 flex flex-col gap-4 min-h-0">
+      <div class="lg:col-span-2 flex flex-col gap-4 min-h-0">
         <!-- No Selection State -->
         <div
           v-if="!selectedCall"
@@ -163,7 +165,7 @@
         <template v-else>
           <!-- Customer Header Card -->
           <div class="bg-gray-50 rounded-xl p-5 shrink-0">
-            <div class="flex items-start justify-between">
+            <div class="flex items-start justify-between flex-wrap gap-3">
               <!-- Info -->
               <div class="flex items-start gap-3">
                 <div
@@ -221,11 +223,11 @@
           <!-- Tabs + History + Result -->
           <div class="flex-1 bg-gray-50 rounded-xl flex flex-col min-h-0">
             <!-- Tabs -->
-            <div class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0">
+            <div class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0 overflow-x-auto">
               <button
                 v-for="tab in tabs"
                 :key="tab.key"
-                class="px-4 py-2 text-xs font-medium rounded-t-lg transition-colors cursor-pointer"
+                class="px-4 py-2 text-xs font-medium rounded-t-lg transition-colors cursor-pointer shrink-0"
                 :class="
                   activeTab === tab.key
                     ? 'text-indigo-600 border-b-2 border-indigo-500 bg-indigo-50/40'
@@ -296,7 +298,7 @@
 
               <!-- Customer Data Tab -->
               <div v-if="activeTab === 'data'" class="space-y-3">
-                <dl class="grid grid-cols-2 gap-3">
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div class="bg-white rounded-xl p-3">
                     <dt class="text-xs text-gray-400 mb-1.5">
                       رقم الجوال <span class="text-red-400">*</span>
@@ -366,7 +368,7 @@
             <!-- Call Result Section -->
             <div class="border-t border-gray-200 p-5 shrink-0">
               <p class="text-xs font-semibold text-gray-700 mb-3">نتيجة المكالمة</p>
-              <div class="grid grid-cols-4 gap-2">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   v-for="outcome in callOutcomes"
                   :key="outcome.key"

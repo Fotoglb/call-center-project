@@ -1133,7 +1133,17 @@
 
     try {
       const backgroundColor = '#F9FAFB'
-      const padding = 48
+
+      /*
+       * حجم الصفحة ثابت A4 دايمًا (210×297مم)، فلو المحتوى أطول من
+       * صفحة واحدة بنقسمه على أكتر من صفحة بدل ما نكبّر/نصغّر الصفحة
+       * نفسها حسب طول المحتوى.
+       */
+      const pageWidthMm = 210
+      const pageHeightMm = 297
+      const marginMm = 10
+      const usableWidthMm = pageWidthMm - marginMm * 2
+      const usableHeightMm = pageHeightMm - marginMm * 2
 
       const canvas = await html2canvas(reportRoot.value, {
         scale: 1.5,
@@ -1141,27 +1151,61 @@
         useCORS: true
       })
 
-      const pageWidth = canvas.width + padding * 2
-      const pageHeight = canvas.height + padding * 2
+      const pxToMm = usableWidthMm / canvas.width
+      const pageHeightPx = Math.floor(usableHeightMm / pxToMm)
 
       const pdf = new jsPDF({
         orientation: 'portrait',
-        unit: 'px',
-        format: [pageWidth, pageHeight],
+        unit: 'mm',
+        format: 'a4',
         compress: true
       })
 
-      pdf.setFillColor(backgroundColor)
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+      let renderedPx = 0
+      let pageIndex = 0
 
-      pdf.addImage(
-        canvas.toDataURL('image/jpeg', 0.85),
-        'JPEG',
-        padding,
-        padding,
-        canvas.width,
-        canvas.height
-      )
+      while (renderedPx < canvas.height) {
+        const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx)
+
+        const sliceCanvas = document.createElement('canvas')
+        sliceCanvas.width = canvas.width
+        sliceCanvas.height = sliceHeightPx
+
+        const ctx = sliceCanvas.getContext('2d')
+        ctx.fillStyle = backgroundColor
+        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height)
+        ctx.drawImage(
+          canvas,
+          0,
+          renderedPx,
+          canvas.width,
+          sliceHeightPx,
+          0,
+          0,
+          canvas.width,
+          sliceHeightPx
+        )
+
+        if (pageIndex > 0) {
+          pdf.addPage()
+        }
+
+        pdf.setFillColor(backgroundColor)
+        pdf.rect(0, 0, pageWidthMm, pageHeightMm, 'F')
+
+        pdf.addImage(
+          sliceCanvas.toDataURL('image/jpeg', 0.85),
+          'JPEG',
+          marginMm,
+          marginMm,
+          usableWidthMm,
+          sliceHeightPx * pxToMm
+        )
+
+        renderedPx += sliceHeightPx
+        pageIndex++
+      }
+
       pdf.save(`تقرير-التحليلات-${dateFrom.value}-${dateTo.value}.pdf`)
     } finally {
       isExportingPdf.value = false
