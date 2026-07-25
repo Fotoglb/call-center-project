@@ -253,13 +253,13 @@
               :key="item.label"
               class="flex min-w-0 items-center justify-between gap-2"
             >
-              <span class="flex min-w-0 items-center gap-1.5">
+              <span class="flex items-center gap-1.5">
                 <span
                   class="h-2.5 w-2.5 shrink-0 rounded-full"
                   :style="{ backgroundColor: item.color }"
                 ></span>
 
-                <span class="truncate">
+                <span class="whitespace-nowrap">
                   {{ item.label }}
                 </span>
               </span>
@@ -1132,7 +1132,7 @@
     await nextTick()
 
     try {
-      const backgroundColor = '#F9FAFB'
+      const backgroundColor = '#FFFFFF'
 
       /*
        * حجم الصفحة ثابت A4 دايمًا (210×297مم)، فلو المحتوى أطول من
