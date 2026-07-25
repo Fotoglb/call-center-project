@@ -107,7 +107,6 @@
     BarChart2,
     PhoneCall,
     Settings,
-    LayoutDashboard,
     HelpCircle,
     MoreHorizontal
   } from '@lucide/vue'
@@ -124,13 +123,12 @@
    * موجود بس جوه "المزيد" مهما كان عرض الشاشة.
    */
   const allItems = [
-    { label: 'الرئيسية', path: '/', icon: Home, exact: true },
+    { label: 'لوحة التحكم', path: '/', icon: Home, exact: true },
     { label: 'إدارة العملاء', path: '/customers', icon: Users },
     { label: 'مركز الاتصال', path: '/agents', icon: PhoneIncoming },
     { label: 'التقارير', path: '/reports', icon: BarChart2 },
     { label: 'سجل المكالمات', path: '/calls', icon: PhoneCall },
     { label: 'الإعدادات', path: '/settings', icon: Settings },
-    { label: 'لوحة التحكم', path: '/dashboard', icon: LayoutDashboard },
     { label: 'المساعدة', path: '/help', icon: HelpCircle }
   ]
 

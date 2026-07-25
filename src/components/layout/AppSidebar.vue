@@ -46,7 +46,6 @@
   import { useRouter } from 'vue-router'
   import {
     Home,
-    LayoutDashboard,
     Users,
     PhoneIncoming,
     PhoneCall,
@@ -61,8 +60,7 @@
   const authStore = useAuthStore()
 
   const navItems = [
-    { label: 'الرئيسية', path: '/', icon: Home, exact: true },
-    { label: 'لوحة التحكم', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'لوحة التحكم', path: '/', icon: Home, exact: true },
     { label: 'إدارة العملاء', path: '/customers', icon: Users },
     { label: 'مركز الاتصال', path: '/agents', icon: PhoneIncoming },
     { label: 'سجل المكالمات', path: '/calls', icon: PhoneCall },
