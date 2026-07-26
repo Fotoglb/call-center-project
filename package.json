@@ -11,6 +11,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@fontsource/tajawal": "^5.3.0",
     "@lucide/vue": "^1.22.0",
     "axios": "^1.18.1",
     "chart.js": "^4.5.1",
