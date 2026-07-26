@@ -2,11 +2,12 @@
 
 @theme {
   --color-primary: #00203f;
-  --color-secondary: #2887c8;
+  --color-secondary: #2ea4dc;
   --color-accent: #c8e4f5;
   --color-muted: #f1f5f9;
   --color-blue: #449af3;
   --color-blue-dark: #2563eb;
+  --color-blue-light: #eff6ff;
 
   --breakpoint-xsm: 300px;
 

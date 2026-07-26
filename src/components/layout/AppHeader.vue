@@ -1,6 +1,6 @@
 <template>
   <header
-    class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-white border-b border-accent/30 shrink-0 lg:h-20 lg:flex-nowrap lg:px-6 lg:py-0"
+    class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-white border-b border-accent/30 shrink-0 lg:h-24 lg:flex-nowrap lg:px-6 lg:py-0"
   >
     <!-- Search bar -->
     <div ref="searchRef" class="order-3 w-full relative lg:order-1 lg:w-auto lg:flex-1 lg:max-w-md">
