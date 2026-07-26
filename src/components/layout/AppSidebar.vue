@@ -1,15 +1,17 @@
 <template>
   <aside
-    class="hidden lg:flex flex-col w-56 bg-gray-50 border-s border-gray-200 h-screen flex-shrink-0 shadow-sm"
+    class="hidden md:flex flex-col w-56 bg-primary border-s border-accent/20 h-screen flex-shrink-0 shadow-sm"
   >
     <!-- Logo -->
-    <div class="flex items-center gap-3 px-4 py-5 border-b border-gray-200 flex-shrink-0">
-      <div class="w-10 h-10 rounded-xl bg-black flex items-center justify-center flex-shrink-0">
-        <span class="text-xs font-black text-white tracking-widest">CRM</span>
-      </div>
-      <div class="leading-tight">
-        <p class="text-sm font-black text-gray-900 tracking-[0.15em]">CRM</p>
-        <p class="text-xs text-gray-400">منصة خدمة العملاء</p>
+    <div class="flex items-center gap-3 px-4 py-5 border-b border-accent/20 flex-shrink-0">
+      <img
+        src="@/assets/logo-fotodev.jpg"
+        alt="Fotodev"
+        class="w-[58px] h-[35px] rounded-[4px] object-contain bg-white shrink-0"
+      />
+      <div class="leading-tight min-w-0">
+        <p class="text-sm font-black text-white whitespace-nowrap">CRM - Fotodev</p>
+        <p class="text-xs text-accent/70 mt-0.5 whitespace-nowrap">منصة خدمة العملاء</p>
       </div>
     </div>
 
@@ -19,10 +21,10 @@
         v-for="item in navItems"
         :key="item.path"
         :to="item.path"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-500 hover:text-gray-800 hover:bg-white transition-colors"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-accent/70 hover:text-white hover:bg-white/5 transition-colors"
         :class="{ 'exact-active': item.exact }"
-        active-class="!text-black !bg-indigo-50 font-semibold"
-        :exact-active-class="item.exact ? '!text-black !bg-indigo-50 font-semibold' : ''"
+        active-class="!text-white !bg-secondary font-semibold"
+        :exact-active-class="item.exact ? '!text-white !bg-secondary font-semibold' : ''"
       >
         <component :is="item.icon" :size="16" class="shrink-0" />
         <span>{{ item.label }}</span>
@@ -30,9 +32,9 @@
     </nav>
 
     <!-- Logout -->
-    <div class="border-t border-gray-200 p-3 flex-shrink-0">
+    <div class="border-t border-accent/20 p-3 flex-shrink-0">
       <button
-        class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+        class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-accent/60 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
         @click="handleLogout"
       >
         <LogOut :size="16" class="shrink-0" />

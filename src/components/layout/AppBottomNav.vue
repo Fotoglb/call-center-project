@@ -1,16 +1,16 @@
 <template>
-  <div ref="rootRef" class="lg:hidden">
+  <div ref="rootRef" class="md:hidden">
     <!-- More sheet -->
     <div
       v-if="showMore"
-      class="fixed inset-x-2 bottom-18 z-20 space-y-0.5 rounded-2xl border border-gray-200 bg-white p-2 shadow-lg"
+      class="fixed sm:inset-x-2 inset-x-0 bottom-18 z-20 space-y-0.5 rounded-t-2xl border-x-0 sm:flex border-t border-b-0 border-accent/20 bg-primary p-2 shadow-lg"
     >
       <RouterLink
         v-for="item in overflowItems"
         :key="item.path"
         :to="item.path"
-        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-600"
-        :class="{ '!text-indigo-600 !bg-indigo-50 font-semibold': isActive(item) }"
+        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-accent/70"
+        :class="{ '!text-white !bg-secondary font-semibold': isActive(item) }"
         @click="showMore = false"
       >
         <component :is="item.icon" :size="16" class="shrink-0" />
@@ -19,21 +19,21 @@
     </div>
 
     <nav
-      class="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between border-t border-gray-200 bg-white px-2 py-2"
+      class="fixed inset-x-0 bottom-0 z-20 flex items-center justify-between border-t border-accent/20 bg-primary"
     >
       <!-- أول عنصرين: ظاهرين دايمًا (من عرض ~300px)، مع زر المزيد = 3 أزرار بالإجمالي -->
       <RouterLink
         v-for="item in allItems.slice(0, 2)"
         :key="item.path"
         :to="item.path"
-        class="flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-gray-400"
-        active-class="!text-indigo-600"
-        :exact-active-class="item.exact ? '!text-indigo-600' : ''"
+        class="flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-accent/60"
+        active-class="!text-white"
+        :exact-active-class="item.exact ? '!text-white' : ''"
         @click="showMore = false"
       >
         <span
           class="flex h-9 w-9 items-center justify-center rounded-xl"
-          :class="{ 'bg-indigo-50': isActive(item) }"
+          :class="{ 'bg-secondary': isActive(item) }"
         >
           <component :is="item.icon" :size="18" />
         </span>
@@ -45,14 +45,14 @@
         v-for="item in allItems.slice(2, 3)"
         :key="item.path"
         :to="item.path"
-        class="hidden flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-gray-400 min-[600px]:flex"
-        active-class="!text-indigo-600"
-        :exact-active-class="item.exact ? '!text-indigo-600' : ''"
+        class="hidden flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-accent/60 min-[600px]:flex"
+        active-class="!text-white"
+        :exact-active-class="item.exact ? '!text-white' : ''"
         @click="showMore = false"
       >
         <span
           class="flex h-9 w-9 items-center justify-center rounded-xl"
-          :class="{ 'bg-indigo-50': isActive(item) }"
+          :class="{ 'bg-secondary': isActive(item) }"
         >
           <component :is="item.icon" :size="18" />
         </span>
@@ -64,14 +64,14 @@
         v-for="item in allItems.slice(3, 5)"
         :key="item.path"
         :to="item.path"
-        class="hidden flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-gray-400 md:flex"
-        active-class="!text-indigo-600"
-        :exact-active-class="item.exact ? '!text-indigo-600' : ''"
+        class="hidden flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-accent/60 md:flex"
+        active-class="!text-white"
+        :exact-active-class="item.exact ? '!text-white' : ''"
         @click="showMore = false"
       >
         <span
           class="flex h-9 w-9 items-center justify-center rounded-xl"
-          :class="{ 'bg-indigo-50': isActive(item) }"
+          :class="{ 'bg-secondary': isActive(item) }"
         >
           <component :is="item.icon" :size="18" />
         </span>
@@ -81,13 +81,13 @@
       <!-- المزيد: ظاهر دايمًا لأن الإجمالي 8 عناصر أكبر من أقصى عدد ظاهر (5 + زر المزيد نفسه = 6) -->
       <button
         type="button"
-        class="flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-gray-400 cursor-pointer"
-        :class="{ '!text-indigo-600': showMore || overflowItems.some(isActive) }"
+        class="flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-accent/60 cursor-pointer"
+        :class="{ '!text-white': showMore || overflowItems.some(isActive) }"
         @click="showMore = !showMore"
       >
         <span
           class="flex h-9 w-9 items-center justify-center rounded-xl"
-          :class="{ 'bg-indigo-50': showMore || overflowItems.some(isActive) }"
+          :class="{ 'bg-secondary': showMore || overflowItems.some(isActive) }"
         >
           <MoreHorizontal :size="18" />
         </span>

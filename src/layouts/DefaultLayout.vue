@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-white overflow-hidden">
+  <div class="flex h-screen bg-muted overflow-hidden">
     <!-- Sidebar (right in RTL) -->
     <AppSidebar />
 

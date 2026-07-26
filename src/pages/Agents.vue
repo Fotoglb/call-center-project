@@ -59,7 +59,7 @@
               v-model="searchQuery"
               type="text"
               placeholder="ابحث عن عميل، رقم هاتف، موظف..."
-              class="w-full h-9 ps-3 pe-8 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-indigo-300"
+              class="w-full h-9 ps-3 pe-8 bg-muted border border-accent/50 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
             />
             <Search
               :size="13"

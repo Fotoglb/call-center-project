@@ -1,31 +1,27 @@
 <template>
   <div class="flex flex-col lg:h-full gap-4">
-    <!-- Top Stats Bar -->
-    <div class="flex flex-wrap items-center gap-3 bg-gray-50 rounded-xl px-5 py-3">
-      <!-- Online Status -->
-      <div class="flex items-center gap-2 pe-4 border-e border-gray-200">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 animate-pulse"></span>
-        <span class="text-xs font-semibold text-emerald-600 whitespace-nowrap">متصل</span>
+    <!-- Page Header -->
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 class="text-sm font-bold text-gray-900">مركز الاتصالات</h2>
+        <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">
+          قائمة مكالمات العملاء المخصصة لك اليوم – مرتبة تلقائياً حسب الأولوية
+        </p>
+        <p class="text-xs text-gray-400 mt-2">قائمة المكالمات المجدولة – {{ todayLabel }}</p>
       </div>
-
-      <!-- Stats -->
-      <div
-        v-for="stat in topStats"
-        :key="stat.label"
-        class="flex items-center gap-2.5 px-4 border-e border-gray-200 last:border-0"
-      >
-        <div
-          class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-          :class="stat.iconBg"
+      <div class="flex items-center gap-2">
+        <button
+          class="flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
         >
-          <component :is="stat.icon" :size="14" :class="stat.iconColor" />
-        </div>
-        <div>
-          <p class="text-sm font-bold text-gray-900 leading-none whitespace-nowrap">
-            {{ stat.value }}
-          </p>
-          <p class="text-xs text-gray-400 mt-0.5 whitespace-nowrap">{{ stat.label }}</p>
-        </div>
+          <Plus :size="14" />
+          ملخص العملاء
+        </button>
+        <button
+          class="flex items-center gap-1.5 text-xs font-semibold text-white bg-secondary rounded-lg px-4 py-2 cursor-pointer transition-colors"
+        >
+          <ListChecks :size="14" />
+          قائمة المكالمات
+        </button>
       </div>
     </div>
 
@@ -33,15 +29,6 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
       <!-- LEFT: Calls List -->
       <div class="bg-gray-50 rounded-xl flex flex-col min-h-0">
-        <!-- Header -->
-        <div class="px-4 pt-4 pb-3 border-b border-gray-200 shrink-0">
-          <h3 class="text-sm font-bold text-gray-900">مركز الاتصالات</h3>
-          <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">
-            قائمة مكالمات العملاء المخصصة لك اليوم – مرتبة تلقائياً حسب الأولوية
-          </p>
-          <p class="text-xs text-gray-400 mt-2">قائمة المكالمات المجدولة – {{ todayLabel }}</p>
-        </div>
-
         <!-- Search -->
         <div class="px-4 py-2.5 border-b border-gray-200 shrink-0">
           <div class="relative">
@@ -49,7 +36,7 @@
               v-model="searchQuery"
               type="text"
               placeholder="ابحث عن عميل، رقم هاتف، موظف..."
-              class="w-full h-9 ps-3 pe-8 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-indigo-300"
+              class="w-full h-9 ps-3 pe-8 bg-muted border border-accent/50 rounded-[10px] text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
             />
             <Search
               :size="13"
@@ -59,15 +46,15 @@
         </div>
 
         <!-- Filter Tabs -->
-        <div class="flex items-center gap-1 px-4 py-2 border-b border-gray-200 shrink-0 overflow-x-auto">
+        <div
+          class="flex items-center gap-1 px-4 py-2 border-b border-gray-200 shrink-0 overflow-x-auto"
+        >
           <button
             v-for="f in filterTabs"
             :key="f.key"
-            class="px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
+            class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
             :class="
-              activeFilter === f.key
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-500 hover:bg-gray-100'
+              activeFilter === f.key ? 'bg-secondary text-white' : 'text-gray-500 hover:bg-gray-100'
             "
             @click="activeFilter = f.key"
           >
@@ -80,23 +67,15 @@
           <button
             v-for="(call, idx) in filteredCalls"
             :key="call.id"
-            class="relative w-full flex items-center gap-3 px-4 py-3 transition-colors text-start cursor-pointer rounded-xl mb-2"
-            :class="
-              selectedCallId === call.id
-                ? 'bg-indigo-50 border-r-2  border-indigo-500'
-                : 'hover:bg-white'
-            "
+            class="relative w-full flex items-center gap-3 px-4 py-3 transition-colors text-start cursor-pointer rounded-[10px] mb-2"
+            :class="selectedCallId === call.id ? 'bg-secondary shadow-sm' : 'hover:bg-white'"
             @click="selectCall(call)"
           >
-            <!-- Active left border -->
-
             <!-- Number badge -->
             <div
               class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
               :class="
-                selectedCallId === call.id
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-500'
+                selectedCallId === call.id ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-500'
               "
             >
               {{ idx + 1 }}
@@ -104,18 +83,38 @@
 
             <!-- Info -->
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-semibold text-gray-800 truncate">{{ call.name }}</p>
-              <p class="text-xs text-gray-400 tabular-nums mt-0.5 text-end" dir="ltr">
+              <p
+                class="text-xs font-semibold truncate"
+                :class="selectedCallId === call.id ? 'text-white' : 'text-gray-800'"
+              >
+                {{ call.name }}
+              </p>
+              <p
+                class="text-xs tabular-nums mt-0.5 text-end"
+                dir="ltr"
+                :class="selectedCallId === call.id ? 'text-white/70' : 'text-gray-400'"
+              >
                 {{ call.phone }}
               </p>
               <!-- Badges row -->
               <div class="flex items-center flex-wrap gap-1 mt-1.5">
-                <span class="text-xs bg-red-50 text-red-500 px-1.5 py-0.5 rounded-md font-medium">
+                <span
+                  class="text-xs px-1.5 py-0.5 rounded-md font-medium"
+                  :class="
+                    selectedCallId === call.id
+                      ? 'bg-white/20 text-white'
+                      : priorityClass(call.priority)
+                  "
+                >
                   {{ call.priority }}
                 </span>
                 <span
-                  class="text-xs px-1.5 py-0.5 rounded-md font-medium border"
-                  :class="callStatusClass(call.status)"
+                  class="text-xs px-1.5 py-0.5 rounded-md font-medium"
+                  :class="
+                    selectedCallId === call.id
+                      ? 'bg-white/20 text-white'
+                      : callStatusClass(call.status)
+                  "
                 >
                   {{ call.status }}
                 </span>
@@ -124,14 +123,18 @@
 
             <!-- Countdown + Avatar -->
             <div class="flex flex-col items-end gap-2 shrink-0">
-              <!-- Direction badge -->
+              <!-- New badge -->
               <span
+                v-if="call.isNew"
                 class="text-xs font-semibold px-2 py-1 rounded-lg shrink-0"
-                :class="directionClass(call.direction)"
-                >{{ call.direction }}</span
+                :class="selectedCallId === call.id ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-600'"
+                >جديد</span
               >
               <!-- Countdown -->
-              <div class="flex items-center gap-1 text-gray-400">
+              <div
+                class="flex items-center gap-1"
+                :class="selectedCallId === call.id ? 'text-white/70' : 'text-gray-400'"
+              >
                 <Clock :size="11" />
                 <span class="text-xs tabular-nums">{{ call.countdown }}</span>
               </div>
@@ -169,7 +172,7 @@
               <!-- Info -->
               <div class="flex items-start gap-3">
                 <div
-                  class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600 shrink-0"
+                  class="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center text-sm font-bold text-secondary shrink-0"
                 >
                   {{ selectedCall.name.charAt(0) }}
                 </div>
@@ -184,7 +187,7 @@
                     </span>
                   </div>
                   <div class="flex items-center flex-wrap gap-1.5 mt-2">
-                    <p class="text-xs text-gray-400 tabular-nums mt-0.5" dir="ltr">
+                    <p class="text-xs text-gray-400 tabular-nums" dir="ltr">
                       {{ selectedCall.phone }}
                     </p>
 
@@ -210,12 +213,6 @@
                   <UserRound :size="13" />
                   عرض الملف
                 </button>
-                <button
-                  class="flex items-center gap-1.5 text-xs text-white bg-green-400 rounded-lg px-3 py-2 hover:bg-indigo-700 cursor-pointer transition-colors"
-                >
-                  <PhoneCall :size="13" />
-                  الاتصال الآن
-                </button>
               </div>
             </div>
           </div>
@@ -223,14 +220,16 @@
           <!-- Tabs + History + Result -->
           <div class="flex-1 bg-gray-50 rounded-xl flex flex-col min-h-0">
             <!-- Tabs -->
-            <div class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0 overflow-x-auto">
+            <div
+              class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0 overflow-x-auto"
+            >
               <button
                 v-for="tab in tabs"
                 :key="tab.key"
                 class="px-4 py-2 text-xs font-medium rounded-t-lg transition-colors cursor-pointer shrink-0"
                 :class="
                   activeTab === tab.key
-                    ? 'text-indigo-600 border-b-2 border-indigo-500 bg-indigo-50/40'
+                    ? 'text-secondary border-b-2 border-secondary bg-secondary/10'
                     : 'text-gray-500 hover:text-gray-700'
                 "
                 @click="activeTab = tab.key"
@@ -259,15 +258,18 @@
 
                   <!-- Body -->
                   <div class="flex-1 min-w-0 bg-white rounded-xl p-3">
-                    <div class="flex items-center justify-between gap-2 mb-1">
-                      <div class="flex items-center gap-2">
-                        <span class="text-xs font-semibold text-gray-800">{{ entry.type }}</span>
-                        <div class="flex items-center gap-1 text-gray-400">
-                          <Clock :size="11" />
-                          <span class="text-xs tabular-nums">{{ entry.duration }}</span>
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                          <span class="text-xs font-semibold text-gray-800">{{ entry.type }}</span>
+                          <div class="flex items-center gap-1 text-gray-400">
+                            <Clock :size="11" />
+                            <span class="text-xs tabular-nums">{{ entry.duration }}</span>
+                          </div>
                         </div>
+                        <p class="text-xs text-gray-500 leading-relaxed">{{ entry.note }}</p>
                       </div>
-                      <div class="flex items-center gap-2 shrink-0">
+                      <div class="flex flex-col items-end gap-1 shrink-0">
                         <span
                           class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                           :class="historyResultClass(entry.result)"
@@ -276,7 +278,6 @@
                         <span class="text-xs text-gray-400 tabular-nums">{{ entry.date }}</span>
                       </div>
                     </div>
-                    <p class="text-xs text-gray-500 leading-relaxed">{{ entry.note }}</p>
                   </div>
                 </div>
               </div>
@@ -287,7 +288,7 @@
                   v-model="noteText"
                   rows="5"
                   placeholder="أضف ملاحظة حول هذا العميل..."
-                  class="w-full ps-4 pe-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors resize-none"
+                  class="w-full ps-4 pe-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors resize-none"
                 ></textarea>
                 <button
                   class="text-xs text-white bg-gray-900 rounded-lg px-4 py-2 hover:bg-gray-700 cursor-pointer transition-colors"
@@ -367,12 +368,12 @@
 
             <!-- Call Result Section -->
             <div class="border-t border-gray-200 p-5 shrink-0">
-              <p class="text-xs font-semibold text-gray-700 mb-3">نتيجة المكالمة</p>
+              <p class="text-xs font-semibold text-gray-700 mb-3">حالة العميل</p>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   v-for="outcome in callOutcomes"
                   :key="outcome.key"
-                  class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-xs font-medium transition-colors cursor-pointer"
+                  class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-xs font-medium transition-colors cursor-pointer"
                   :class="
                     selectedOutcome === outcome.key
                       ? outcome.activeClass
@@ -380,7 +381,12 @@
                   "
                   @click="selectedOutcome = outcome.key"
                 >
-                  <component :is="outcome.icon" :size="16" />
+                  <div
+                    class="w-8 h-8 rounded-lg flex items-center justify-center"
+                    :class="outcome.iconBg"
+                  >
+                    <component :is="outcome.icon" :size="16" :class="outcome.iconColor" />
+                  </div>
                   <span class="font-semibold">{{ outcome.label }}</span>
                   <span class="text-[10px] text-gray-400 font-normal leading-tight text-center">{{
                     outcome.sub
@@ -401,7 +407,6 @@
   import {
     Search,
     Phone,
-    PhoneCall,
     PhoneIncoming,
     PhoneOutgoing,
     PhoneMissed,
@@ -412,39 +417,10 @@
     Clock,
     Calendar,
     CalendarClock,
-    PhoneOff
+    PhoneOff,
+    ListChecks,
+    Plus
   } from '@lucide/vue'
-
-  const topStats = [
-    {
-      label: 'مكالمات الانتظار',
-      value: '6',
-      icon: Clock,
-      iconBg: 'bg-amber-50',
-      iconColor: 'text-amber-500'
-    },
-    {
-      label: 'عملاء ينشطون',
-      value: '5',
-      icon: UserRound,
-      iconBg: 'bg-indigo-50',
-      iconColor: 'text-indigo-500'
-    },
-    {
-      label: 'مكالمة اليوم',
-      value: '30',
-      icon: Phone,
-      iconBg: 'bg-teal-50',
-      iconColor: 'text-teal-500'
-    },
-    {
-      label: 'مؤسسة المكالمات',
-      value: '640',
-      icon: PhoneOutgoing,
-      iconBg: 'bg-purple-50',
-      iconColor: 'text-purple-500'
-    }
-  ]
 
   const router = useRouter()
 
@@ -459,9 +435,10 @@
 
   const filterTabs = [
     { key: 'all', label: 'الكل' },
-    { key: 'في الانتظار', label: 'في الانتظار' },
-    { key: 'مؤجل', label: 'مؤجل' },
-    { key: 'لا يرد', label: 'لا يرد' }
+    { key: 'إعادة جدولة', label: 'إعادة جدولة' },
+    { key: 'لا يرد', label: 'لا يرد' },
+    { key: 'غير مهتم', label: 'غير مهتم' },
+    { key: 'مهتم', label: 'مهتم' }
   ]
 
   const tabs = [
@@ -470,34 +447,46 @@
     { key: 'data', label: 'بيانات العميل' }
   ]
 
+  /*
+   * الترتيب معكوس عشان أول عنصر في الـ DOM يظهر أقصى اليمين مع RTL
+   * (مهتم يمين، إعادة جدولة يسار) زي فيجما بالظبط.
+   */
   const callOutcomes = [
     {
-      key: 'reschedule',
-      label: 'إعادة جدولة',
-      sub: 'طلب موعد آخر',
-      icon: CalendarClock,
-      activeClass: 'border-indigo-400 bg-indigo-50 text-indigo-600'
-    },
-    {
-      key: 'no_answer',
-      label: 'لا يرد',
-      sub: 'لم يرد على المكالمة',
-      icon: PhoneOff,
-      activeClass: 'border-gray-400 bg-gray-100 text-gray-700'
+      key: 'interested',
+      label: 'مهتم',
+      sub: 'أبدى اهتمام بالشراء',
+      icon: CheckCircle2,
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+      activeClass: 'border-emerald-400 bg-emerald-50 text-emerald-600'
     },
     {
       key: 'not_interested',
       label: 'غير مهتم',
       sub: 'لا رغبة في الشراء',
       icon: XCircle,
+      iconBg: 'bg-red-50',
+      iconColor: 'text-red-500',
       activeClass: 'border-red-400 bg-red-50 text-red-600'
     },
     {
-      key: 'interested',
-      label: 'مهتم',
-      sub: 'أبدى اهتمام بالشراء',
-      icon: CheckCircle2,
-      activeClass: 'border-emerald-400 bg-emerald-50 text-emerald-600'
+      key: 'no_answer',
+      label: 'لا يرد',
+      sub: 'لم يرد على المكالمة',
+      icon: PhoneOff,
+      iconBg: 'bg-gray-100',
+      iconColor: 'text-gray-500',
+      activeClass: 'border-gray-400 bg-gray-100 text-gray-700'
+    },
+    {
+      key: 'reschedule',
+      label: 'إعادة جدولة',
+      sub: 'طلب موعد آخر',
+      icon: CalendarClock,
+      iconBg: 'bg-secondary/10',
+      iconColor: 'text-secondary',
+      activeClass: 'border-secondary bg-secondary/10 text-secondary'
     }
   ]
 
@@ -509,7 +498,7 @@
       status: 'في الانتظار',
       priority: 'عالي الأهمية',
       countdown: '5 د',
-      direction: 'وارد',
+      isNew: true,
       tags: ['سكني', 'إعلانات رقمية'],
       lastContact: 'أمس 13:30م',
       lastResult: 'مهتم',
@@ -530,7 +519,7 @@
         {
           id: 2,
           type: 'رسالة صادر',
-          date: 'الأحد 4/8/2026 10:00ص',
+          date: '4/6/2026 10:00ص',
           duration: '—',
           result: 'تم الإرسال',
           note: 'تم إرسال الكتالوج الإلكتروني الكامل وقائمة الأسعار عبر البريد الإلكتروني.'
@@ -538,7 +527,7 @@
         {
           id: 3,
           type: 'مكالمة وارد',
-          date: 'الأحد 16/6/2026 1:00م',
+          date: '16/6/2026 1:00م',
           duration: '0 د',
           result: 'لا يرد',
           note: 'لم يتم الرد على المكالمة، تم ترك رسالة صوتية للعميل للتواصل.'
@@ -546,7 +535,7 @@
         {
           id: 4,
           type: 'مكالمة صادر',
-          date: 'الثلاثاء 30/6/2026 2:30م',
+          date: '20/6/2026 2:30م',
           duration: '8:45 د',
           result: 'متابعة مجدولة',
           note: 'تواصل العميل وطلب تأجيل اتخاذ القرار لأسبوع، تم جدولة متابعة.'
@@ -560,7 +549,6 @@
       status: 'في الانتظار',
       priority: 'عالي الأهمية',
       countdown: '5 د',
-      direction: 'وارد',
       tags: ['B2C'],
       lastContact: 'الأسبوع الماضي',
       lastResult: 'إعادة جدولة',
@@ -571,9 +559,8 @@
       name: 'فاطمة علي',
       phone: '0555569876',
       status: 'مؤجل',
-      priority: 'متوسط',
+      priority: 'متوسط الأهمية',
       countdown: '15 د',
-      direction: 'تمت',
       tags: ['سكني'],
       lastContact: 'أمس',
       lastResult: 'مهتم',
@@ -586,7 +573,6 @@
       status: 'في الانتظار',
       priority: 'عالي الأهمية',
       countdown: '20 د',
-      direction: 'صادر',
       tags: ['B2B'],
       lastContact: '3 أيام',
       lastResult: 'غير مهتم',
@@ -597,9 +583,8 @@
       name: 'علي حسن',
       phone: '0555565078',
       status: 'لا يرد',
-      priority: 'منخفض',
+      priority: 'منخفض الأهمية',
       countdown: '30 د',
-      direction: 'تمت',
       tags: ['تجاري'],
       lastContact: 'اليوم',
       lastResult: 'لا يرد',
@@ -610,9 +595,8 @@
       name: 'خالد المطيري',
       phone: '0555565678',
       status: 'مؤجل',
-      priority: 'متوسط',
+      priority: 'متوسط الأهمية',
       countdown: '45 د',
-      direction: 'صادر',
       tags: ['سكني'],
       lastContact: 'أمس',
       lastResult: 'إعادة جدولة',
@@ -625,7 +609,6 @@
       status: 'في الانتظار',
       priority: 'عالي الأهمية',
       countdown: '55 د',
-      direction: 'وارد',
       tags: ['B2C'],
       lastContact: 'منذ يومين',
       lastResult: 'مهتم',
@@ -634,9 +617,15 @@
   ]
 
   const filteredCalls = computed(() => {
-    if (!searchQuery.value.trim()) return callsList
-    const q = searchQuery.value.toLowerCase()
-    return callsList.filter(c => c.name.includes(q) || c.phone.includes(q))
+    let calls = callsList
+    if (activeFilter.value !== 'all') {
+      calls = calls.filter(c => c.lastResult === activeFilter.value)
+    }
+    const q = searchQuery.value.trim().toLowerCase()
+    if (q) {
+      calls = calls.filter(c => c.name.includes(q) || c.phone.includes(q))
+    }
+    return calls
   })
 
   const selectedCall = computed(() => callsList.find(c => c.id === selectedCallId.value) ?? null)
@@ -659,21 +648,23 @@
     activeTab.value = 'data'
   }
 
-  function directionClass(direction) {
-    if (direction === 'وارد') return 'bg-emerald-50 text-emerald-600'
-    if (direction === 'صادر') return 'bg-indigo-50 text-indigo-600'
-    if (direction === 'تمت') return 'bg-gray-100 text-gray-500'
-    return 'bg-gray-100 text-gray-500'
-  }
-
   function callStatusClass(status) {
     const map = {
       'في الانتظار': 'bg-amber-50 text-amber-600',
-      'على الأعمدة': 'bg-indigo-50 text-indigo-600',
+      'على الأعمدة': 'bg-secondary/10 text-secondary',
       منتظم: 'bg-emerald-50 text-emerald-600',
       مكتمل: 'bg-gray-100 text-gray-500'
     }
     return map[status] ?? 'bg-gray-100 text-gray-500'
+  }
+
+  function priorityClass(priority) {
+    const map = {
+      'عالي الأهمية': 'bg-red-50 text-red-500',
+      'متوسط الأهمية': 'bg-amber-50 text-amber-600',
+      'منخفض الأهمية': 'bg-emerald-50 text-emerald-600'
+    }
+    return map[priority] ?? 'bg-gray-100 text-gray-500'
   }
 
   function historyIcon(type) {
@@ -685,7 +676,7 @@
   }
 
   function historyIconBg(type) {
-    if (type === 'مكالمة صادر') return 'bg-indigo-50'
+    if (type === 'مكالمة صادر') return 'bg-secondary/10'
     if (type === 'مكالمة وارد') return 'bg-teal-50'
     if (type === 'مكالمة فائتة') return 'bg-red-50'
     if (type === 'رسالة صادر') return 'bg-purple-50'
@@ -693,7 +684,7 @@
   }
 
   function historyIconColor(type) {
-    if (type === 'مكالمة صادر') return 'text-indigo-500'
+    if (type === 'مكالمة صادر') return 'text-secondary'
     if (type === 'مكالمة وارد') return 'text-teal-500'
     if (type === 'مكالمة فائتة') return 'text-red-500'
     if (type === 'رسالة صادر') return 'text-purple-500'
@@ -707,7 +698,7 @@
       'لا يرد': 'bg-gray-100 text-gray-500',
       'تم الإرسال': 'bg-blue-50 text-blue-600',
       'متابعة مجدولة': 'bg-amber-50 text-amber-600',
-      'إعادة جدولة': 'bg-indigo-50 text-indigo-600'
+      'إعادة جدولة': 'bg-secondary/10 text-secondary'
     }
     return map[result] ?? 'bg-gray-100 text-gray-500'
   }

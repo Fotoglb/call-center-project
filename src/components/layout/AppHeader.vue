@@ -1,6 +1,6 @@
 <template>
   <header
-    class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200 shrink-0 lg:h-20 lg:flex-nowrap lg:px-6 lg:py-0"
+    class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-white border-b border-accent/30 shrink-0 lg:h-20 lg:flex-nowrap lg:px-6 lg:py-0"
   >
     <!-- Search bar -->
     <div ref="searchRef" class="order-3 w-full relative lg:order-1 lg:w-auto lg:flex-1 lg:max-w-md">
@@ -8,7 +8,7 @@
         v-model="searchQuery"
         type="text"
         placeholder="ابحث عن عميل بالرقم هاتفه..."
-        class="w-full h-10 ps-4 pe-10 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
+        class="w-full h-10 ps-4 pe-10 bg-muted border border-accent/50 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors"
         @focus="showResults = true"
       />
       <span
@@ -30,7 +30,7 @@
           @click="goToCustomer(customer)"
         >
           <div
-            class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0"
+            class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-xs font-bold text-secondary shrink-0"
           >
             {{ customer.name.charAt(0) }}
           </div>
@@ -47,13 +47,15 @@
     </div>
 
     <!-- Logo (mobile only, shown in sidebar on desktop) -->
-    <div class="order-1 flex items-center gap-2 shrink-0 lg:hidden">
-      <div class="w-9 h-9 rounded-xl bg-black flex items-center justify-center shrink-0">
-        <span class="text-[10px] font-black text-white tracking-widest">CRM</span>
-      </div>
-      <div class="leading-tight">
-        <p class="text-xs font-black text-gray-900 tracking-[0.15em]">CRM</p>
-        <p class="text-[11px] text-gray-400">منصة خدمة العملاء</p>
+    <div class="order-1 flex items-center gap-2 shrink-0 md:hidden">
+      <img
+        src="@/assets/logo-fotodev.jpg"
+        alt="Fotodev"
+        class="w-[46px] h-[28px] rounded-[4px] object-contain bg-white shrink-0"
+      />
+      <div class="leading-tight min-w-0">
+        <p class="text-xs font-black text-gray-900 whitespace-nowrap">CRM - Fotodev</p>
+        <p class="text-[11px] text-gray-400 whitespace-nowrap">منصة خدمة العملاء</p>
       </div>
     </div>
 
@@ -66,10 +68,10 @@
         <span class="absolute top-1.5 inset-e-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
       </button>
       <button
-        class="flex items-center gap-2.5 hover:bg-white rounded-xl px-2 py-1.5 transition-colors cursor-pointer group"
+        class="flex items-center gap-2.5 hover:bg-gray-50 rounded-xl px-2 py-1.5 transition-colors cursor-pointer group"
       >
         <div
-          class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm shrink-0 overflow-hidden"
+          class="w-9 h-9 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-bold text-sm shrink-0 overflow-hidden"
         >
           <img v-if="userAvatar" :src="userAvatar" class="w-full h-full object-cover" alt="" />
           <span v-else>{{ userInitial }}</span>
