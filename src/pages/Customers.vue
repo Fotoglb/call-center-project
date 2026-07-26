@@ -4,27 +4,27 @@
     <div class="sm:flex sm:space-y-0 space-y-3 items-start justify-between">
       <div>
         <h1 class="text-xl font-bold text-gray-900">إدارة العملاء المحتملين</h1>
-        <p class="text-xs text-gray-400 mt-1">جميع إشعارات من جهات الاتصال والإدخال اليدوي</p>
+        <p class="text-xs text-gray-400 mt-1">جميع العملاء من حملات الإعلانات والإدخال اليدوي</p>
       </div>
       <div class="flex items-center gap-2">
         <button
-          class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg sm:px-3 px-1 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
-        >
-          <SlidersHorizontal :size="14" />
-          تصفيل الملف
-        </button>
-        <button
-          class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg sm:px-3 px-1 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
-        >
-          <Download :size="14" />
-          تنزيل الملف
-        </button>
-        <button
-          class="flex items-center gap-1.5 text-xs text-white bg-gray-900 rounded-lg px-3 py-2 hover:bg-gray-700 cursor-pointer transition-colors"
-          @click="router.push({ name: 'AddCustomer' })"
+          class="flex items-center gap-1.5 text-xs font-medium text-white bg-blue-dark rounded-lg sm:px-3 px-1 py-2 hover:opacity-90 cursor-pointer transition-colors"
         >
           <Plus :size="14" />
           إضافة عميل
+        </button>
+        <button
+          class="flex items-center gap-1.5 text-xs font-medium text-blue border border-blue rounded-lg sm:px-3 px-1 py-2 hover:bg-blue-light cursor-pointer transition-colors"
+        >
+          <Plus :size="14" />
+          تنزيل الملف
+        </button>
+        <button
+          class="flex items-center gap-1.5 text-xs font-medium text-white bg-blue rounded-lg px-3 py-2 hover:opacity-90 cursor-pointer transition-colors"
+          @click="router.push({ name: 'AddCustomer' })"
+        >
+          <Plus :size="14" />
+          تحميل الملف
         </button>
       </div>
     </div>
@@ -36,12 +36,24 @@
           v-model="activeFilters[filter.key]"
           class="appearance-none text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
         >
-          <option value="">{{ filter.label }}</option>
+          <option value="">{{ filter.label }} : الكل</option>
           <option v-for="opt in filter.options" :key="opt" :value="opt">{{ opt }}</option>
         </select>
         <ChevronDown
           :size="12"
           class="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+        />
+      </div>
+      <div class="relative flex-1 min-w-48">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="ابحث عن عميل، رقم هاتف، موظف..."
+          class="w-full h-9 ps-3 pe-8 bg-muted border border-accent/50 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
+        />
+        <Search
+          :size="13"
+          class="absolute inset-e-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
         />
       </div>
       <button
@@ -59,19 +71,14 @@
         <table class="w-full text-xs">
           <thead class="bg-gray-100 border-b border-gray-200">
             <tr>
-              <th class="w-10 px-4 py-3">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 cursor-pointer"
-                  :checked="allSelected"
-                  @change="toggleAll"
-                />
-              </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 اسم العميل
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 رقم الهاتف
+              </th>
+              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+                البريد الإلكتروني
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 المصدر
@@ -89,9 +96,6 @@
                 التاريخ
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
-                الحالة
-              </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 الإجراءات
               </th>
             </tr>
@@ -102,14 +106,6 @@
               :key="customer.id"
               class="hover:bg-gray-100 transition-colors"
             >
-              <td class="px-4 py-3">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 cursor-pointer"
-                  :checked="selectedIds.has(customer.id)"
-                  @change="toggleOne(customer.id)"
-                />
-              </td>
               <td class="px-4 py-3">
                 <div
                   class="flex items-center gap-2 cursor-pointer"
@@ -127,6 +123,7 @@
                 </div>
               </td>
               <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.phone }}</td>
+              <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.email }}</td>
               <td class="px-4 py-3">
                 <span
                   class="flex items-center gap-1 text-indigo-600 hover:underline cursor-pointer whitespace-nowrap"
@@ -141,28 +138,12 @@
                 {{ customer.date }}
               </td>
               <td class="px-4 py-3">
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
-                  :class="statusClass(customer.status)"
+                <button
+                  class="text-gray-400 hover:text-emerald-500 cursor-pointer transition-colors"
+                  title="اعتماد"
                 >
-                  {{ customer.status }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <button
-                    class="text-gray-400 hover:text-indigo-500 cursor-pointer transition-colors"
-                    title="تعديل"
-                  >
-                    <Pencil :size="14" />
-                  </button>
-                  <button
-                    class="text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
-                    title="حذف"
-                  >
-                    <Trash2 :size="14" />
-                  </button>
-                </div>
+                  <CheckCircle2 :size="16" />
+                </button>
               </td>
             </tr>
           </tbody>
@@ -221,35 +202,42 @@
 <script setup>
   import { ref, computed } from 'vue'
   import { useRouter } from 'vue-router'
-  import {
-    Plus,
-    Download,
-    SlidersHorizontal,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    Pencil,
-    Trash2
-  } from '@lucide/vue'
+  import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, CheckCircle2 } from '@lucide/vue'
 
   const router = useRouter()
 
   const currentPage = ref(1)
   const pageSize = ref(10)
+  const searchQuery = ref('')
 
   const activeFilters = ref({
-    name: '',
-    source: '',
-    type: '',
+    date: 'آخر 30 يوم',
     status: '',
-    city: ''
+    city: '',
+    agent: '',
+    source: ''
   })
 
   const filters = [
     {
-      key: 'name',
-      label: 'اسم العميل',
-      options: ['عبد الله المطيري', 'نورا المحمد', 'سلمان العلي', 'ليلى السيسي', 'طارق العزيزي']
+      key: 'date',
+      label: 'التاريخ',
+      options: ['اليوم', 'آخر 7 أيام', 'آخر 30 يوم', 'هذا الشهر']
+    },
+    {
+      key: 'status',
+      label: 'الحالة',
+      options: ['منتظم', 'عميل جديد', 'زيارة مجدولة', 'قيد التحويل', 'قيد الدراسة', 'تم الإغلاق']
+    },
+    {
+      key: 'city',
+      label: 'المدينة',
+      options: ['الرياض', 'جدة', 'الطائف', 'المدينة المنورة', 'أبها', 'الدمام']
+    },
+    {
+      key: 'agent',
+      label: 'الموظف',
+      options: ['سارة أحمد', 'محمد علي', 'هند الفضل', 'فاطمة حسن', 'إبراهيم أحمد', 'طارق محمد', 'يوسف سالم']
     },
     {
       key: 'source',
@@ -263,33 +251,6 @@
         'مجتمع ميتا',
         'تسويق الشبكات'
       ]
-    },
-    {
-      key: 'type',
-      label: 'التصنيف',
-      options: [
-        'B2B',
-        'B2C',
-        'Enterprise',
-        'SME',
-        'Startup',
-        'E-commerce',
-        'Retail',
-        'Manufacturing',
-        'Service',
-        'Non-profit',
-        'Education'
-      ]
-    },
-    {
-      key: 'status',
-      label: 'الحالة',
-      options: ['منتظم', 'عميل جديد', 'زيارة مجدولة', 'قيد التحويل', 'قيد الدراسة', 'تم الإغلاق']
-    },
-    {
-      key: 'city',
-      label: 'المدينة',
-      options: ['الرياض', 'جدة', 'الطائف', 'المدينة المنورة', 'أبها', 'الدمام']
     }
   ]
 
@@ -516,20 +477,34 @@
     }
   ]
 
-  const hasActiveFilter = computed(() => Object.values(activeFilters.value).some(v => v !== ''))
+  customers.forEach(c => {
+    c.email = 'example@email.com'
+  })
+
+  const defaultFilters = { date: 'آخر 30 يوم', status: '', city: '', agent: '', source: '' }
+
+  const hasActiveFilter = computed(
+    () =>
+      searchQuery.value.trim() !== '' ||
+      Object.keys(activeFilters.value).some(k => activeFilters.value[k] !== defaultFilters[k])
+  )
 
   function clearFilters() {
-    Object.keys(activeFilters.value).forEach(k => (activeFilters.value[k] = ''))
+    activeFilters.value = { ...defaultFilters }
+    searchQuery.value = ''
     currentPage.value = 1
   }
 
   const filteredCustomers = computed(() => {
     return customers.filter(c => {
-      if (activeFilters.value.name && !c.name.includes(activeFilters.value.name)) return false
       if (activeFilters.value.source && c.source !== activeFilters.value.source) return false
-      if (activeFilters.value.type && c.type !== activeFilters.value.type) return false
       if (activeFilters.value.status && c.status !== activeFilters.value.status) return false
       if (activeFilters.value.city && c.city !== activeFilters.value.city) return false
+      if (activeFilters.value.agent && c.agent !== activeFilters.value.agent) return false
+      const q = searchQuery.value.trim().toLowerCase()
+      if (q && !c.name.toLowerCase().includes(q) && !c.phone.includes(q) && !c.agent.toLowerCase().includes(q)) {
+        return false
+      }
       return true
     })
   })
@@ -543,40 +518,4 @@
   const paginatedCustomers = computed(() =>
     filteredCustomers.value.slice(startIndex.value, endIndex.value)
   )
-
-  const selectedIds = ref(new Set())
-
-  const allSelected = computed(
-    () =>
-      paginatedCustomers.value.length > 0 &&
-      paginatedCustomers.value.every(c => selectedIds.value.has(c.id))
-  )
-
-  function toggleAll(e) {
-    if (e.target.checked) {
-      paginatedCustomers.value.forEach(c => selectedIds.value.add(c.id))
-    } else {
-      paginatedCustomers.value.forEach(c => selectedIds.value.delete(c.id))
-    }
-  }
-
-  function toggleOne(id) {
-    if (selectedIds.value.has(id)) {
-      selectedIds.value.delete(id)
-    } else {
-      selectedIds.value.add(id)
-    }
-  }
-
-  function statusClass(status) {
-    const map = {
-      منتظم: 'bg-emerald-50 text-emerald-600',
-      'عميل جديد': 'bg-indigo-50 text-indigo-600',
-      'زيارة مجدولة': 'bg-amber-50 text-amber-600',
-      'قيد التحويل': 'bg-teal-50 text-teal-600',
-      'قيد الدراسة': 'bg-orange-50 text-orange-500',
-      'تم الإغلاق': 'bg-rose-50 text-rose-500'
-    }
-    return map[status] ?? 'bg-gray-100 text-gray-500'
-  }
 </script>

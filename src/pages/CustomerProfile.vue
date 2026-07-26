@@ -149,28 +149,30 @@
       <!-- LEFT: col-span-2 -->
       <div class="lg:col-span-2 space-y-5">
         <!-- Interest Score Card -->
-        <div class="bg-gray-50 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-5">
+        <div
+          class="rounded-2xl p-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-5 bg-gradient-to-l from-blue to-blue-dark"
+        >
           <div>
             <div class="flex items-baseline gap-1">
-              <p class="text-sm font-bold text-gray-900">نقاط الاهتمام</p>
+              <p class="text-sm font-bold text-white">نقاط الاهتمام</p>
             </div>
             <div class="flex items-baseline gap-1 mt-1">
-              <span class="text-xs text-gray-400">100/</span>
-              <span class="text-2xl font-bold text-gray-900">{{ customer.interestScore }}</span>
+              <span class="text-[55px] font-bold text-white">{{ customer.interestScore }}</span>
+              <span class="text-xs text-white/70">/100</span>
             </div>
-            <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+            <p class="text-xs text-white/70 mt-1 leading-relaxed">
               احتمالية التحويل مرتفعة جداً – يُنصح بالمتابعة العاجلة
             </p>
           </div>
-          <div class="relative w-20 h-20 shrink-0">
-            <svg class="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-              <circle cx="40" cy="40" r="34" fill="none" stroke="#F1F5F9" stroke-width="8" />
+          <div class="relative w-35 h-35 shrink-0">
+            <svg class="w-35 h-35 -rotate-90" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="34" fill="none" stroke="#ffffff4d" stroke-width="8" />
               <circle
                 cx="40"
                 cy="40"
                 r="34"
                 fill="none"
-                stroke="#6366F1"
+                stroke="#ffffff"
                 stroke-width="8"
                 stroke-linecap="round"
                 :stroke-dasharray="circumference"
@@ -178,7 +180,7 @@
               />
             </svg>
             <div class="absolute inset-0 flex items-center justify-center">
-              <span class="text-lg font-bold text-gray-900">{{ customer.interestScore }}%</span>
+              <span class="text-[40px] font-bold text-white">{{ customer.interestScore }}%</span>
             </div>
           </div>
         </div>
@@ -207,12 +209,37 @@
           <!-- Timeline -->
           <div class="p-5 space-y-3">
             <div v-for="entry in filteredActivity" :key="entry.id" class="flex gap-3">
-              <span class="w-5 h-5 rounded-md border border-gray-300 shrink-0 mt-0.5"></span>
-              <div class="flex-1 min-w-0 bg-white rounded-xl p-3">
+              <div
+                v-if="entry.category === 'calls'"
+                class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                :class="entry.answered ? 'bg-emerald-50' : 'bg-red-50'"
+              >
+                <component
+                  :is="entry.answered ? PhoneOutgoing : PhoneMissed"
+                  :size="14"
+                  :class="entry.answered ? 'text-emerald-600' : 'text-red-500'"
+                />
+              </div>
+              <div
+                v-else-if="entry.category === 'system'"
+                class="w-8 h-8 rounded-full bg-blue-light flex items-center justify-center shrink-0 mt-0.5"
+              >
+                <UserPlus :size="14" class="text-blue" />
+              </div>
+              <span v-else class="w-5 h-5 rounded-md border border-gray-300 shrink-0 mt-0.5"></span>
+              <div
+                class="flex-1 min-w-0 rounded-xl p-3"
+                :class="
+                  entry.category === 'calls' && !entry.answered
+                    ? 'border-2 border-blue bg-sky-lighter'
+                    : 'bg-white'
+                "
+              >
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
                   <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-xs font-semibold text-gray-800">{{ entry.title }}</span>
                     <span
+                      v-if="entry.tag"
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                       :class="entry.tagClass"
                       >{{ entry.tag }}</span
@@ -254,7 +281,10 @@
     Briefcase,
     Wallet,
     Calendar,
-    Star
+    Star,
+    PhoneOutgoing,
+    PhoneMissed,
+    UserPlus
   } from '@lucide/vue'
 
   const route = useRoute()
@@ -303,8 +333,21 @@
 
   const activityLog = [
     {
+      id: 0,
+      category: 'system',
+      title: 'إضافة العميل إلى النظام',
+      tag: '',
+      tagClass: '',
+      time: '9:00',
+      period: 'ص',
+      date: '10/6/2026',
+      note: 'تم إضافة العميل من مصدر الموقع الإلكتروني - نموذج طلب معلومات',
+      meta: 'بواسطة النظام'
+    },
+    {
       id: 1,
       category: 'calls',
+      answered: true,
       title: 'مكالمة هاتفية صادرة',
       tag: 'متابعة مجدولة',
       tagClass: 'bg-emerald-50 text-emerald-600',
@@ -317,6 +360,7 @@
     {
       id: 2,
       category: 'calls',
+      answered: false,
       title: 'مكالمة واردة – لم يُرد',
       tag: 'متابعة مجدولة',
       tagClass: 'bg-emerald-50 text-emerald-600',
@@ -329,7 +373,8 @@
     {
       id: 3,
       category: 'calls',
-      title: 'مكالمة واردة – لم يُرد',
+      answered: true,
+      title: 'مكالمة واردة',
       tag: 'متابعة مجدولة',
       tagClass: 'bg-emerald-50 text-emerald-600',
       time: '11:15',

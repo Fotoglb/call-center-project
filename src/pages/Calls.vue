@@ -10,15 +10,16 @@
       </div>
       <div class="flex items-center gap-2">
         <button
-          class="flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+          class="flex items-center gap-1.5 text-xs font-medium text-blue bg-blue-light rounded-lg px-4 py-2 hover:bg-blue-light/70 cursor-pointer transition-colors"
+          @click="router.push({ name: 'Customers' })"
         >
           <Plus :size="14" />
           ملخص العملاء
         </button>
         <button
-          class="flex items-center gap-1.5 text-xs font-semibold text-white bg-secondary rounded-lg px-4 py-2 cursor-pointer transition-colors"
+          class="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2 cursor-pointer transition-colors"
         >
-          <ListChecks :size="14" />
+          <Plus :size="14" />
           قائمة المكالمات
         </button>
       </div>
@@ -34,7 +35,7 @@
         </p>
 
         <!-- Search -->
-        <div class="px-4 py-2.5 border-b border-gray-200 shrink-0">
+        <div class="px-4 py-2.5 shrink-0">
           <div class="relative">
             <input
               v-model="searchQuery"
@@ -50,15 +51,15 @@
         </div>
 
         <!-- Filter Tabs -->
-        <div
-          class="flex items-center gap-1 px-4 py-2 border-b border-gray-200 shrink-0 overflow-x-auto"
-        >
+        <div class="flex items-center gap-1 px-4 py-2 shrink-0 overflow-x-auto">
           <button
             v-for="f in filterTabs"
             :key="f.key"
             class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
             :class="
-              activeFilter === f.key ? 'bg-secondary text-white' : 'text-gray-500 hover:bg-gray-100'
+              activeFilter === f.key
+                ? 'bg-blue-light text-blue-dark'
+                : 'text-gray-500 hover:bg-gray-100'
             "
             @click="activeFilter = f.key"
           >
@@ -209,16 +210,14 @@
             <!-- Tabs + History -->
             <div class="flex-1 flex flex-col min-h-0 border-t border-gray-200">
               <!-- Tabs -->
-              <div
-                class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0 overflow-x-auto"
-              >
+              <div class="flex items-center gap-1 px-5 pt-4 shrink-0 overflow-x-auto">
                 <button
                   v-for="tab in tabs"
                   :key="tab.key"
-                  class="px-4 py-2 text-xs font-medium rounded-t-lg transition-colors cursor-pointer shrink-0"
+                  class="px-4 py-2 font-medium rounded-t-lg transition-colors cursor-pointer shrink-0"
                   :class="
                     activeTab === tab.key
-                      ? 'text-secondary border-b-2 border-secondary bg-secondary/10'
+                      ? 'text-blue-dark border-b-2 border-blue-dark font-bold '
                       : 'text-gray-500 hover:text-gray-700'
                   "
                   @click="activeTab = tab.key"
@@ -412,7 +411,6 @@
     Calendar,
     CalendarClock,
     PhoneOff,
-    ListChecks,
     Plus
   } from '@lucide/vue'
 
