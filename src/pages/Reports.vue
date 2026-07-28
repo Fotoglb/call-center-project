@@ -10,43 +10,10 @@
 
       <!-- Export Actions -->
       <div v-if="!isExportingPdf" class="flex flex-wrap items-center justify-end gap-2">
-        <button
-          type="button"
-          class="cursor-pointer rounded-lg px-4 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-          :class="
-            exportFormat === 'excel'
-              ? 'bg-gray-900 text-white'
-              : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-          "
-          :disabled="isExportingExcel"
-          @click="exportExcel"
-        >
-          <span v-if="isExportingExcel" class="flex items-center gap-1.5">
-            <Loader2 :size="14" class="animate-spin" />
-            ...جاري التصدير
-          </span>
-
-          <span v-else>Excel</span>
-        </button>
-
-        <button
-          type="button"
-          class="cursor-pointer rounded-lg px-4 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-          :class="
-            exportFormat === 'pdf'
-              ? 'bg-gray-900 text-white'
-              : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-          "
-          :disabled="isExportingPdf || isShareBusy"
-          @click="onExportPdfClick"
-        >
-          {{ isExportingPdf ? '...جاري التجهيز' : 'PDF' }}
-        </button>
-
         <div ref="shareMenuRef" class="relative">
           <button
             type="button"
-            class="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-xs text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            class="flex cursor-pointer items-center gap-1.5 rounded-lg border border-blue px-4 py-2 text-xs font-medium text-blue transition-colors hover:bg-blue-light disabled:cursor-not-allowed disabled:opacity-60"
             :aria-label="shareButtonLabel"
             :aria-busy="isShareBusy"
             :disabled="isShareBusy || isExportingPdf"
@@ -59,11 +26,11 @@
 
           <div
             v-if="isFallbackMenuOpen"
-            class="absolute start-0 top-full z-30 mt-2 w-52 space-y-1 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg"
+            class="absolute start-0 top-full z-30 mt-2 space-y-1 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg"
           >
             <button
               type="button"
-              class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-start text-xs text-gray-600 transition-colors hover:bg-gray-50"
+              class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-8 py-2 text-start text-xs text-gray-600 transition-colors hover:bg-gray-50"
               @click="downloadReport"
             >
               <Download :size="14" />
@@ -71,6 +38,29 @@
             </button>
           </div>
         </div>
+
+        <button
+          type="button"
+          class="cursor-pointer rounded-lg bg-blue px-8 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="isExportingPdf || isShareBusy"
+          @click="onExportPdfClick"
+        >
+          {{ isExportingPdf ? '...جاري التجهيز' : 'PDF' }}
+        </button>
+
+        <button
+          type="button"
+          class="cursor-pointer rounded-lg bg-blue-dark px-8 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="isExportingExcel"
+          @click="exportExcel"
+        >
+          <span v-if="isExportingExcel" class="flex items-center gap-1.5">
+            <Loader2 :size="14" class="animate-spin" />
+            ...جاري التصدير
+          </span>
+
+          <span v-else>Excel</span>
+        </button>
       </div>
     </div>
 
@@ -172,12 +162,14 @@
       </div>
 
       <!-- Period Tabs -->
-      <div class="flex shrink-0 items-center rounded-lg bg-gray-100 p-1">
+      <div class="flex shrink-0 items-center gap-2.5 rounded-lg border border-blue bg-blue/10 p-1">
         <button
           type="button"
           class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
           :class="
-            period === 'daily' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'
+            period === 'daily'
+              ? 'bg-white text-blue-dark shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
           "
           @click="period = 'daily'"
         >
@@ -188,7 +180,9 @@
           type="button"
           class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
           :class="
-            period === 'weekly' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'
+            period === 'weekly'
+              ? 'bg-white text-blue-dark shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
           "
           @click="period = 'weekly'"
         >
@@ -199,7 +193,9 @@
           type="button"
           class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
           :class="
-            period === 'monthly' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'
+            period === 'monthly'
+              ? 'bg-white text-blue-dark shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
           "
           @click="period = 'monthly'"
         >
@@ -516,7 +512,15 @@
     Tooltip
   } from 'chart.js'
 
-  import { CalendarRange, ChevronDown, Download, Loader2, Pencil, Share2, Trash2 } from '@lucide/vue'
+  import {
+    CalendarRange,
+    ChevronDown,
+    Download,
+    Loader2,
+    Pencil,
+    Share2,
+    Trash2
+  } from '@lucide/vue'
   import ExcelJS from 'exceljs'
 
   import { useNotification } from '@/composables/useNotification'
@@ -539,7 +543,6 @@
    * Filters
    * -------------------------------------- */
 
-  const exportFormat = ref('excel')
   const period = ref('daily')
   const agentFilter = ref('')
   const sourceFilter = ref('')
@@ -1325,7 +1328,6 @@
       return
     }
 
-    exportFormat.value = 'excel'
     isExportingExcel.value = true
 
     try {
@@ -1592,7 +1594,6 @@
       throw new Error('A PDF export is already in progress')
     }
 
-    exportFormat.value = 'pdf'
     isExportingPdf.value = true
     await nextTick()
 
@@ -1644,7 +1645,6 @@
       return
     }
 
-    exportFormat.value = 'pdf'
     await downloadReport()
   }
 </script>
