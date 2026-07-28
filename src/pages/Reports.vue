@@ -31,25 +31,46 @@
 
         <button
           type="button"
-          class="cursor-pointer rounded-lg px-4 py-2 text-xs font-medium transition-colors"
+          class="cursor-pointer rounded-lg px-4 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60"
           :class="
             exportFormat === 'pdf'
               ? 'bg-gray-900 text-white'
               : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
           "
-          :disabled="isExportingPdf"
-          @click="exportPdf"
+          :disabled="isExportingPdf || isShareBusy"
+          @click="onExportPdfClick"
         >
           {{ isExportingPdf ? '...جاري التجهيز' : 'PDF' }}
         </button>
 
-        <button
-          type="button"
-          class="flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-xs text-gray-600 transition-colors hover:bg-gray-50"
-        >
-          <Share2 :size="14" />
-          مشاركة التقرير
-        </button>
+        <div ref="shareMenuRef" class="relative">
+          <button
+            type="button"
+            class="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-xs text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            :aria-label="shareButtonLabel"
+            :aria-busy="isShareBusy"
+            :disabled="isShareBusy || isExportingPdf"
+            @click="shareReport"
+          >
+            <Loader2 v-if="isShareBusy" :size="14" class="animate-spin" />
+            <Share2 v-else :size="14" />
+            {{ shareButtonLabel }}
+          </button>
+
+          <div
+            v-if="isFallbackMenuOpen"
+            class="absolute start-0 top-full z-30 mt-2 w-52 space-y-1 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg"
+          >
+            <button
+              type="button"
+              class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-start text-xs text-gray-600 transition-colors hover:bg-gray-50"
+              @click="downloadReport"
+            >
+              <Download :size="14" />
+              تنزيل PDF
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -479,7 +500,7 @@
 </template>
 
 <script setup>
-  import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+  import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
   import { Bar, Doughnut, Line } from 'vue-chartjs'
 
@@ -495,12 +516,13 @@
     Tooltip
   } from 'chart.js'
 
-  import { CalendarRange, ChevronDown, Loader2, Pencil, Share2, Trash2 } from '@lucide/vue'
-  import html2canvas from 'html2canvas-pro'
-  import jsPDF from 'jspdf'
+  import { CalendarRange, ChevronDown, Download, Loader2, Pencil, Share2, Trash2 } from '@lucide/vue'
   import ExcelJS from 'exceljs'
 
   import { useNotification } from '@/composables/useNotification'
+  import { useReportShare } from '@/composables/useReportShare'
+  import { generateReportPdfBlob } from '@/services/reportPdf.service'
+  import { buildPdfFileName } from '@/utils/fileName'
 
   ChartJS.register(
     CategoryScale,
@@ -536,6 +558,7 @@
 
   const showDatePicker = ref(false)
   const dateRangeRef = ref(null)
+  const shareMenuRef = ref(null)
 
   const dateFrom = ref('2026-06-10')
   const dateTo = ref('2026-06-16')
@@ -557,6 +580,10 @@
   function handleClickOutside(event) {
     if (dateRangeRef.value && !dateRangeRef.value.contains(event.target)) {
       showDatePicker.value = false
+    }
+
+    if (shareMenuRef.value && !shareMenuRef.value.contains(event.target)) {
+      isFallbackMenuOpen.value = false
     }
   }
 
@@ -1556,9 +1583,13 @@
     }
   }
 
-  async function exportPdf() {
-    if (!reportRoot.value || isExportingPdf.value) {
-      return
+  async function captureReportPdf() {
+    if (!reportRoot.value) {
+      throw new Error('Report root element is not available')
+    }
+
+    if (isExportingPdf.value) {
+      throw new Error('A PDF export is already in progress')
     }
 
     exportFormat.value = 'pdf'
@@ -1566,84 +1597,55 @@
     await nextTick()
 
     try {
-      const backgroundColor = '#FFFFFF'
-
-      /*
-       * حجم الصفحة ثابت A4 دايمًا (210×297مم)، فلو المحتوى أطول من
-       * صفحة واحدة بنقسمه على أكتر من صفحة بدل ما نكبّر/نصغّر الصفحة
-       * نفسها حسب طول المحتوى.
-       */
-      const pageWidthMm = 210
-      const pageHeightMm = 297
-      const marginMm = 10
-      const usableWidthMm = pageWidthMm - marginMm * 2
-      const usableHeightMm = pageHeightMm - marginMm * 2
-
-      const canvas = await html2canvas(reportRoot.value, {
-        scale: 1.5,
-        backgroundColor,
-        useCORS: true
-      })
-
-      const pxToMm = usableWidthMm / canvas.width
-      const pageHeightPx = Math.floor(usableHeightMm / pxToMm)
-
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true
-      })
-
-      let renderedPx = 0
-      let pageIndex = 0
-
-      while (renderedPx < canvas.height) {
-        const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx)
-
-        const sliceCanvas = document.createElement('canvas')
-        sliceCanvas.width = canvas.width
-        sliceCanvas.height = sliceHeightPx
-
-        const ctx = sliceCanvas.getContext('2d')
-        ctx.fillStyle = backgroundColor
-        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height)
-        ctx.drawImage(
-          canvas,
-          0,
-          renderedPx,
-          canvas.width,
-          sliceHeightPx,
-          0,
-          0,
-          canvas.width,
-          sliceHeightPx
-        )
-
-        if (pageIndex > 0) {
-          pdf.addPage()
-        }
-
-        pdf.setFillColor(backgroundColor)
-        pdf.rect(0, 0, pageWidthMm, pageHeightMm, 'F')
-
-        pdf.addImage(
-          sliceCanvas.toDataURL('image/jpeg', 0.85),
-          'JPEG',
-          marginMm,
-          marginMm,
-          usableWidthMm,
-          sliceHeightPx * pxToMm
-        )
-
-        renderedPx += sliceHeightPx
-        pageIndex++
-      }
-
-      pdf.save(`تقرير-التحليلات-${dateFrom.value}-${dateTo.value}.pdf`)
+      return await generateReportPdfBlob(reportRoot.value)
     } finally {
       isExportingPdf.value = false
     }
+  }
+
+  /* ----------------------------------------
+   * Share report
+   * -------------------------------------- */
+
+  const {
+    isPreparing: isSharePreparing,
+    isSharing: isReportSharing,
+    isFallbackMenuOpen,
+    shareReport,
+    downloadReport,
+    invalidatePreparedReport
+  } = useReportShare({
+    generatePdf: captureReportPdf,
+    getFileName: () => buildPdfFileName(`تقرير-التحليلات-${dateFrom.value}-${dateTo.value}`),
+    reportTitle: 'تقرير التحليلات',
+    shareText: 'الرجاء الاطلاع على التقرير المرفق.'
+  })
+
+  watch([period, agentFilter, sourceFilter, dateFrom, dateTo], () => {
+    invalidatePreparedReport()
+  })
+
+  const shareButtonLabel = computed(() => {
+    if (isSharePreparing.value) {
+      return '...جاري تجهيز التقرير'
+    }
+
+    if (isReportSharing.value) {
+      return '...جاري فتح خيارات المشاركة'
+    }
+
+    return 'مشاركة التقرير'
+  })
+
+  const isShareBusy = computed(() => isSharePreparing.value || isReportSharing.value)
+
+  async function onExportPdfClick() {
+    if (isShareBusy.value || isExportingPdf.value) {
+      return
+    }
+
+    exportFormat.value = 'pdf'
+    await downloadReport()
   }
 </script>
 
