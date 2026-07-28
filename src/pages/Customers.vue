@@ -9,6 +9,7 @@
       <div class="flex items-center gap-2">
         <button
           class="flex items-center gap-1.5 text-xs font-medium text-white bg-blue-dark rounded-lg sm:px-3 px-1 py-2 hover:opacity-90 cursor-pointer transition-colors"
+          @click="router.push({ name: 'AddCustomer' })"
         >
           <Plus :size="14" />
           إضافة عميل
@@ -21,7 +22,6 @@
         </button>
         <button
           class="flex items-center gap-1.5 text-xs font-medium text-white bg-blue rounded-lg px-3 py-2 hover:opacity-90 cursor-pointer transition-colors"
-          @click="router.push({ name: 'AddCustomer' })"
         >
           <Plus :size="14" />
           تحميل الملف
@@ -126,7 +126,8 @@
               <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.email }}</td>
               <td class="px-4 py-3">
                 <span
-                  class="flex items-center gap-1 text-indigo-600 hover:underline cursor-pointer whitespace-nowrap"
+                  class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium whitespace-nowrap cursor-pointer"
+                  :class="sourceClass(customer.source)"
                 >
                   {{ customer.source }}
                 </span>
@@ -138,12 +139,22 @@
                 {{ customer.date }}
               </td>
               <td class="px-4 py-3">
-                <button
-                  class="text-gray-400 hover:text-emerald-500 cursor-pointer transition-colors"
-                  title="اعتماد"
-                >
-                  <CheckCircle2 :size="16" />
-                </button>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="text-blue hover:text-blue-dark cursor-pointer transition-colors"
+                    title="تعديل"
+                    @click="handleEdit(customer)"
+                  >
+                    <Pencil :size="14" />
+                  </button>
+                  <button
+                    class="text-red hover:text-red-dark cursor-pointer transition-colors"
+                    title="حذف"
+                    @click="handleDelete(customer)"
+                  >
+                    <Trash2 :size="14" />
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -196,13 +207,22 @@
         </div>
       </div>
     </div>
+
+    <ConfirmDialog
+      v-model="isDeleteDialogOpen"
+      title="حذف العميل"
+      :message="`هل أنت متأكد من حذف “${customerToDelete?.name}”؟`"
+      confirm-text="حذف"
+      cancel-text="إلغاء"
+    />
   </div>
 </template>
 
 <script setup>
   import { ref, computed } from 'vue'
   import { useRouter } from 'vue-router'
-  import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, CheckCircle2 } from '@lucide/vue'
+  import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Pencil, Trash2 } from '@lucide/vue'
+  import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
   const router = useRouter()
 
@@ -254,7 +274,7 @@
     }
   ]
 
-  const customers = [
+  const customers = ref([
     {
       id: 1,
       name: 'عبد الله المطيري',
@@ -475,11 +495,49 @@
       date: '20/5/2026',
       status: 'منتظم'
     }
-  ]
+  ])
 
-  customers.forEach(c => {
+  customers.value.forEach(c => {
     c.email = 'example@email.com'
   })
+
+  function handleEdit(customer) {
+    router.push({
+      name: 'AddCustomer',
+      query: {
+        editId: customer.id,
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+        source: customer.source,
+        projectType: customer.type,
+        city: customer.city
+      }
+    })
+  }
+
+  const isDeleteDialogOpen = ref(false)
+  const customerToDelete = ref(null)
+
+  function handleDelete(customer) {
+    customerToDelete.value = customer
+    isDeleteDialogOpen.value = true
+  }
+
+  function sourceClass(source) {
+    const map = {
+      'جوجل أدز': 'bg-blue-light text-blue',
+      'إعلانات جوجل': 'bg-blue-light text-blue',
+      'وسائل التواصل': 'bg-emerald-50 text-emerald-600',
+      'الاتصال المباشر': 'bg-amber-50 text-amber-600',
+      'إعلانات تويتر': 'bg-sky-light text-blue-dark',
+      'التسويق الخارجي': 'bg-violet-light text-violet',
+      'إعلانات ميتا': 'bg-indigo-50 text-indigo-600',
+      'مجتمع ميتا': 'bg-indigo-50 text-indigo-600',
+      'تسويق الشبكات': 'bg-pink-50 text-pink-600'
+    }
+    return map[source] ?? 'bg-gray-100 text-gray-600'
+  }
 
   const defaultFilters = { date: 'آخر 30 يوم', status: '', city: '', agent: '', source: '' }
 
@@ -496,7 +554,7 @@
   }
 
   const filteredCustomers = computed(() => {
-    return customers.filter(c => {
+    return customers.value.filter(c => {
       if (activeFilters.value.source && c.source !== activeFilters.value.source) return false
       if (activeFilters.value.status && c.status !== activeFilters.value.status) return false
       if (activeFilters.value.city && c.city !== activeFilters.value.city) return false

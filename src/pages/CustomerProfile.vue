@@ -17,12 +17,26 @@
         </button>
         <button
           class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+          @click="
+            router.push({
+              name: 'AddCustomer',
+              query: {
+                editId: customer.id,
+                name: customer.name,
+                phone: customer.phone,
+                email: customer.email,
+                city: customer.location,
+                projectType: customer.projectType
+              }
+            })
+          "
         >
           <Pencil :size="14" />
           تعديل
         </button>
         <button
           class="flex items-center gap-1.5 text-xs text-white bg-indigo-600 rounded-lg px-3 py-2 hover:bg-indigo-700 cursor-pointer transition-colors"
+          @click="router.push({ name: 'Calls' })"
         >
           <PhoneCall :size="14" />
           الاتصال الآن

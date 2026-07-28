@@ -3,8 +3,10 @@
     <!-- Page Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-xl font-bold text-gray-900">إضافة عميل محتمل جديد</h1>
-        <p class="text-xs text-gray-400 mt-0.5">إضافة جديدة</p>
+        <h1 class="text-xl font-bold text-gray-900">
+          {{ isEditMode ? 'تعديل بيانات العميل' : 'إضافة عميل محتمل جديد' }}
+        </h1>
+        <p class="text-xs text-gray-400 mt-0.5">{{ isEditMode ? 'تعديل عميل حالي' : 'إضافة جديدة' }}</p>
       </div>
       <button
         class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -232,7 +234,15 @@
               :disabled="isSubmitting"
               @click="handleSubmit"
             >
-              {{ isSubmitting ? 'جارٍ الإضافة...' : 'إضافة هذا العميل' }}
+              {{
+                isSubmitting
+                  ? isEditMode
+                    ? 'جارٍ الحفظ...'
+                    : 'جارٍ الإضافة...'
+                  : isEditMode
+                    ? 'حفظ التعديلات'
+                    : 'إضافة هذا العميل'
+              }}
             </button>
           </div>
         </div>
@@ -296,7 +306,7 @@
 
 <script setup>
   import { ref, watch } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import {
     ArrowRight,
     User,
@@ -308,17 +318,20 @@
   } from '@lucide/vue'
 
   const router = useRouter()
+  const route = useRoute()
+
+  const isEditMode = !!route.query.editId
 
   const form = ref({
-    name: '',
-    email: '',
+    name: route.query.name ?? '',
+    email: route.query.email ?? '',
     countryCode: '+966',
-    phone: '',
-    source: '',
-    projectType: '',
+    phone: route.query.phone ?? '',
+    source: route.query.source ?? '',
+    projectType: route.query.projectType ?? '',
     createdAt: new Date().toISOString().split('T')[0],
     requirements: '',
-    city: '',
+    city: route.query.city ?? '',
     notes: ''
   })
 
