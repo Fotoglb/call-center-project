@@ -10,6 +10,14 @@ const PAGE_WIDTH_MM = 210
 const PAGE_HEIGHT_MM = 297
 const MARGIN_MM = 10
 
+/*
+ * بنثبّت عرض نافذة الالتقاط الوهمية على مقاس الديسكتوب عشان الـ
+ * media queries بتاعة Tailwind (زي xl:grid-cols-4) تتحل بنفس شكل
+ * الديسكتوب دايمًا، حتى لو التصدير حصل من موبايل بشاشة أضيق ولايوت
+ * "ريسبونسيف" مختلف.
+ */
+const CAPTURE_WINDOW_WIDTH_PX = 1440
+
 function waitForNextPaint() {
   return new Promise(resolve => {
     requestAnimationFrame(() => requestAnimationFrame(resolve))
@@ -41,7 +49,8 @@ export async function generateReportPdfBlob(element, { backgroundColor = '#FFFFF
   const canvas = await html2canvas(element, {
     scale,
     backgroundColor,
-    useCORS: true
+    useCORS: true,
+    windowWidth: CAPTURE_WINDOW_WIDTH_PX
   })
 
   const pxToMm = usableWidthMm / canvas.width
