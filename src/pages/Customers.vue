@@ -1,75 +1,76 @@
 <template>
   <div class="space-y-5">
-    <!-- Page Header -->
-    <div class="sm:flex sm:space-y-0 space-y-3 items-start justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900">إدارة العملاء المحتملين</h1>
-        <p class="text-xs text-gray-400 mt-1">جميع العملاء من حملات الإعلانات والإدخال اليدوي</p>
+    <!-- Actions + Filters Card -->
+    <div class="bg-white border border-gray-100 rounded-2xl p-5 space-y-4">
+      <div class="sm:flex sm:space-y-0 space-y-3 items-start justify-between">
+        <div>
+          <h1 class="text-xl font-bold text-gray-900">إدارة العملاء المحتملين</h1>
+          <p class="text-xs text-gray-400 mt-1">جميع العملاء من حملات الإعلانات والإدخال اليدوي</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="flex items-center gap-1.5 text-xs font-medium text-blue border border-blue bg-white rounded-lg sm:px-3 px-1 py-2 hover:bg-blue-light cursor-pointer transition-colors"
+          >
+            <Plus :size="14" />
+            تحميل الملف
+          </button>
+          <button
+            class="flex items-center gap-1.5 text-xs font-medium text-blue bg-blue-light rounded-lg sm:px-3 px-1 py-2 hover:opacity-90 cursor-pointer transition-colors"
+          >
+            <Plus :size="14" />
+            تنزيل الملف
+          </button>
+          <button
+            class="flex items-center gap-1.5 text-xs font-medium text-white bg-blue-dark rounded-lg px-3 py-2 hover:opacity-90 cursor-pointer transition-colors"
+            @click="router.push({ name: 'AddCustomer' })"
+          >
+            <Plus :size="14" />
+            إضافة عميل
+          </button>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <button
-          class="flex items-center gap-1.5 text-xs font-medium text-white bg-blue-dark rounded-lg sm:px-3 px-1 py-2 hover:opacity-90 cursor-pointer transition-colors"
-          @click="router.push({ name: 'AddCustomer' })"
-        >
-          <Plus :size="14" />
-          إضافة عميل
-        </button>
-        <button
-          class="flex items-center gap-1.5 text-xs font-medium text-blue border border-blue rounded-lg sm:px-3 px-1 py-2 hover:bg-blue-light cursor-pointer transition-colors"
-        >
-          <Plus :size="14" />
-          تنزيل الملف
-        </button>
-        <button
-          class="flex items-center gap-1.5 text-xs font-medium text-white bg-blue rounded-lg px-3 py-2 hover:opacity-90 cursor-pointer transition-colors"
-        >
-          <Plus :size="14" />
-          تحميل الملف
-        </button>
-      </div>
-    </div>
 
-    <!-- Filters Bar -->
-    <div class="flex items-center gap-2 flex-wrap">
-      <div v-for="filter in filters" :key="filter.key" class="relative">
-        <select
-          v-model="activeFilters[filter.key]"
-          class="appearance-none text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
+      <div class="flex items-center gap-2 flex-wrap">
+        <div v-for="filter in filters" :key="filter.key" class="relative">
+          <select
+            v-model="activeFilters[filter.key]"
+            class="appearance-none text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
+          >
+            <option value="">{{ filter.label }} : الكل</option>
+            <option v-for="opt in filter.options" :key="opt" :value="opt">{{ opt }}</option>
+          </select>
+          <ChevronDown
+            :size="12"
+            class="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          />
+        </div>
+        <div class="relative flex-1 min-w-48">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="ابحث عن عميل، رقم هاتف، موظف..."
+            class="w-full h-9 ps-3 pe-8 bg-muted border border-accent/50 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
+          />
+          <Search
+            :size="13"
+            class="absolute inset-e-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          />
+        </div>
+        <button
+          v-if="hasActiveFilter"
+          class="text-xs text-red-500 hover:text-red-600 cursor-pointer px-2 py-2"
+          @click="clearFilters"
         >
-          <option value="">{{ filter.label }} : الكل</option>
-          <option v-for="opt in filter.options" :key="opt" :value="opt">{{ opt }}</option>
-        </select>
-        <ChevronDown
-          :size="12"
-          class="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-        />
+          مسح الكل
+        </button>
       </div>
-      <div class="relative flex-1 min-w-48">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="ابحث عن عميل، رقم هاتف، موظف..."
-          class="w-full h-9 ps-3 pe-8 bg-muted border border-accent/50 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
-        />
-        <Search
-          :size="13"
-          class="absolute inset-e-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-        />
-      </div>
-      <button
-        v-if="hasActiveFilter"
-        class="text-xs text-red-500 hover:text-red-600 cursor-pointer px-2 py-2"
-        @click="clearFilters"
-      >
-        مسح الكل
-      </button>
     </div>
 
     <!-- Table Card -->
-    <div class="bg-gray-50 rounded-xl overflow-hidden">
+    <div class="bg-white border border-gray-100 rounded-xl overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-xs">
-          <thead class="bg-gray-100 border-b border-gray-200">
+          <thead class="bg-white border-b border-gray-200">
             <tr>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 اسم العميل
@@ -166,6 +167,18 @@
         <p class="text-xs text-gray-400">
           عرض {{ startIndex + 1 }}-{{ endIndex }} من أصل {{ filteredCustomers.length }} سجل
         </p>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400">عدد السجلات:</span>
+          <select
+            v-model="pageSize"
+            class="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 focus:outline-none cursor-pointer"
+            @change="currentPage = 1"
+          >
+            <option :value="10">10</option>
+            <option :value="20">20</option>
+            <option :value="50">50</option>
+          </select>
+        </div>
         <div class="flex items-center gap-1">
           <button
             class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
@@ -179,7 +192,7 @@
             :key="p"
             class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium cursor-pointer transition-colors"
             :class="
-              p === currentPage ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-100'
+              p === currentPage ? 'bg-blue text-white' : 'text-gray-500 hover:bg-gray-100'
             "
             @click="currentPage = p"
           >
@@ -192,18 +205,6 @@
           >
             <ChevronLeft :size="14" />
           </button>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-400">عدد السجلات:</span>
-          <select
-            v-model="pageSize"
-            class="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 focus:outline-none cursor-pointer"
-            @change="currentPage = 1"
-          >
-            <option :value="10">10</option>
-            <option :value="20">20</option>
-            <option :value="50">50</option>
-          </select>
         </div>
       </div>
     </div>
@@ -240,26 +241,6 @@
 
   const filters = [
     {
-      key: 'date',
-      label: 'التاريخ',
-      options: ['اليوم', 'آخر 7 أيام', 'آخر 30 يوم', 'هذا الشهر']
-    },
-    {
-      key: 'status',
-      label: 'الحالة',
-      options: ['منتظم', 'عميل جديد', 'زيارة مجدولة', 'قيد التحويل', 'قيد الدراسة', 'تم الإغلاق']
-    },
-    {
-      key: 'city',
-      label: 'المدينة',
-      options: ['الرياض', 'جدة', 'الطائف', 'المدينة المنورة', 'أبها', 'الدمام']
-    },
-    {
-      key: 'agent',
-      label: 'الموظف',
-      options: ['سارة أحمد', 'محمد علي', 'هند الفضل', 'فاطمة حسن', 'إبراهيم أحمد', 'طارق محمد', 'يوسف سالم']
-    },
-    {
       key: 'source',
       label: 'المصدر',
       options: [
@@ -271,6 +252,26 @@
         'مجتمع ميتا',
         'تسويق الشبكات'
       ]
+    },
+    {
+      key: 'agent',
+      label: 'الموظف',
+      options: ['سارة أحمد', 'محمد علي', 'هند الفضل', 'فاطمة حسن', 'إبراهيم أحمد', 'طارق محمد', 'يوسف سالم']
+    },
+    {
+      key: 'city',
+      label: 'المدينة',
+      options: ['الرياض', 'جدة', 'الطائف', 'المدينة المنورة', 'أبها', 'الدمام']
+    },
+    {
+      key: 'status',
+      label: 'الحالة',
+      options: ['منتظم', 'عميل جديد', 'زيارة مجدولة', 'قيد التحويل', 'قيد الدراسة', 'تم الإغلاق']
+    },
+    {
+      key: 'date',
+      label: 'التاريخ',
+      options: ['اليوم', 'آخر 7 أيام', 'آخر 30 يوم', 'هذا الشهر']
     }
   ]
 

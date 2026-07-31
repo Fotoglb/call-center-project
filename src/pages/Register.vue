@@ -15,22 +15,23 @@
             <div
               :class="[
                 'w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all',
-                step.number === currentStep
-                  ? 'bg-gray-700 border-gray-700 text-white'
-                  : step.number < currentStep
-                    ? 'bg-gray-900 border-gray-900 text-white'
-                    : 'bg-white border-gray-300 text-gray-400',
+                step.number <= currentStep
+                  ? 'bg-blue border-blue text-white'
+                  : 'bg-white border-gray-300 text-gray-400',
               ]"
             >
               {{ step.number }}
             </div>
-            <span class="text-xs text-gray-500">{{ step.label }}</span>
+            <span
+              class="text-xs"
+              :class="step.number <= currentStep ? 'text-blue' : 'text-gray-400'"
+            >{{ step.label }}</span>
           </div>
 
           <div
             v-if="index < steps.length - 1"
             class="flex-1 h-px mx-2 mb-5"
-            :class="step.number < currentStep ? 'bg-gray-900' : 'bg-gray-200'"
+            :class="step.number < currentStep ? 'bg-blue' : 'bg-gray-200'"
           />
         </template>
       </div>
@@ -87,15 +88,15 @@
         </div>
 
         <Button type="submit" size="full" class="mt-6 flex items-center justify-center gap-2">
-          <ChevronLeft :size="16" />
           <span>التالي</span>
+          <ArrowLeft :size="16" />
         </Button>
 
-        <p class="text-center text-sm text-gray-500 mt-4">
+        <p class="text-center text-sm text-blue mt-4">
           هل لديك حساب؟
           <button
             type="button"
-            class="text-gray-900 font-semibold hover:underline ms-1 cursor-pointer"
+            class="text-blue font-semibold hover:underline ms-1 cursor-pointer"
             @click="goToLogin"
           >
             تسجيل الدخول
@@ -111,14 +112,23 @@
             v-for="role in roles"
             :key="role.value"
             class="relative flex flex-col items-center justify-between gap-2 border rounded-xl p-4 cursor-pointer transition-all hover:border-gray-400"
-            :class="form.role === role.value ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white'"
+            :class="form.role === role.value ? 'border-blue bg-blue' : 'border-gray-200 bg-white'"
           >
             <input type="radio" v-model="form.role" :value="role.value" class="sr-only" />
-            <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+            <div
+              class="w-12 h-12 rounded-full flex items-center justify-center"
+              :class="form.role === role.value ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'"
+            >
               <component :is="role.icon" :size="22" />
             </div>
-            <span class="text-xs font-semibold text-gray-800 text-center leading-tight">{{ role.label }}</span>
-            <span class="text-xs text-gray-400 flex items-center gap-1">
+            <span
+              class="text-xs font-semibold text-center leading-tight"
+              :class="form.role === role.value ? 'text-white' : 'text-gray-800'"
+            >{{ role.label }}</span>
+            <span
+              class="text-xs flex items-center gap-1"
+              :class="form.role === role.value ? 'text-white' : 'text-gray-400'"
+            >
               <ChevronLeft :size="12" />
               {{ role.sub }}
             </span>
@@ -132,12 +142,12 @@
 
         <div class="space-y-3 pt-1">
           <Button type="submit" size="full" class="flex items-center justify-center gap-2">
-            <ChevronLeft :size="16" />
             <span>التالي</span>
+            <ArrowLeft :size="16" />
           </Button>
           <Button type="button" variant="outline" size="full" class="flex items-center justify-center gap-2" @click="prevStep">
             <span>السابق</span>
-            <ChevronRight :size="16" />
+            <ArrowRight :size="16" />
           </Button>
         </div>
       </form>
@@ -145,8 +155,8 @@
       <!-- ────────── Step 3: مراجعة البيانات ────────── -->
       <div v-else class="space-y-5">
 
-        <div class="space-y-3">
-          <div class="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3">
+        <div class="border border-gray-200 rounded-2xl divide-y divide-gray-100">
+          <div class="flex items-center justify-between px-5 py-4">
             <span class="text-sm text-gray-400">{{ form.fullName }}</span>
             <div class="flex items-center gap-2 text-gray-500 text-sm font-medium">
               <span>الاسم</span>
@@ -154,7 +164,7 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3">
+          <div class="flex items-center justify-between px-5 py-4">
             <span class="text-sm text-gray-400 truncate max-w-50">{{ form.email }}</span>
             <div class="flex items-center gap-2 text-gray-500 text-sm font-medium shrink-0 ms-3">
               <span>البريد الإلكتروني</span>
@@ -162,11 +172,11 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3">
+          <div class="flex items-center justify-between px-5 py-4">
             <span class="text-sm text-gray-400">{{ roleLabel[form.role] }}</span>
             <div class="flex items-center gap-2 text-gray-500 text-sm font-medium">
               <span>الدور</span>
-              <Briefcase :size="16" class="text-gray-400" />
+              <ClipboardList :size="16" class="text-gray-400" />
             </div>
           </div>
         </div>
@@ -177,7 +187,7 @@
           </Button>
           <Button type="button" variant="outline" size="full" class="flex items-center justify-center gap-2" @click="prevStep">
             <span>السابق</span>
-            <ChevronRight :size="16" />
+            <ArrowRight :size="16" />
           </Button>
         </div>
       </div>
@@ -191,8 +201,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   User, Mail, Lock, Eye, EyeOff,
-  ChevronLeft, ChevronRight,
-  PhoneCall, ClipboardList, ShieldCheck, Info, Briefcase,
+  ArrowLeft, ArrowRight, ChevronLeft,
+  PhoneCall, ClipboardList, ShieldCheck, Info,
 } from '@lucide/vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
