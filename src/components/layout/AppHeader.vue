@@ -67,21 +67,38 @@
         <Bell :size="18" />
         <span class="absolute top-1.5 inset-e-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
       </button>
-      <button
-        class="flex items-center gap-2.5 hover:bg-gray-50 rounded-xl px-2 py-1.5 transition-colors cursor-pointer group"
-      >
-        <div
-          class="w-9 h-9 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-bold text-sm shrink-0 overflow-hidden"
+      <div ref="userMenuRef" class="relative">
+        <button
+          class="flex items-center gap-2.5 hover:bg-gray-50 rounded-xl px-2 py-1.5 transition-colors cursor-pointer group"
+          @click="isUserMenuOpen = !isUserMenuOpen"
         >
-          <img v-if="userAvatar" :src="userAvatar" class="w-full h-full object-cover" alt="" />
-          <span v-else>{{ userInitial }}</span>
+          <div
+            class="w-9 h-9 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-bold text-sm shrink-0 overflow-hidden"
+          >
+            <img v-if="userAvatar" :src="userAvatar" class="w-full h-full object-cover" alt="" />
+            <span v-else>{{ userInitial }}</span>
+          </div>
+          <div class="text-end leading-tight">
+            <p class="text-sm font-semibold text-gray-900">{{ userName }}</p>
+            <p class="text-xs text-gray-400">{{ userRole }}</p>
+          </div>
+          <ChevronDown :size="14" class="text-gray-400 group-hover:text-gray-600 shrink-0" />
+        </button>
+
+        <!-- User Menu Dropdown -->
+        <div
+          v-if="isUserMenuOpen"
+          class="absolute inset-e-0 top-full z-30 mt-2 w-48 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg"
+        >
+          <button
+            class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
+            @click="handleLogout"
+          >
+            <LogOut :size="16" class="shrink-0" />
+            تسجيل الخروج
+          </button>
         </div>
-        <div class="text-end leading-tight">
-          <p class="text-sm font-semibold text-gray-900">{{ userName }}</p>
-          <p class="text-xs text-gray-400">{{ userRole }}</p>
-        </div>
-        <ChevronDown :size="14" class="text-gray-400 group-hover:text-gray-600 shrink-0" />
-      </button>
+      </div>
     </div>
   </header>
 </template>
@@ -89,7 +106,7 @@
 <script setup>
   import { computed, onMounted, onUnmounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import { Bell, ChevronDown, Search } from '@lucide/vue'
+  import { Bell, ChevronDown, LogOut, Search } from '@lucide/vue'
   import { useAuthStore } from '@/stores/auth.store'
 
   const authStore = useAuthStore()
@@ -99,6 +116,14 @@
   const userRole = computed(() => authStore.user?.role || 'موظف كول سنتر')
   const userAvatar = computed(() => authStore.user?.avatar || null)
   const userInitial = computed(() => (authStore.user?.name || 'م').charAt(0))
+
+  const userMenuRef = ref(null)
+  const isUserMenuOpen = ref(false)
+
+  function handleLogout() {
+    authStore.logout()
+    router.push({ name: 'Login' })
+  }
 
   /* ----------------------------------------
    * Customer search
@@ -142,6 +167,9 @@
   function handleClickOutside(event) {
     if (searchRef.value && !searchRef.value.contains(event.target)) {
       showResults.value = false
+    }
+    if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
+      isUserMenuOpen.value = false
     }
   }
 

@@ -16,6 +16,17 @@
         <component :is="item.icon" :size="16" class="shrink-0" />
         <span>{{ item.label }}</span>
       </RouterLink>
+
+      <div class="my-1 border-t border-accent/20"></div>
+
+      <button
+        type="button"
+        class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-400 hover:bg-white/5 cursor-pointer transition-colors"
+        @click="handleLogout"
+      >
+        <LogOut :size="16" class="shrink-0" />
+        <span>تسجيل الخروج</span>
+      </button>
     </div>
 
     <nav
@@ -99,7 +110,7 @@
 
 <script setup>
   import { computed, onMounted, onUnmounted, ref } from 'vue'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import {
     Home,
     Users,
@@ -108,12 +119,21 @@
     PhoneCall,
     Settings,
     HelpCircle,
+    LogOut,
     MoreHorizontal
   } from '@lucide/vue'
+  import { useAuthStore } from '@/stores/auth.store'
 
   const route = useRoute()
+  const router = useRouter()
+  const authStore = useAuthStore()
   const rootRef = ref(null)
   const showMore = ref(false)
+
+  function handleLogout() {
+    authStore.logout()
+    router.push({ name: 'Login' })
+  }
 
   /*
    * مرتبة حسب الأولوية. زر "المزيد" بيتحسب كواحد من الأزرار الظاهرة:
