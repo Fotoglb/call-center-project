@@ -5,7 +5,7 @@
       <div
         v-for="stat in stats"
         :key="stat.label"
-        class="flex flex-col items-center justify-center gap-1 rounded-xl bg-gray-50 p-4 text-center h-37.25 lg:items-stretch lg:justify-between lg:gap-0 lg:text-start"
+        class="flex flex-col items-center justify-center gap-1 rounded-xl bg-gray-50 p-4 text-center min-h-37.25 lg:items-stretch lg:justify-between lg:gap-0 lg:text-start"
       >
         <div class="hidden w-9 h-9 rounded-lg bg-gray-200 lg:block"></div>
         <div class="space-y-1">

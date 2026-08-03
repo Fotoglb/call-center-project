@@ -107,7 +107,7 @@
       <!-- ────────── Step 2: اختيار الدور ────────── -->
       <form v-else-if="currentStep === 2" class="space-y-5" @submit.prevent="nextStep">
 
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <label
             v-for="role in roles"
             :key="role.value"
@@ -157,8 +157,8 @@
 
         <div class="border border-gray-200 rounded-2xl divide-y divide-gray-100">
           <div class="flex items-center justify-between px-5 py-4">
-            <span class="text-sm text-gray-400">{{ form.fullName }}</span>
-            <div class="flex items-center gap-2 text-gray-500 text-sm font-medium">
+            <span class="text-sm text-gray-400 truncate max-w-50">{{ form.fullName }}</span>
+            <div class="flex items-center gap-2 text-gray-500 text-sm font-medium shrink-0 ms-3">
               <span>الاسم</span>
               <User :size="16" class="text-gray-400" />
             </div>

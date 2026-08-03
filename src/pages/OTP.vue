@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-md border border-gray-200 p-8">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-md border border-gray-200 p-6 sm:p-8">
 
       <!-- Header -->
       <div class="mb-8 text-center">
@@ -12,7 +12,7 @@
 
       <!-- OTP Inputs -->
       <form class="space-y-6" @submit.prevent="handleSubmit">
-        <div class="flex items-center justify-center gap-3" dir="ltr">
+        <div class="flex items-center justify-center gap-2 sm:gap-3" dir="ltr">
           <input
             v-for="(_, index) in otp"
             :key="index"
@@ -21,7 +21,7 @@
             type="text"
             inputmode="numeric"
             maxlength="1"
-            class="w-14 h-14 text-center text-xl font-semibold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900"
+            class="w-11 h-11 sm:w-14 sm:h-14 text-center text-xl font-semibold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900"
             @input="onInput(index, $event)"
             @keydown="onKeydown(index, $event)"
             @paste="onPaste"

@@ -203,7 +203,7 @@
       </div>
 
       <!-- Pagination -->
-      <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+      <div class="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-t border-gray-200">
         <p class="text-xs text-gray-400">
           عرض {{ filteredCalls.length === 0 ? 0 : startIndex + 1 }}-{{ endIndex }} من أصل
           {{ filteredCalls.length }} مكالمة

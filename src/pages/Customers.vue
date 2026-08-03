@@ -7,7 +7,7 @@
           <h1 class="text-xl font-bold text-gray-900">إدارة العملاء المحتملين</h1>
           <p class="text-xs text-gray-400 mt-1">جميع العملاء من حملات الإعلانات والإدخال اليدوي</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <button
             class="flex items-center gap-1.5 text-xs font-medium text-blue border border-blue bg-white rounded-lg sm:px-3 px-1 py-2 hover:bg-blue-light cursor-pointer transition-colors"
           >
@@ -163,7 +163,7 @@
       </div>
 
       <!-- Pagination -->
-      <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+      <div class="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-t border-gray-200">
         <p class="text-xs text-gray-400">
           عرض {{ startIndex + 1 }}-{{ endIndex }} من أصل {{ filteredCustomers.length }} سجل
         </p>

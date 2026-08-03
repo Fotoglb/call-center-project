@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-5">
     <!-- Page Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between flex-wrap gap-2">
       <div>
         <h1 class="text-xl font-bold text-gray-900">
           {{ isEditMode ? 'تعديل بيانات العميل' : 'إضافة عميل محتمل جديد' }}
@@ -26,7 +26,7 @@
 
           <div class="space-y-4">
             <!-- Row 1: Full Name + Email -->
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="space-y-1.5">
                 <label class="text-xs font-medium text-gray-700">
                   الاسم بالكامل <span class="text-red-500">*</span>
@@ -67,7 +67,7 @@
             </div>
 
             <!-- Row 2: Mobile + Source -->
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="space-y-1.5">
                 <label class="text-xs font-medium text-gray-700">
                   الجوال <span class="text-red-500">*</span>
@@ -128,7 +128,7 @@
             </div>
 
             <!-- Row 3: Project Type + Creation Date -->
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="space-y-1.5">
                 <label class="text-xs font-medium text-gray-700">نوع مشروع العميل</label>
                 <div class="relative">
@@ -163,7 +163,7 @@
             </div>
 
             <!-- Row 4: Mandatory Requirements + City -->
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="space-y-1.5">
                 <label class="text-xs font-medium text-gray-700">متطلبات العميل الإلزامية</label>
                 <textarea

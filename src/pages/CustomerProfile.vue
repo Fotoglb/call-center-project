@@ -148,7 +148,7 @@
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 xsm:grid-cols-2 gap-3">
           <div
             v-for="stat in statCards"
             :key="stat.label"
