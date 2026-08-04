@@ -16,7 +16,7 @@
           العودة
         </button>
         <button
-          class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+          class="flex items-center gap-1.5 text-xs font-semibold text-blue bg-sky-light border border-blue-200 rounded-lg px-3 py-2 hover:bg-sky-lighter cursor-pointer transition-colors"
           @click="
             router.push({
               name: 'AddCustomer',
@@ -35,7 +35,7 @@
           تعديل
         </button>
         <button
-          class="flex items-center gap-1.5 text-xs text-white bg-indigo-600 rounded-lg px-3 py-2 hover:bg-indigo-700 cursor-pointer transition-colors"
+          class="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue rounded-lg px-3 py-2 hover:bg-blue-dark cursor-pointer transition-colors"
           @click="router.push({ name: 'Calls' })"
         >
           <PhoneCall :size="14" />
@@ -268,11 +268,25 @@
               </div>
             </div>
 
-            <button
-              class="w-full text-center text-xs font-medium text-gray-500 hover:text-gray-700 py-2 cursor-pointer transition-colors"
-            >
-              تحميل المزيد
-            </button>
+            <div v-if="activeActivityTab === 'timeline'" class="pt-2 space-y-2">
+              <input
+                v-model="newActivityNote"
+                type="text"
+                placeholder="موقع إلكتروني خاص بنوع عقارات سكنية"
+                class="w-full h-11 px-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors"
+                @keyup.enter="addActivity"
+              />
+              <div class="flex">
+                <button
+                  type="button"
+                  class="ms-auto text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2 hover:bg-blue-dark cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="!newActivityNote.trim()"
+                  @click="addActivity"
+                >
+                  إضافة
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -343,9 +357,10 @@
     { key: 'visits', label: 'الزيارات' },
     { key: 'documents', label: 'الوثائق' }
   ]
-  const activeActivityTab = ref('calls')
+  const activeActivityTab = ref('timeline')
+  const newActivityNote = ref('')
 
-  const activityLog = [
+  const activityLog = ref([
     {
       id: 0,
       category: 'system',
@@ -409,12 +424,30 @@
       note: 'تم جدولة زيارة ميدانية لمشاهدة الوحدة TM-12 والجولة في المشروع',
       meta: 'اليوم - 5:00 م – سارة أحمد'
     }
-  ]
+  ])
 
   const filteredActivity = computed(() => {
-    if (activeActivityTab.value === 'timeline') return activityLog
-    return activityLog.filter(e => e.category === activeActivityTab.value)
+    if (activeActivityTab.value === 'timeline') return activityLog.value
+    return activityLog.value.filter(e => e.category === activeActivityTab.value)
   })
+
+  function addActivity() {
+    const text = newActivityNote.value.trim()
+    if (!text) return
+    activityLog.value.unshift({
+      id: Date.now(),
+      category: 'notes',
+      title: 'ملاحظة جديدة',
+      tag: '',
+      tagClass: '',
+      time: 'الآن',
+      period: '',
+      date: 'اليوم',
+      note: text,
+      meta: `الموظف: ${customer.value.assignedAgent.name}`
+    })
+    newActivityNote.value = ''
+  }
 
   function statusClass(status) {
     const map = {

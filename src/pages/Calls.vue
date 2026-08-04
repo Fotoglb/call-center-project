@@ -289,72 +289,77 @@
 
                 <!-- Customer Data Tab -->
                 <div v-if="activeTab === 'data'" class="space-y-3">
-                  <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="bg-white rounded-xl p-3">
-                      <dt class="text-xs text-gray-400 mb-1.5">
-                        رقم الجوال <span class="text-red-400">*</span>
-                      </dt>
-                      <dd
-                        class="flex items-center justify-between text-xs font-semibold text-gray-800"
-                      >
-                        <span class="flex items-center gap-1.5">
-                          <Phone :size="13" class="text-gray-400 shrink-0" />
-                          <span dir="ltr">{{ selectedCall.phone }}</span>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1.5">
+                      <Label for="dataFullName">الاسم بالكامل <span class="text-red-400">*</span></Label>
+                      <div class="relative">
+                        <Input id="dataFullName" v-model="selectedCall.name" type="text" class="ps-10" />
+                        <span class="absolute inset-y-0 inset-s-3 flex items-center text-gray-400 pointer-events-none">
+                          <UserRound :size="16" />
                         </span>
-                        <span class="text-gray-400 font-normal">+966</span>
-                      </dd>
+                      </div>
                     </div>
-                    <div class="bg-white rounded-xl p-3">
-                      <dt class="text-xs text-gray-400 mb-1.5">
-                        الاسم بالكامل <span class="text-red-400">*</span>
-                      </dt>
-                      <dd class="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
-                        <UserRound :size="13" class="text-gray-400 shrink-0" />
-                        {{ selectedCall.name }}
-                      </dd>
+
+                    <div class="space-y-1.5">
+                      <Label for="dataPhone">رقم الجوال <span class="text-red-400">*</span></Label>
+                      <div class="relative">
+                        <Input id="dataPhone" v-model="selectedCall.phone" type="text" dir="ltr" class="ps-10 pe-12" />
+                        <span class="absolute inset-y-0 inset-s-3 flex items-center text-gray-400 pointer-events-none">
+                          <Phone :size="16" />
+                        </span>
+                        <span class="absolute inset-y-0 inset-e-3 flex items-center text-xs text-gray-400 pointer-events-none">+966</span>
+                      </div>
                     </div>
-                    <div class="bg-white rounded-xl p-3">
-                      <dt class="text-xs text-gray-400 mb-1.5">مصدر العميل</dt>
-                      <dd class="text-xs font-semibold text-gray-800">
-                        {{ selectedCall.source ?? '—' }}
-                      </dd>
+
+                    <div class="space-y-1.5">
+                      <Label for="dataWorkType">نوع العمل</Label>
+                      <Input id="dataWorkType" v-model="selectedCall.workType" type="text" />
                     </div>
-                    <div class="bg-white rounded-xl p-3">
-                      <dt class="text-xs text-gray-400 mb-1.5">نوع العمل</dt>
-                      <dd class="text-xs font-semibold text-gray-800">
-                        {{ selectedCall.workType ?? '—' }}
-                      </dd>
+
+                    <div class="space-y-1.5">
+                      <Label for="dataSource">مصدر العميل</Label>
+                      <Input id="dataSource" v-model="selectedCall.source" type="text" />
                     </div>
-                    <div class="bg-white rounded-xl p-3">
-                      <dt class="text-xs text-gray-400 mb-1.5">
-                        نوع مشروع العميل <span class="text-red-400">*</span>
-                      </dt>
-                      <dd class="text-xs font-semibold text-gray-800">
-                        {{ selectedCall.projectType ?? '—' }}
-                      </dd>
+
+                    <div class="space-y-1.5">
+                      <Label for="dataCreatedAt">تاريخ الإنشاء</Label>
+                      <div class="relative">
+                        <Input id="dataCreatedAt" v-model="selectedCall.createdAt" type="text" class="pe-10" />
+                        <span class="absolute inset-y-0 inset-e-3 flex items-center text-gray-400 pointer-events-none">
+                          <Calendar :size="16" />
+                        </span>
+                      </div>
                     </div>
-                    <div class="bg-white rounded-xl p-3">
-                      <dt class="text-xs text-gray-400 mb-1.5">تاريخ الإنشاء</dt>
-                      <dd class="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
-                        <Calendar :size="13" class="text-gray-400 shrink-0" />
-                        {{ selectedCall.createdAt ?? '—' }}
-                      </dd>
+
+                    <div class="space-y-1.5">
+                      <Label for="dataProjectType">نوع مشروع العميل <span class="text-red-400">*</span></Label>
+                      <div class="relative">
+                        <select
+                          id="dataProjectType"
+                          v-model="selectedCall.projectType"
+                          class="flex h-10 w-full appearance-none rounded-md border border-gray-200 bg-white ps-3 pe-10 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
+                        >
+                          <option v-for="type in projectTypes" :key="type" :value="type">{{ type }}</option>
+                        </select>
+                        <span class="absolute inset-y-0 inset-e-3 flex items-center text-gray-400 pointer-events-none">
+                          <ChevronDown :size="16" />
+                        </span>
+                      </div>
                     </div>
-                    <div class="bg-white rounded-xl p-3">
-                      <dt class="text-xs text-gray-400 mb-1.5">الأولوية</dt>
-                      <dd class="text-xs font-semibold text-gray-800">
-                        {{ selectedCall.priority ?? '—' }}
-                      </dd>
+
+                    <div class="space-y-1.5">
+                      <Label for="dataCallAttempts">محاولات الاتصال</Label>
+                      <div class="relative">
+                        <Input id="dataCallAttempts" v-model="callAttemptsText" type="text" inputmode="numeric" class="pe-16" />
+                        <span class="absolute inset-y-0 inset-e-3 flex items-center text-xs text-gray-400 pointer-events-none">اتصالات</span>
+                      </div>
                     </div>
-                    <div class="bg-white rounded-xl p-3">
-                      <dt class="text-xs text-gray-400 mb-1.5">محاولات الاتصال</dt>
-                      <dd class="text-xs font-semibold text-gray-800">
-                        {{
-                          selectedCall.callAttempts ? selectedCall.callAttempts + ' اتصالات' : '—'
-                        }}
-                      </dd>
+
+                    <div class="space-y-1.5">
+                      <Label for="dataPriority">الأولوية</Label>
+                      <Input id="dataPriority" v-model="selectedCall.priority" type="text" />
                     </div>
-                  </dl>
+                  </div>
                 </div>
               </div>
             </div>
@@ -362,7 +367,10 @@
 
           <!-- Call Result Card -->
           <div class="bg-gray-50 rounded-xl p-5 shrink-0">
-            <p class="text-xs font-semibold text-gray-700 mb-3">حالة العميل</p>
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-xs font-semibold text-gray-700">حالة العميل</p>
+              <p class="text-xs text-gray-400">اختر نتيجة واحدة</p>
+            </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 v-for="outcome in callOutcomes"
@@ -387,6 +395,28 @@
                 }}</span>
               </button>
             </div>
+
+            <div class="space-y-1.5 mt-4">
+              <p class="text-xs text-gray-500 font-medium">
+                نتيجة المكالمة <span class="text-red-400">*</span>
+              </p>
+              <textarea
+                v-model="resultNote"
+                rows="3"
+                placeholder="اكتب ملاحظات العميل هنا ..."
+                class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors resize-none"
+              ></textarea>
+            </div>
+
+            <button
+              type="button"
+              class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2.5 mt-3 cursor-pointer transition-colors hover:bg-blue-dark disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!selectedOutcome || !resultNote.trim()"
+              @click="saveCallResult"
+            >
+              <span>حفظ نتيجة المكالمة ثم الانتقال للعميل التالي</span>
+              <ArrowLeft :size="14" />
+            </button>
           </div>
         </template>
       </div>
@@ -411,8 +441,12 @@
     Calendar,
     CalendarClock,
     PhoneOff,
-    Plus
+    Plus,
+    ArrowLeft,
+    ChevronDown
   } from '@lucide/vue'
+  import Input from '@/components/ui/Input.vue'
+  import Label from '@/components/ui/Label.vue'
 
   const router = useRouter()
 
@@ -430,6 +464,7 @@
   const selectedCallId = ref(1)
   const activeTab = ref('data')
   const selectedOutcome = ref('')
+  const resultNote = ref('')
   const noteText = ref('')
   const activeFilter = ref('all')
 
@@ -446,6 +481,8 @@
     { key: 'notes', label: 'ملاحظات العميل' },
     { key: 'data', label: 'بيانات العميل' }
   ]
+
+  const projectTypes = ['B2B', 'B2C']
 
   /*
    * الترتيب معكوس عشان أول عنصر في الـ DOM يظهر أقصى اليمين مع RTL
@@ -630,6 +667,14 @@
 
   const selectedCall = computed(() => callsList.find(c => c.id === selectedCallId.value) ?? null)
 
+  const callAttemptsText = computed({
+    get: () => (selectedCall.value?.callAttempts ? String(selectedCall.value.callAttempts) : ''),
+    set: val => {
+      if (!selectedCall.value) return
+      selectedCall.value.callAttempts = val === '' ? null : Number(val)
+    }
+  })
+
   const customerFields = computed(() => {
     if (!selectedCall.value) return []
     return [
@@ -645,7 +690,33 @@
   function selectCall(call) {
     selectedCallId.value = call.id
     selectedOutcome.value = ''
+    resultNote.value = ''
     activeTab.value = 'data'
+  }
+
+  function saveCallResult() {
+    if (!selectedOutcome.value || !resultNote.value.trim() || !selectedCall.value) return
+
+    const outcome = callOutcomes.find(o => o.key === selectedOutcome.value)
+    selectedCall.value.history.unshift({
+      id: Date.now(),
+      type: 'مكالمة صادر',
+      date: 'الآن',
+      duration: '—',
+      result: outcome.label,
+      note: resultNote.value.trim()
+    })
+    selectedCall.value.lastResult = outcome.label
+
+    const idx = filteredCalls.value.findIndex(c => c.id === selectedCallId.value)
+    const nextCall = filteredCalls.value[idx + 1]
+
+    if (nextCall) {
+      selectCall(nextCall)
+    } else {
+      selectedOutcome.value = ''
+      resultNote.value = ''
+    }
   }
 
   function callStatusClass(status) {
