@@ -9,10 +9,10 @@ export const useUiStore = defineStore('ui', () => {
     isSidebarOpen.value = !isSidebarOpen.value
   }
 
-  function addNotification({ type = 'info', message, duration = 4000 }) {
+  function addNotification({ type = 'info', message, duration = 4000, details = [] }) {
     const id = Date.now() + Math.random()
-    notifications.value.push({ id, type, message })
-    setTimeout(() => removeNotification(id), duration)
+    notifications.value.push({ id, type, message, details })
+    if (duration > 0) setTimeout(() => removeNotification(id), duration)
   }
 
   function removeNotification(id) {

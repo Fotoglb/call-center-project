@@ -6,12 +6,13 @@
       <div class="mb-8">
         <h1 class="text-2xl font-bold text-gray-900 mb-2">هل نسيت كلمة المرور</h1>
         <p class="text-sm text-gray-400 leading-relaxed">
-          برجاء كتابة بريدك الإلكتروني و سيصلك رسالة با رابط تعديل كلمة السرا
+          أدخل بريدك الإلكتروني لطلب رمز التحقق واستعادة كلمة المرور.
         </p>
       </div>
 
       <!-- Form -->
-      <form class="space-y-5" @submit.prevent="handleSubmit">
+      <form class="space-y-5" :aria-busy="isSubmitting" @submit.prevent="handleSubmit">
+        <p v-if="error" role="alert" class="rounded-lg bg-red-light p-3 text-sm text-red-dark">{{ error }}</p>
 
         <!-- Email -->
         <div class="space-y-1.5">
@@ -21,6 +22,9 @@
               id="email"
               v-model="email"
               type="email"
+              required
+              autocomplete="email"
+              :disabled="isSubmitting"
               placeholder="ادخل بريدك الإلكتروني"
               class="ps-10"
             />
@@ -31,8 +35,8 @@
         </div>
 
         <!-- Submit Button -->
-        <Button type="submit" size="full" class="mt-2">
-          تشغيل
+        <Button type="submit" size="full" class="mt-2" :disabled="isSubmitting">
+          {{ isSubmitting ? 'جارٍ الإرسال...' : 'إرسال رمز التحقق' }}
         </Button>
       </form>
 
@@ -59,12 +63,33 @@ import { Mail } from '@lucide/vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Label from '@/components/ui/Label.vue'
+import { authService } from '@/services/auth.service'
+import { useNotification } from '@/composables/useNotification'
 
 const router = useRouter()
+const notification = useNotification()
 
 const email = ref('')
+const isSubmitting = ref(false)
+const error = ref('')
 
-function handleSubmit() {
-  router.push({ name: 'OTP' })
+async function handleSubmit() {
+  if (isSubmitting.value) return
+  error.value = ''
+  const normalizedEmail = email.value.trim()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    error.value = 'يرجى إدخال بريد إلكتروني صحيح'
+    return
+  }
+  isSubmitting.value = true
+  try {
+    const response = await authService.forgotPassword({ email: normalizedEmail })
+    notification.success(response?.message || 'تم قبول طلب استعادة كلمة المرور. تحقّق من بريدك الإلكتروني.')
+    await router.push({ name: 'OTP', query: { email: normalizedEmail } })
+  } catch (err) {
+    error.value = err?.message || 'تعذّر إرسال رمز التحقق'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>

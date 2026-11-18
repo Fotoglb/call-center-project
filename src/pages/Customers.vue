@@ -22,6 +22,7 @@
           </button>
           <button
             class="flex items-center gap-1.5 text-xs font-medium text-white bg-blue-dark rounded-lg px-3 py-2 hover:opacity-90 cursor-pointer transition-colors"
+            v-if="permissions.can('customers.create')"
             @click="router.push({ name: 'AddCustomer' })"
           >
             <Plus :size="14" />
@@ -30,30 +31,31 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2 flex-wrap">
-        <div v-for="filter in filters" :key="filter.key" class="relative">
-          <select
-            v-model="activeFilters[filter.key]"
-            class="appearance-none text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
-          >
-            <option value="">{{ filter.label }} : الكل</option>
-            <option v-for="opt in filter.options" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
-          <ChevronDown
-            :size="12"
-            class="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-          />
-        </div>
+      <div class="flex items-center gap-2 flex-wrap" dir="rtl">
         <div class="relative flex-1 min-w-48">
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="ابحث عن عميل، رقم هاتف، موظف..."
+            placeholder="ابحث بالاسم، رقم الجوال أو البريد الإلكتروني..."
             class="w-full h-9 ps-3 pe-8 bg-muted border border-accent/50 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
           />
           <Search
             :size="13"
             class="absolute inset-e-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          />
+        </div>
+        <div v-for="filter in filters" :key="filter.key" class="relative">
+          <select
+            v-model="activeFilters[filter.key]"
+            :aria-label="filter.label"
+            class="appearance-none text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
+          >
+            <option value="">{{ filter.label }} : الكل</option>
+            <option v-for="opt in filter.options" :key="opt.value ?? opt" :value="opt.value ?? opt">{{ opt.label ?? opt }}</option>
+          </select>
+          <ChevronDown
+            :size="12"
+            class="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
           />
         </div>
         <button
@@ -102,6 +104,21 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
+            <tr v-if="isLoading">
+              <td colspan="9" class="text-center text-gray-400 py-8">...جارٍ التحميل</td>
+            </tr>
+            <tr v-else-if="loadError">
+              <td colspan="9" class="text-center py-8">
+                <p class="text-red-500 mb-2">{{ loadError.message || 'تعذر تحميل بيانات العملاء' }}</p>
+                <button
+                  class="text-xs text-white bg-gray-900 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-gray-700 transition-colors"
+                  @click="loadCustomers"
+                >
+                  إعادة المحاولة
+                </button>
+              </td>
+            </tr>
+            <template v-else>
             <tr
               v-for="customer in paginatedCustomers"
               :key="customer.id"
@@ -130,7 +147,7 @@
                   class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium whitespace-nowrap cursor-pointer"
                   :class="sourceClass(customer.source)"
                 >
-                  {{ customer.source }}
+                  {{ meta.sources.find(source => source.value === customer.sourceId)?.label || customer.source || '—' }}
                 </span>
               </td>
               <td class="px-4 py-3 text-gray-500">{{ customer.type }}</td>
@@ -144,13 +161,16 @@
                   <button
                     class="text-blue hover:text-blue-dark cursor-pointer transition-colors"
                     title="تعديل"
+                    v-if="permissions.can('customers.viewEdit')"
                     @click="handleEdit(customer)"
                   >
                     <Pencil :size="14" />
                   </button>
                   <button
+                    type="button"
                     class="text-red hover:text-red-dark cursor-pointer transition-colors"
                     title="حذف"
+                    v-if="permissions.can('customers.delete')"
                     @click="handleDelete(customer)"
                   >
                     <Trash2 :size="14" />
@@ -158,6 +178,10 @@
                 </div>
               </td>
             </tr>
+            <tr v-if="paginatedCustomers.length === 0">
+              <td colspan="9" class="text-center text-gray-400 py-8">لا توجد نتائج</td>
+            </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -165,7 +189,7 @@
       <!-- Pagination -->
       <div class="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-t border-gray-200">
         <p class="text-xs text-gray-400">
-          عرض {{ startIndex + 1 }}-{{ endIndex }} من أصل {{ filteredCustomers.length }} سجل
+          عرض {{ paginatedCustomers.length ? startIndex + 1 : 0 }}-{{ endIndex }} <template v-if="totalCustomers !== null">من أصل {{ totalCustomers }}</template> سجل
         </p>
         <div class="flex items-center gap-2">
           <span class="text-xs text-gray-400">عدد السجلات:</span>
@@ -200,7 +224,7 @@
           </button>
           <button
             class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
-            :disabled="currentPage === totalPages"
+            :disabled="isLoading || !!loadError || (totalCustomers === null ? paginatedCustomers.length < pageSize : currentPage >= totalPages)"
             @click="currentPage++"
           >
             <ChevronLeft :size="14" />
@@ -215,314 +239,205 @@
       :message="`هل أنت متأكد من حذف “${customerToDelete?.name}”؟`"
       confirm-text="حذف"
       cancel-text="إلغاء"
+      @confirm="confirmDelete"
+      @cancel="customerToDelete = null"
     />
   </div>
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue'
+  import { useAuthStore } from '@/stores/auth.store'
+  const permissions = useAuthStore()
+  import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
   import { useRouter } from 'vue-router'
   import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Pencil, Trash2 } from '@lucide/vue'
   import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+  import { customersService } from '@/services/customers.service'
+  import { usersService } from '@/services/users.service'
+  import { customerDateRange } from '@/utils/customerDateRange'
+  import { useNotification } from '@/composables/useNotification'
 
   const router = useRouter()
+  const notification = useNotification()
 
   const currentPage = ref(1)
   const pageSize = ref(10)
   const searchQuery = ref('')
 
-  const activeFilters = ref({
-    date: 'آخر 30 يوم',
-    status: '',
-    city: '',
-    agent: '',
-    source: ''
-  })
+  const defaultFilters = { date: '', status: '', city: '', agent: '', source: '' }
+  const activeFilters = ref({ ...defaultFilters })
 
-  const filters = [
-    {
-      key: 'source',
-      label: 'المصدر',
-      options: [
-        'جوجل أدز',
-        'وسائل التواصل',
-        'الاتصال المباشر',
-        'إعلانات تويتر',
-        'التسويق الخارجي',
-        'مجتمع ميتا',
-        'تسويق الشبكات'
-      ]
-    },
-    {
-      key: 'agent',
-      label: 'الموظف',
-      options: ['سارة أحمد', 'محمد علي', 'هند الفضل', 'فاطمة حسن', 'إبراهيم أحمد', 'طارق محمد', 'يوسف سالم']
-    },
-    {
-      key: 'city',
-      label: 'المدينة',
-      options: ['الرياض', 'جدة', 'الطائف', 'المدينة المنورة', 'أبها', 'الدمام']
-    },
-    {
-      key: 'status',
-      label: 'الحالة',
-      options: ['منتظم', 'عميل جديد', 'زيارة مجدولة', 'قيد التحويل', 'قيد الدراسة', 'تم الإغلاق']
-    },
-    {
-      key: 'date',
-      label: 'التاريخ',
-      options: ['اليوم', 'آخر 7 أيام', 'آخر 30 يوم', 'هذا الشهر']
-    }
-  ]
+  const meta = ref({ sources: [], cities: [], agents: [], statuses: [], dateRanges: [
+    { value: 'today', label: 'اليوم' },
+    { value: 'yesterday', label: 'أمس' },
+    { value: 'week', label: 'آخر 7 أيام' },
+    { value: 'month', label: 'هذا الشهر' }
+  ] })
 
-  const customers = ref([
-    {
-      id: 1,
-      name: 'عبد الله المطيري',
-      phone: '0551234567',
-      source: 'جوجل أدز',
-      type: 'B2B',
-      city: 'أبها',
-      agent: 'سارة أحمد',
-      date: '10/4/2026',
-      status: 'منتظم'
-    },
-    {
-      id: 2,
-      name: 'نورا المحمد',
-      phone: '0569801234',
-      source: 'وسائل التواصل',
-      type: 'B2C',
-      city: 'الرياض',
-      agent: 'محمد علي',
-      date: '14/4/2026',
-      status: 'عميل جديد'
-    },
-    {
-      id: 3,
-      name: 'خالد الزهراني',
-      phone: '0533456789',
-      source: 'الاتصال المباشر',
-      type: 'Enterprise',
-      city: 'الطائف',
-      agent: 'محمد علي',
-      date: '9/4/2026',
-      status: 'زيارة مجدولة'
-    },
-    {
-      id: 4,
-      name: 'سلمان العلي',
-      phone: '0561022334',
-      source: 'الاتصال المباشر',
-      type: 'SME',
-      city: 'المدينة المنورة',
-      agent: 'هند الفضل',
-      date: '17/4/2026',
-      status: 'قيد التحويل'
-    },
-    {
-      id: 5,
-      name: 'من الزرقاء',
-      phone: '0564433667',
-      source: 'إعلانات تويتر',
-      type: 'Startup',
-      city: 'الرياض',
-      agent: 'فاطمة حسن',
-      date: '18/4/2026',
-      status: 'قيد الدراسة'
-    },
-    {
-      id: 6,
-      name: 'ليلى السيسي',
-      phone: '0569876543',
-      source: 'إعلانات جوجل',
-      type: 'E-commerce',
-      city: 'جدة',
-      agent: 'إبراهيم أحمد',
-      date: '19/4/2026',
-      status: 'عميل جديد'
-    },
-    {
-      id: 7,
-      name: 'فيصل المثنى',
-      phone: '0367654321',
-      source: 'التسويق الخارجي',
-      type: 'Retail',
-      city: 'جدة',
-      agent: 'إبراهيم أحمد',
-      date: '20/4/2026',
-      status: 'قيد الدراسة'
-    },
-    {
-      id: 8,
-      name: 'فاطمة الحربي',
-      phone: '0559876543',
-      source: 'إعلانات ميتا',
-      type: 'Manufacturing',
-      city: 'الطائف',
-      agent: 'فاطمة حسن',
-      date: '19/9/2026',
-      status: 'قيد الدراسة'
-    },
-    {
-      id: 9,
-      name: 'طارق العزيزي',
-      phone: '0559898034',
-      source: 'مجتمع ميتا',
-      type: 'Service',
-      city: 'المدينة المنورة',
-      agent: 'طارق محمد',
-      date: '22/5/2026',
-      status: 'منتظم'
-    },
-    {
-      id: 10,
-      name: 'فاطمة القامر',
-      phone: '0952345699',
-      source: 'تسويق الشبكات',
-      type: 'Non-profit',
-      city: 'الرياض',
-      agent: 'سارة أحمد',
-      date: '23/5/2026',
-      status: 'تم الإغلاق'
-    },
-    {
-      id: 11,
-      name: 'يوسف القاسم',
-      phone: '0312345678',
-      source: 'إعلانات جوجل',
-      type: 'Education',
-      city: 'الطائف',
-      agent: 'يوسف سالم',
-      date: '24/4/2026',
-      status: 'منتظم'
-    },
-    {
-      id: 12,
-      name: 'عمر الشمري',
-      phone: '0505551234',
-      source: 'الاتصال المباشر',
-      type: 'B2B',
-      city: 'الدمام',
-      agent: 'هند الفضل',
-      date: '1/5/2026',
-      status: 'زيارة مجدولة'
-    },
-    {
-      id: 13,
-      name: 'رنا الغامدي',
-      phone: '0557654321',
-      source: 'وسائل التواصل',
-      type: 'B2C',
-      city: 'أبها',
-      agent: 'محمد علي',
-      date: '3/5/2026',
-      status: 'عميل جديد'
-    },
-    {
-      id: 14,
-      name: 'أحمد الراشد',
-      phone: '0543219876',
-      source: 'جوجل أدز',
-      type: 'Enterprise',
-      city: 'الرياض',
-      agent: 'إبراهيم أحمد',
-      date: '5/5/2026',
-      status: 'قيد التحويل'
-    },
-    {
-      id: 15,
-      name: 'هدى الأحمد',
-      phone: '0512345678',
-      source: 'إعلانات تويتر',
-      type: 'SME',
-      city: 'جدة',
-      agent: 'سارة أحمد',
-      date: '7/5/2026',
-      status: 'منتظم'
-    },
-    {
-      id: 16,
-      name: 'سالم المطيري',
-      phone: '0598765432',
-      source: 'التسويق الخارجي',
-      type: 'Startup',
-      city: 'الدمام',
-      agent: 'يوسف سالم',
-      date: '10/5/2026',
-      status: 'قيد الدراسة'
-    },
-    {
-      id: 17,
-      name: 'مريم الجهني',
-      phone: '0534567890',
-      source: 'مجتمع ميتا',
-      type: 'Retail',
-      city: 'المدينة المنورة',
-      agent: 'فاطمة حسن',
-      date: '12/5/2026',
-      status: 'زيارة مجدولة'
-    },
-    {
-      id: 18,
-      name: 'بدر الزهراني',
-      phone: '0561234567',
-      source: 'تسويق الشبكات',
-      type: 'Service',
-      city: 'الطائف',
-      agent: 'طارق محمد',
-      date: '15/5/2026',
-      status: 'عميل جديد'
-    },
-    {
-      id: 19,
-      name: 'لطيفة السبيعي',
-      phone: '0556789012',
-      source: 'الاتصال المباشر',
-      type: 'Manufacturing',
-      city: 'أبها',
-      agent: 'هند الفضل',
-      date: '17/5/2026',
-      status: 'تم الإغلاق'
-    },
-    {
-      id: 20,
-      name: 'ناصر العتيبي',
-      phone: '0501234567',
-      source: 'جوجل أدز',
-      type: 'Education',
-      city: 'الرياض',
-      agent: 'محمد علي',
-      date: '20/5/2026',
-      status: 'منتظم'
-    }
+  const filters = computed(() => [
+    { key: 'source', label: 'المصدر', options: meta.value.sources },
+    { key: 'agent', label: 'الموظف', options: meta.value.agents },
+    { key: 'city', label: 'المدينة', options: meta.value.cities },
+    { key: 'status', label: 'الحالة', options: meta.value.statuses },
+    { key: 'date', label: 'التاريخ', options: meta.value.dateRanges }
   ])
 
-  customers.value.forEach(c => {
-    c.email = 'example@email.com'
+  const isLoading = ref(true)
+  const loadError = ref(null)
+  const paginatedCustomers = ref([])
+  const totalCustomers = ref(0)
+
+  function queryParams() {
+    return {
+      q: searchQuery.value.trim() || undefined,
+      sourceId: activeFilters.value.source || undefined,
+      assignedTo: activeFilters.value.agent || undefined,
+      city: activeFilters.value.city || undefined,
+      callStatus: activeFilters.value.status || undefined,
+      ...customerDateRange(activeFilters.value.date),
+      page: currentPage.value,
+      limit: pageSize.value
+    }
+  }
+
+  let requestVersion = 0
+  async function loadCustomers() {
+    const version = ++requestVersion
+    isLoading.value = true
+    loadError.value = null
+    try {
+      const { items, total } = await customersService.getList(queryParams())
+      if (version !== requestVersion) return
+      paginatedCustomers.value = items
+      totalCustomers.value = total
+    } catch (err) {
+      if (version !== requestVersion) return
+      loadError.value = err
+    } finally {
+      if (version === requestVersion) isLoading.value = false
+    }
+  }
+
+  async function loadMeta() {
+    try {
+      const result = await customersService.getMeta()
+      meta.value.sources = result.sources
+    } catch (error) {
+      notification.error(error.message || 'تعذّر تحميل مصادر العملاء')
+    }
+  }
+
+  let disposed = false
+  const statusLabels = { interested: 'مهتم', not_interested: 'غير مهتم', no_answer: 'لا يرد', reschedule: 'إعادة جدولة' }
+  async function loadCustomerFilterOptions() {
+    const cities = new Set()
+    const statuses = new Set()
+    const agents = new Map()
+    try {
+      // Collect options across pages, independently of the current table filters.
+      let previousSignature = null
+      for (let page = 1; !disposed; page++) {
+        const { items, total } = await customersService.getList({ page, limit: 100 })
+        if (disposed) return
+        const signature = JSON.stringify(items.map(item => item.id))
+        if (items.length && signature === previousSignature) break
+        previousSignature = signature
+        for (const item of items) {
+          if (typeof item.city === 'string' && item.city.trim()) cities.add(item.city)
+          if (typeof item.callStatus === 'string' && item.callStatus) statuses.add(item.callStatus)
+          const assigned = item.assignedTo
+          const id = typeof assigned === 'string' ? assigned : assigned?.id ?? assigned?._id
+          if (id) agents.set(id, assigned?.name || item.agent || id)
+        }
+        meta.value.cities = [...cities].sort((a, b) => a.localeCompare(b, 'ar'))
+        meta.value.statuses = [...statuses].map(value => ({ value, label: statusLabels[value] || value }))
+        const merged = new Map(meta.value.agents.map(item => [item.value, item.label]))
+        for (const [id, name] of agents) if (!merged.has(id)) merged.set(id, name)
+        meta.value.agents = [...merged].map(([value, label]) => ({ value, label }))
+        if (items.length < 100 || (total !== null && page * 100 >= total)) break
+      }
+    } catch (error) {
+      if (!disposed) notification.error(error.message || 'تعذّر تحميل خيارات فلترة العملاء')
+    }
+  }
+
+  async function loadEmployeeOptions() {
+    if (!permissions.can('employees.manage')) return
+    try {
+      let previousSignature = null
+      for (let page = 1; !disposed; page++) {
+        const response = await usersService.list({ page, limit: 100 })
+        if (disposed) return
+        const rows = Array.isArray(response) ? response : response?.data
+        if (!Array.isArray(rows)) throw new Error('تعذّر قراءة قائمة الموظفين من استجابة السيرفر')
+        const signature = JSON.stringify(rows.map(user => user.id ?? user._id))
+        if (rows.length && signature === previousSignature) break
+        previousSignature = signature
+        const agents = new Map(meta.value.agents.map(item => [item.value, item.label]))
+        for (const user of rows) {
+          const id = user.id ?? user._id
+          if (id && user.name) agents.set(id, user.name)
+        }
+        meta.value.agents = [...agents].map(([value, label]) => ({ value, label }))
+        if (rows.length < 100) break
+      }
+    } catch (error) {
+      if (!disposed) notification.error(error.message || 'تعذّر تحميل الموظفين')
+    }
+  }
+
+  let searchDebounce = null
+  watch([searchQuery, activeFilters, pageSize], () => {
+    currentPage.value = 1
+  }, { deep: true, flush: 'sync' })
+  watch([searchQuery, activeFilters, currentPage, pageSize], (values, previous) => {
+    clearTimeout(searchDebounce)
+    ++requestVersion
+    isLoading.value = true
+    loadError.value = null
+    searchDebounce = setTimeout(loadCustomers, values[0] !== previous[0] ? 700 : 0)
+  }, { deep: true })
+
+  onBeforeUnmount(() => {
+    disposed = true
+    clearTimeout(searchDebounce)
+    ++requestVersion
+  })
+
+  onMounted(() => {
+    loadMeta()
+    loadCustomers()
+    loadCustomerFilterOptions()
+    loadEmployeeOptions()
   })
 
   function handleEdit(customer) {
-    router.push({
-      name: 'AddCustomer',
-      query: {
-        editId: customer.id,
-        name: customer.name,
-        phone: customer.phone,
-        email: customer.email,
-        source: customer.source,
-        projectType: customer.type,
-        city: customer.city
-      }
-    })
+    router.push({ name: 'AddCustomer', query: { editId: customer.id } })
   }
 
   const isDeleteDialogOpen = ref(false)
   const customerToDelete = ref(null)
+  const isDeleting = ref(false)
 
   function handleDelete(customer) {
+    if (isDeleting.value) return
     customerToDelete.value = customer
     isDeleteDialogOpen.value = true
+  }
+
+  async function confirmDelete() {
+    if (!customerToDelete.value || isDeleting.value) return
+    isDeleting.value = true
+    try {
+      await customersService.remove(customerToDelete.value.id)
+      notification.success('تم حذف العميل بنجاح')
+      loadCustomers()
+    } catch (err) {
+      notification.error(err?.message || 'تعذر حذف العميل')
+    } finally {
+      customerToDelete.value = null
+      isDeleting.value = false
+    }
   }
 
   function sourceClass(source) {
@@ -540,8 +455,6 @@
     return map[source] ?? 'bg-gray-100 text-gray-600'
   }
 
-  const defaultFilters = { date: 'آخر 30 يوم', status: '', city: '', agent: '', source: '' }
-
   const hasActiveFilter = computed(
     () =>
       searchQuery.value.trim() !== '' ||
@@ -554,27 +467,7 @@
     currentPage.value = 1
   }
 
-  const filteredCustomers = computed(() => {
-    return customers.value.filter(c => {
-      if (activeFilters.value.source && c.source !== activeFilters.value.source) return false
-      if (activeFilters.value.status && c.status !== activeFilters.value.status) return false
-      if (activeFilters.value.city && c.city !== activeFilters.value.city) return false
-      if (activeFilters.value.agent && c.agent !== activeFilters.value.agent) return false
-      const q = searchQuery.value.trim().toLowerCase()
-      if (q && !c.name.toLowerCase().includes(q) && !c.phone.includes(q) && !c.agent.toLowerCase().includes(q)) {
-        return false
-      }
-      return true
-    })
-  })
-
-  const totalPages = computed(() => Math.ceil(filteredCustomers.value.length / pageSize.value))
+  const totalPages = computed(() => totalCustomers.value === null ? currentPage.value : Math.max(1, Math.ceil(totalCustomers.value / pageSize.value)))
   const startIndex = computed(() => (currentPage.value - 1) * pageSize.value)
-  const endIndex = computed(() =>
-    Math.min(startIndex.value + pageSize.value, filteredCustomers.value.length)
-  )
-
-  const paginatedCustomers = computed(() =>
-    filteredCustomers.value.slice(startIndex.value, endIndex.value)
-  )
+  const endIndex = computed(() => paginatedCustomers.value.length ? startIndex.value + paginatedCustomers.value.length : 0)
 </script>

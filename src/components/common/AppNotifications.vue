@@ -26,8 +26,18 @@
           <span class="font-bold flex-shrink-0 mt-0.5">
             {{ (typeMap[n.type] || typeMap.info).icon }}
           </span>
-          <p class="text-sm flex-1 leading-relaxed">{{ n.message }}</p>
+          <div class="text-sm flex-1 min-w-0 leading-relaxed" dir="rtl" role="status">
+            <p class="whitespace-pre-wrap break-words">{{ n.message }}</p>
+            <dl v-if="n.details?.length" class="mt-3 space-y-2">
+              <div v-for="detail in n.details" :key="detail.label">
+                <dt class="text-xs font-medium">{{ detail.label }}</dt>
+                <dd class="select-text break-all whitespace-pre-wrap" dir="ltr">{{ detail.value }}</dd>
+              </div>
+            </dl>
+          </div>
           <button
+            type="button"
+            aria-label="إغلاق الإشعار"
             class="opacity-60 hover:opacity-100 transition-opacity flex-shrink-0 text-current"
             @click="uiStore.removeNotification(n.id)"
           >

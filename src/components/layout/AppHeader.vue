@@ -40,7 +40,8 @@
           </div>
         </button>
 
-        <p v-if="searchResults.length === 0" class="px-2.5 py-2 text-xs text-gray-400">
+        <p v-if="isSearching" class="px-2.5 py-2 text-xs text-gray-400">...جارٍ البحث</p>
+        <p v-else-if="searchResults.length === 0" class="px-2.5 py-2 text-xs text-gray-400">
           لا توجد نتائج
         </p>
       </div>
@@ -93,9 +94,11 @@
           <button
             class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
             @click="handleLogout"
+            :disabled="authStore.isLoggingOut"
+            :aria-busy="authStore.isLoggingOut"
           >
             <LogOut :size="16" class="shrink-0" />
-            تسجيل الخروج
+            {{ authStore.isLoggingOut ? 'جارٍ تسجيل الخروج...' : 'تسجيل الخروج' }}
           </button>
         </div>
       </div>
@@ -104,24 +107,25 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, onUnmounted, ref } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { Bell, ChevronDown, LogOut, Search } from '@lucide/vue'
   import { useAuthStore } from '@/stores/auth.store'
+  import { customersService } from '@/services/customers.service'
 
   const authStore = useAuthStore()
   const router = useRouter()
 
-  const userName = computed(() => authStore.user?.name || 'محمد العتيبي')
-  const userRole = computed(() => authStore.user?.role || 'موظف كول سنتر')
+  const userName = computed(() => authStore.user?.name || '—')
+  const userRole = computed(() => authStore.user?.role || '—')
   const userAvatar = computed(() => authStore.user?.avatar || null)
-  const userInitial = computed(() => (authStore.user?.name || 'م').charAt(0))
+  const userInitial = computed(() => (authStore.user?.name || '؟').charAt(0))
 
   const userMenuRef = ref(null)
   const isUserMenuOpen = ref(false)
 
-  function handleLogout() {
-    authStore.logout()
+  async function handleLogout() {
+    await authStore.logout()
     router.push({ name: 'Login' })
   }
 
@@ -129,33 +133,32 @@
    * Customer search
    * -------------------------------------- */
 
-  const customers = [
-    { id: 1, name: 'عبد الله المطيري', phone: '0551234567' },
-    { id: 2, name: 'نورا المحمد', phone: '0569801234' },
-    { id: 3, name: 'خالد الزهراني', phone: '0533456789' },
-    { id: 4, name: 'سلمان العلي', phone: '0561022334' },
-    { id: 5, name: 'منى الزرقاء', phone: '0564433667' },
-    { id: 6, name: 'ليلى السيسي', phone: '0569876543' },
-    { id: 7, name: 'فيصل المثنى', phone: '0367654321' },
-    { id: 8, name: 'فاطمة الحربي', phone: '0559876543' },
-    { id: 9, name: 'طارق العزيزي', phone: '0559898034' },
-    { id: 10, name: 'فاطمة القامر', phone: '0952345699' },
-    { id: 11, name: 'يوسف القاسم', phone: '0312345678' }
-  ]
-
   const searchRef = ref(null)
   const searchQuery = ref('')
   const showResults = ref(false)
+  const searchResults = ref([])
+  const isSearching = ref(false)
+  let searchDebounce = null
 
-  const searchResults = computed(() => {
-    const q = searchQuery.value.trim().toLowerCase()
+  watch(searchQuery, value => {
+    clearTimeout(searchDebounce)
+    const q = value.trim()
     if (!q) {
-      return []
+      searchResults.value = []
+      isSearching.value = false
+      return
     }
 
-    return customers
-      .filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q))
-      .slice(0, 6)
+    searchDebounce = setTimeout(async () => {
+      isSearching.value = true
+      try {
+        searchResults.value = await customersService.search(q)
+      } catch {
+        searchResults.value = []
+      } finally {
+        isSearching.value = false
+      }
+    }, 300)
   })
 
   function goToCustomer(customer) {

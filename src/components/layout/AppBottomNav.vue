@@ -23,6 +23,8 @@
         type="button"
         class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-400 hover:bg-white/5 cursor-pointer transition-colors"
         @click="handleLogout"
+        :disabled="authStore.isLoggingOut"
+        :aria-busy="authStore.isLoggingOut"
       >
         <LogOut :size="16" class="shrink-0" />
         <span>تسجيل الخروج</span>
@@ -130,8 +132,8 @@
   const rootRef = ref(null)
   const showMore = ref(false)
 
-  function handleLogout() {
-    authStore.logout()
+  async function handleLogout() {
+    await authStore.logout()
     router.push({ name: 'Login' })
   }
 
@@ -142,11 +144,13 @@
    * >=md(768px): 5 عناصر + المزيد = 6 أزرار (الأقصى). الباقي (6، 7، 8)
    * موجود بس جوه "المزيد" مهما كان عرض الشاشة.
    */
-  const allItems = [
+  const navigationItems = [
     { label: 'لوحة التحكم', path: '/', icon: Home, exact: true },
     { label: 'إدارة العملاء', path: '/customers', icon: Users },
-    { label: 'مركز الاتصال', path: '/agents', icon: PhoneIncoming },
+    { label: 'إضافة عميل', path: '/customers/add', icon: Users, createOnly: true },
+    { label: 'مركز الاتصال', path: '/calls/history', icon: PhoneIncoming },
     { label: 'التقارير', path: '/reports', icon: BarChart2 },
+    { label: 'المستخدمون', path: '/users', icon: Users },
     { label: 'سجل المكالمات', path: '/calls', icon: PhoneCall },
     { label: 'الإعدادات', path: '/settings', icon: Settings },
     { label: 'المساعدة', path: '/help', icon: HelpCircle }
@@ -158,7 +162,8 @@
    * مقاس — عشان في المقاسات الصغيرة محدش يضيع من غير ما يظهر في
    * الشريط ولا في المزيد.
    */
-  const overflowItems = computed(() => allItems.slice(2))
+  const allItems = computed(() => navigationItems.filter(item => authStore.canOpen(item.path) && (!item.createOnly || (authStore.can('customers.create') && !authStore.can('customers.list')))))
+  const overflowItems = computed(() => allItems.value.slice(2))
 
   function isActive(item) {
     return item.exact ? route.path === item.path : route.path.startsWith(item.path)

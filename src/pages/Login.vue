@@ -9,7 +9,7 @@
       </div>
 
       <!-- Form -->
-      <form class="space-y-5" @submit.prevent="handleLogin">
+      <form class="space-y-5" :aria-busy="isSubmitting" @submit.prevent="handleLogin">
 
         <!-- Email -->
         <div class="space-y-1.5">
@@ -19,6 +19,9 @@
               id="email"
               v-model="form.email"
               type="email"
+              required
+              autocomplete="username"
+              :disabled="isSubmitting"
               placeholder="ادخل بريدك الإلكتروني"
               class="ps-10"
             />
@@ -35,6 +38,9 @@
             <Input
               id="password"
               v-model="form.password"
+              required
+              autocomplete="current-password"
+              :disabled="isSubmitting"
               :type="showPassword ? 'text' : 'password'"
               placeholder="••••••••••"
               class="px-10"
@@ -44,6 +50,8 @@
             </span>
             <button
               type="button"
+              :aria-label="showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'"
+              :aria-pressed="showPassword"
               class="absolute inset-y-0 inset-e-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
               @click="showPassword = !showPassword"
             >
@@ -73,20 +81,20 @@
         </div>
 
         <!-- Login Button -->
-        <Button type="submit" size="full" class="mt-2">
-          تسجيل الدخول
+        <Button type="submit" size="full" class="mt-2" :disabled="isSubmitting">
+          {{ isSubmitting ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول' }}
         </Button>
       </form>
 
       <!-- Register Link -->
       <p class="text-center text-sm text-gray-500 mt-6">
-        ليس لديك حساب؟
+        إنشاء الحسابات متاح للمستخدم المخوّل بعد تسجيل الدخول.
         <button
           type="button"
           class="text-gray-900 font-semibold hover:underline ms-1 cursor-pointer"
           @click="goToRegister"
         >
-          إنشاء حساب
+          إدارة إنشاء الحسابات
         </button>
       </p>
 
@@ -96,24 +104,51 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Mail, Lock, Eye, EyeOff } from '@lucide/vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Label from '@/components/ui/Label.vue'
+import { useAuthStore } from '@/stores/auth.store'
+import { useNotification } from '@/composables/useNotification'
 
 const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+const notification = useNotification()
 
 const showPassword = ref(false)
 const rememberMe = ref(false)
+const isSubmitting = ref(false)
 
 const form = ref({
   email: '',
   password: '',
 })
 
-function handleLogin() {
-  // TODO: connect to auth service
+async function handleLogin() {
+  if (isSubmitting.value) return
+  const email = form.value.email.trim()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !form.value.password) {
+    notification.error('يرجى إدخال بريد إلكتروني صحيح وكلمة المرور')
+    return
+  }
+  isSubmitting.value = true
+  try {
+    await authStore.login({ email, password: form.value.password }, rememberMe.value)
+    form.value.password = ''
+    notification.success('تم تسجيل الدخول بنجاح')
+    if (authStore.profileError) {
+      notification.warning('تم تسجيل الدخول، لكن تعذّر تحديث بيانات المستخدم: ' + authStore.profileError)
+    }
+    const redirect = route.query.redirect
+    await router.replace(typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')
+      ? redirect : { name: 'Home' })
+  } catch (err) {
+    notification.error(err?.message || 'بيانات الدخول غير صحيحة')
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 function goToRegister() {

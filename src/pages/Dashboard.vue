@@ -1,5 +1,19 @@
 <template>
-  <div class="space-y-6">
+  <div v-if="isLoading" class="flex items-center justify-center py-24 text-sm text-gray-400">
+    ...جارٍ تحميل بيانات لوحة التحكم
+  </div>
+
+  <div v-else-if="loadError" class="flex flex-col items-center justify-center gap-3 py-24 text-center">
+    <p class="text-sm text-red-500">تعذر تحميل بيانات لوحة التحكم</p>
+    <button
+      class="text-xs text-white bg-gray-900 rounded-lg px-4 py-2 cursor-pointer hover:bg-gray-700 transition-colors"
+      @click="loadDashboard"
+    >
+      إعادة المحاولة
+    </button>
+  </div>
+
+  <div v-else class="space-y-6">
     <!-- Stats Row -->
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-6">
       <div
@@ -80,6 +94,7 @@
           <p class="text-xs text-gray-400 mt-0.5">المكالمات والتحويلات أول موظف - هذا الأسبوع</p>
         </div>
         <button
+          v-if="permissions.canOpen('/reports')"
           class="text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-white cursor-pointer"
           @click="router.push({ name: 'Reports' })"
         >
@@ -104,7 +119,7 @@
             مباشر
           </span>
         </div>
-        <ul class="space-y-4">
+        <ul v-if="activities.length" class="space-y-4">
           <li v-for="activity in activities" :key="activity.id" class="flex items-center gap-3">
             <div
               class="w-11 h-11 rounded-md bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0"
@@ -126,6 +141,7 @@
             </div>
           </li>
         </ul>
+        <p v-else class="text-center text-xs text-gray-400 py-8">لا توجد نشاطات حتى الآن</p>
       </div>
 
       <!-- Upcoming Visits — col-span-2 → LEFT in RTL -->
@@ -148,7 +164,7 @@
         </div>
 
         <!-- Visit cards -->
-        <ul class="">
+        <ul v-if="upcomingVisits.length" class="">
           <li
             v-for="visit in upcomingVisits"
             :key="visit.id"
@@ -178,12 +194,16 @@
             </div>
           </li>
         </ul>
+        <p v-else class="text-center text-xs text-gray-400 py-8">لا توجد زيارات قادمة</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+  import { useAuthStore } from '@/stores/auth.store'
+  const permissions = useAuthStore()
+  import { ref, computed, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import { Clock } from '@lucide/vue'
   import { Line, Doughnut } from 'vue-chartjs'
@@ -198,6 +218,7 @@
     Legend,
     ArcElement
   } from 'chart.js'
+  import { dashboardService } from '@/services/dashboard.service'
 
   ChartJS.register(
     CategoryScale,
@@ -212,23 +233,22 @@
 
   const router = useRouter()
 
-  const stats = [
-    { value: '250', label: 'عملاء جدد', sub: 'هدف الأسبوع' },
-    { value: '1,290', label: 'مكالمات اليوم', sub: 'من أصل 1400 مستهدف' },
-    { value: '90', label: 'عملاء مهتمون', sub: 'مشاركة في الأسبوع' },
-    { value: '40', label: 'زيارة مجدولة', sub: 'خلال 7 أيام' },
-    { value: '18.5%', label: 'معدل التحويل', sub: 'من الأسبوع' },
-    { value: '92%', label: 'أداء الفريق', sub: 'موسمية الأسبوع' }
-  ]
+  const isLoading = ref(true)
+  const loadError = ref(null)
 
-  const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+  const stats = ref([])
+  const weeklyPerformance = ref({ labels: [], calls: [], newCustomers: [] })
+  const donutLegend = ref([])
+  const teamPerformance = ref({ labels: [], calls: [], transfers: [] })
+  const activities = ref([])
+  const upcomingVisits = ref([])
 
-  const lineChartData = {
-    labels: days,
+  const lineChartData = computed(() => ({
+    labels: weeklyPerformance.value.labels,
     datasets: [
       {
         label: 'المكالمات',
-        data: [80, 73, 76, 91, 113, 120, 110],
+        data: weeklyPerformance.value.calls,
         borderColor: '#6366F1',
         backgroundColor: '#6366F1',
         borderWidth: 1.5,
@@ -244,7 +264,7 @@
       },
       {
         label: 'عملاء جدد',
-        data: [44, 56, 64, 68, 71, 74, 77],
+        data: weeklyPerformance.value.newCustomers,
         borderColor: '#F472B6',
         backgroundColor: '#F472B6',
         borderWidth: 1.5,
@@ -259,7 +279,7 @@
         clip: false
       }
     ]
-  }
+  }))
 
   const lineChartOptions = {
     responsive: true,
@@ -284,25 +304,17 @@
     }
   }
 
-  const donutLegend = [
-    { label: 'مواقع الويب', percent: 38, color: '#3B82F6' },
-    { label: 'إعلانات سوشيال ميديا', percent: 27, color: '#A855F7' },
-    { label: 'توصية عميل', percent: 18, color: '#10B981' },
-    { label: 'إعلانات جوجل', percent: 12, color: '#F59E0B' },
-    { label: 'أخرى', percent: 5, color: '#EF4444' }
-  ]
-
-  const donutChartData = {
-    labels: donutLegend.map(i => i.label),
+  const donutChartData = computed(() => ({
+    labels: donutLegend.value.map(i => i.label),
     datasets: [
       {
-        data: donutLegend.map(i => i.percent),
-        backgroundColor: donutLegend.map(i => i.color),
+        data: donutLegend.value.map(i => i.percent),
+        backgroundColor: donutLegend.value.map(i => i.color),
         borderWidth: 0,
         hoverOffset: 4
       }
     ]
-  }
+  }))
 
   const donutChartOptions = {
     responsive: true,
@@ -311,12 +323,12 @@
     plugins: { legend: { display: false } }
   }
 
-  const areaChartData = {
-    labels: days,
+  const areaChartData = computed(() => ({
+    labels: teamPerformance.value.labels,
     datasets: [
       {
         label: 'المكالمات',
-        data: [30, 55, 45, 70, 85, 75, 90],
+        data: teamPerformance.value.calls,
         borderColor: '#14B8A6',
         borderWidth: 2,
         tension: 0.5,
@@ -325,7 +337,7 @@
       },
       {
         label: 'التحويلات',
-        data: [20, 35, 30, 50, 60, 55, 65],
+        data: teamPerformance.value.transfers,
         borderColor: '#F472B6',
         borderWidth: 2,
         tension: 0.5,
@@ -333,7 +345,7 @@
         pointRadius: 0
       }
     ]
-  }
+  }))
 
   const areaChartOptions = {
     responsive: true,
@@ -345,49 +357,6 @@
     }
   }
 
-  const upcomingVisits = [
-    {
-      id: 1,
-      client: 'عبد الله الخالدي',
-      type: 'زيارة ميدانية',
-      agent: 'أحمد محمد',
-      agentInitials: 'أح',
-      time: 'اليوم - 3:30م',
-      countdown: '5 د',
-      status: 'مؤكدة'
-    },
-    {
-      id: 2,
-      client: 'عبد الله الخالدي',
-      type: 'زيارة ميدانية',
-      agent: 'أحمد محمد',
-      agentInitials: 'أح',
-      time: 'اليوم - 3:30م',
-      countdown: '24 د',
-      status: 'مؤكدة'
-    },
-    {
-      id: 3,
-      client: 'عبد الله الخالدي',
-      type: 'زيارة ميدانية',
-      agent: 'أحمد محمد',
-      agentInitials: 'أح',
-      time: 'اليوم - 3:30م',
-      countdown: '40 د',
-      status: 'قيد التأكيد'
-    },
-    {
-      id: 4,
-      client: 'عبد الله الخالدي',
-      type: 'زيارة ميدانية',
-      agent: 'أحمد محمد',
-      agentInitials: 'أح',
-      time: 'اليوم - 3:30م',
-      countdown: '55 د',
-      status: 'مؤكدة'
-    }
-  ]
-
   function visitStatusClass(status) {
     if (status === 'مؤكدة') return 'bg-emerald-50 text-emerald-600'
     if (status === 'مباشر') return 'bg-blue-50 text-blue-600'
@@ -396,45 +365,34 @@
     return 'bg-gray-100 text-gray-500'
   }
 
-  const activities = [
-    {
-      id: 1,
-      user: 'أحمد محمد',
-      action: 'أضاف عميلاً جديداً',
-      target: 'عبد الله الخالدي - إعلانات',
-      time: '5 د'
-    },
-    {
-      id: 2,
-      user: 'سارة أحمد',
-      action: 'أجرت مكالمة ناجحة مع',
-      target: 'نورا المحمد',
-      time: '24 د'
-    },
-    {
-      id: 3,
-      user: 'محمد علي',
-      action: 'أكمل زيارة ميدانية لـ',
-      target: 'فيصل العتيبي',
-      time: '40 د'
-    },
-    {
-      id: 4,
-      user: 'فاطمة حسن',
-      action: 'جدولت زيارة جديدة لـ',
-      target: 'مني الشمري',
-      time: '55 د'
-    },
-    {
-      id: 5,
-      user: 'سارة أحمد',
-      action: 'تعذّر الوصول إلى',
-      target: 'خالد الزهراني',
-      time: '1 س'
-    }
-  ]
-
   function initials(name) {
     return `${name.slice(0, 1)} ${name.slice(1, 2)}`
   }
+
+  async function loadDashboard() {
+    isLoading.value = true
+    loadError.value = null
+    try {
+      const [statsData, weekly, sources, team, activityLog, visits] = await Promise.all([
+        dashboardService.getStats(),
+        dashboardService.getWeeklyPerformance(),
+        dashboardService.getCustomerSources(),
+        dashboardService.getTeamPerformance(),
+        dashboardService.getActivities(),
+        dashboardService.getUpcomingVisits()
+      ])
+      stats.value = statsData
+      weeklyPerformance.value = weekly
+      donutLegend.value = sources
+      teamPerformance.value = team
+      activities.value = activityLog
+      upcomingVisits.value = visits
+    } catch (err) {
+      loadError.value = err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  onMounted(loadDashboard)
 </script>

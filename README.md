@@ -42,7 +42,7 @@ cp .env.example .env
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:3000/api` |
+| `VITE_API_BASE_URL` | Backend API base URL | `https://call-center-backend-kvok.onrender.com/api` |
 | `VITE_APP_NAME` | Application display name | `CallCenter` |
 | `VITE_APP_VERSION` | Application version | `1.0.0` |
 

@@ -1,5 +1,19 @@
 <template>
   <div class="space-y-5">
+    <!-- Loading / Error states -->
+    <div v-if="isLoading" class="flex items-center justify-center py-24 text-sm text-gray-400">
+      ...جارٍ تحميل بيانات العميل
+    </div>
+    <div v-else-if="loadError" class="flex flex-col items-center justify-center gap-3 py-24 text-center">
+      <p class="text-sm text-red-500">تعذر تحميل بيانات العميل</p>
+      <button
+        class="text-xs text-white bg-gray-900 rounded-lg px-4 py-2 cursor-pointer hover:bg-gray-700 transition-colors"
+        @click="loadCustomer"
+      >
+        إعادة المحاولة
+      </button>
+    </div>
+    <template v-else>
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center items-start justify-between gap-3">
       <div>
@@ -16,17 +30,13 @@
           العودة
         </button>
         <button
+          v-if="permissions.can('customers.viewEdit')"
           class="flex items-center gap-1.5 text-xs font-semibold text-blue bg-sky-light border border-blue-200 rounded-lg px-3 py-2 hover:bg-sky-lighter cursor-pointer transition-colors"
           @click="
             router.push({
               name: 'AddCustomer',
               query: {
-                editId: customer.id,
-                name: customer.name,
-                phone: customer.phone,
-                email: customer.email,
-                city: customer.location,
-                projectType: customer.projectType
+                editId: customer.id
               }
             })
           "
@@ -35,6 +45,7 @@
           تعديل
         </button>
         <button
+          v-if="permissions.canOpen('/calls')"
           class="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue rounded-lg px-3 py-2 hover:bg-blue-dark cursor-pointer transition-colors"
           @click="router.push({ name: 'Calls' })"
         >
@@ -171,11 +182,11 @@
               <p class="text-sm font-bold text-white">نقاط الاهتمام</p>
             </div>
             <div class="flex items-baseline gap-1 mt-1">
-              <span class="text-[55px] font-bold text-white">{{ customer.interestScore }}</span>
+              <span class="text-[55px] font-bold text-white">{{ customer.interestScore ?? '—' }}</span>
               <span class="text-xs text-white/70">/100</span>
             </div>
             <p class="text-xs text-white/70 mt-1 leading-relaxed">
-              احتمالية التحويل مرتفعة جداً – يُنصح بالمتابعة العاجلة
+              {{ customer.interestScore === null ? 'لا توجد بيانات' : '' }}
             </p>
           </div>
           <div class="relative w-35 h-35 shrink-0">
@@ -190,11 +201,11 @@
                 stroke-width="8"
                 stroke-linecap="round"
                 :stroke-dasharray="circumference"
-                :stroke-dashoffset="circumference * (1 - customer.interestScore / 100)"
+                :stroke-dashoffset="circumference * (1 - (customer.interestScore ?? 0) / 100)"
               />
             </svg>
             <div class="absolute inset-0 flex items-center justify-center">
-              <span class="text-[40px] font-bold text-white">{{ customer.interestScore }}%</span>
+              <span class="text-[40px] font-bold text-white">{{ customer.interestScore === null ? '—' : `${customer.interestScore}%` }}</span>
             </div>
           </div>
         </div>
@@ -222,16 +233,17 @@
 
           <!-- Timeline -->
           <div class="p-5 space-y-3">
+            <p v-if="!filteredActivity.length" class="text-xs text-gray-400 text-center">لا توجد بيانات</p>
             <div v-for="entry in filteredActivity" :key="entry.id" class="flex gap-3">
               <div
                 v-if="entry.category === 'calls'"
                 class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                :class="entry.answered ? 'bg-emerald-50' : 'bg-red-50'"
+                :class="entry.answered === false ? 'bg-red-50' : 'bg-blue-light'"
               >
                 <component
-                  :is="entry.answered ? PhoneOutgoing : PhoneMissed"
+                  :is="entry.answered === false ? PhoneMissed : Phone"
                   :size="14"
-                  :class="entry.answered ? 'text-emerald-600' : 'text-red-500'"
+                  :class="entry.answered === false ? 'text-red-500' : 'text-blue'"
                 />
               </div>
               <div
@@ -244,7 +256,7 @@
               <div
                 class="flex-1 min-w-0 rounded-xl p-3"
                 :class="
-                  entry.category === 'calls' && !entry.answered
+                  entry.category === 'calls' && entry.answered === false
                     ? 'border-2 border-blue bg-sky-lighter'
                     : 'bg-white'
                 "
@@ -274,14 +286,15 @@
                 type="text"
                 placeholder="موقع إلكتروني خاص بنوع عقارات سكنية"
                 class="w-full h-11 px-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors"
-                @keyup.enter="addActivity"
+                disabled
+                title="إضافة النشاط غير متاحة حاليًا"
               />
               <div class="flex">
                 <button
                   type="button"
                   class="ms-auto text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2 hover:bg-blue-dark cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  :disabled="!newActivityNote.trim()"
-                  @click="addActivity"
+                  disabled
+                  title="إضافة النشاط غير متاحة حاليًا"
                 >
                   إضافة
                 </button>
@@ -291,11 +304,14 @@
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue'
+  import { useAuthStore } from '@/stores/auth.store'
+  const permissions = useAuthStore()
+  import { ref, computed, watch, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import {
     ArrowRight,
@@ -314,42 +330,27 @@
     PhoneMissed,
     UserPlus
   } from '@lucide/vue'
+  import { customersService } from '@/services/customers.service'
+  import { mapCustomerProfile } from '@/utils/customerProfile'
 
   const route = useRoute()
   const router = useRouter()
 
   const circumference = 2 * Math.PI * 34
 
-  const customers = [
-    {
-      id: 1,
-      name: 'عبد الله الخالدي',
-      status: 'عميل جديد',
-      phone: '0505551234',
-      email: 'khal5346@outlook.com',
-      nationalId: '1023456789',
-      interestScore: 88,
-      location: 'الرياض',
-      workType: 'تجاري',
-      projectType: 'B2B',
-      budget: '120,000',
-      createdAt: '10/6/2026',
-      priority: 'عالي',
-      assignedAgent: { name: 'سارة أحمد', role: 'موظف أول مبيعات' },
-      stats: { fieldVisits: 50, totalCalls: 247, interestPoints: 50, daysSinceAdded: 4 }
-    }
-  ]
+  const isLoading = ref(true)
+  const loadError = ref(null)
+  const customer = ref(null)
 
-  const customer = computed(
-    () => customers.find(c => c.id === Number(route.params.id)) ?? customers[0]
-  )
-
-  const statCards = computed(() => [
-    { label: 'الزيارات الميدانية', value: customer.value.stats.fieldVisits },
-    { label: 'إجمالي المكالمات', value: customer.value.stats.totalCalls },
-    { label: 'نقاط الاهتمام', value: customer.value.stats.interestPoints },
-    { label: 'أيام منذ الإضافة', value: customer.value.stats.daysSinceAdded }
-  ])
+  const statCards = computed(() => {
+    if (!customer.value) return []
+    return [
+      { label: 'الزيارات الميدانية', value: customer.value.stats.fieldVisits ?? 'لا توجد بيانات' },
+      { label: 'إجمالي المكالمات', value: customer.value.stats.totalCalls ?? 'لا توجد بيانات' },
+      { label: 'نقاط الاهتمام', value: customer.value.stats.interestPoints ?? 'لا توجد بيانات' },
+      { label: 'أيام منذ الإضافة', value: customer.value.stats.daysSinceAdded ?? 'لا توجد بيانات' }
+    ]
+  })
 
   const activityTabs = [
     { key: 'timeline', label: 'الجدول الزمني' },
@@ -359,95 +360,33 @@
   ]
   const activeActivityTab = ref('timeline')
   const newActivityNote = ref('')
+  const activityLog = ref({ timeline: [], calls: [], visits: [], documents: [] })
 
-  const activityLog = ref([
-    {
-      id: 0,
-      category: 'system',
-      title: 'إضافة العميل إلى النظام',
-      tag: '',
-      tagClass: '',
-      time: '9:00',
-      period: 'ص',
-      date: '10/6/2026',
-      note: 'تم إضافة العميل من مصدر الموقع الإلكتروني - نموذج طلب معلومات',
-      meta: 'بواسطة النظام'
-    },
-    {
-      id: 1,
-      category: 'calls',
-      answered: true,
-      title: 'مكالمة هاتفية صادرة',
-      tag: 'متابعة مجدولة',
-      tagClass: 'bg-emerald-50 text-emerald-600',
-      time: '11:15',
-      period: 'ص',
-      date: '12/6/2026',
-      note: 'أول تواصل مع العميل. أبدى اهتماماً بإنشاء موقع إلكتروني سكني - عقاري. مدة المكالمة: 4:28 دقيقة',
-      meta: 'الموظف: سارة أحمد'
-    },
-    {
-      id: 2,
-      category: 'calls',
-      answered: false,
-      title: 'مكالمة واردة – لم يُرد',
-      tag: 'متابعة مجدولة',
-      tagClass: 'bg-emerald-50 text-emerald-600',
-      time: '11:15',
-      period: 'ص',
-      date: '12/6/2026',
-      note: 'اتصل العميل ولم يتم الرد. تم ترك رسالة صوتية للمتابعة.',
-      meta: 'الموظف: سارة أحمد'
-    },
-    {
-      id: 3,
-      category: 'calls',
-      answered: true,
-      title: 'مكالمة واردة',
-      tag: 'متابعة مجدولة',
-      tagClass: 'bg-emerald-50 text-emerald-600',
-      time: '11:15',
-      period: 'ص',
-      date: '12/6/2026',
-      note: 'تحدثنا عن تفاصيل الوحدة TM-12. أبدت اهتماماً كبيراً وطلبت جدولة زيارة ميدانية للمشروع. مدة المكالمة: 8:42 دقيقة',
-      meta: 'الموظف: سارة أحمد'
-    },
-    {
-      id: 4,
-      category: 'visits',
-      title: 'زيارة ميدانية – مجدولة',
-      tag: 'قادم',
-      tagClass: 'bg-orange-50 text-orange-500',
-      time: '9:00',
-      period: 'ص',
-      date: '10/6/2026',
-      note: 'تم جدولة زيارة ميدانية لمشاهدة الوحدة TM-12 والجولة في المشروع',
-      meta: 'اليوم - 5:00 م – سارة أحمد'
+  let loadVersion = 0
+  async function loadCustomer() {
+    const version = ++loadVersion
+    isLoading.value = true
+    loadError.value = null
+    try {
+      const response = await customersService.getProfile(route.params.id)
+      if (version !== loadVersion) return
+      const profile = mapCustomerProfile(response)
+      customer.value = profile.customer
+      activityLog.value = profile.activities
+    } catch (err) {
+      if (version !== loadVersion) return
+      loadError.value = err
+    } finally {
+      if (version === loadVersion) isLoading.value = false
     }
-  ])
+  }
+
+  watch(() => route.params.id, loadCustomer)
+  onMounted(loadCustomer)
 
   const filteredActivity = computed(() => {
-    if (activeActivityTab.value === 'timeline') return activityLog.value
-    return activityLog.value.filter(e => e.category === activeActivityTab.value)
+    return activityLog.value[activeActivityTab.value] ?? []
   })
-
-  function addActivity() {
-    const text = newActivityNote.value.trim()
-    if (!text) return
-    activityLog.value.unshift({
-      id: Date.now(),
-      category: 'notes',
-      title: 'ملاحظة جديدة',
-      tag: '',
-      tagClass: '',
-      time: 'الآن',
-      period: '',
-      date: 'اليوم',
-      note: text,
-      meta: `الموظف: ${customer.value.assignedAgent.name}`
-    })
-    newActivityNote.value = ''
-  }
 
   function statusClass(status) {
     const map = {

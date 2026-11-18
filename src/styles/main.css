@@ -64,6 +64,24 @@ body {
   min-height: 100vh;
 }
 
+button,
+[role='button'],
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+::file-selector-button {
+  cursor: pointer;
+}
+
+button:disabled,
+input[type='button']:disabled,
+input[type='submit']:disabled,
+input[type='reset']:disabled,
+[role='button'][aria-disabled='true'],
+button[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
 /* إخفاء شريط التمرير في كل الموقع مع إبقاء إمكانية التمرير شغالة */
 * {
   scrollbar-width: none;

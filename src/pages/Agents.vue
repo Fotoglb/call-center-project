@@ -1,33 +1,34 @@
 <template>
-  <div class="space-y-5">
+  <div class="call-history space-y-5" dir="rtl">
     <!-- Page Header -->
     <div class="md:flex md:space-y-0 space-y-3 items-start justify-between">
       <div>
         <h1 class="text-xl font-bold text-gray-900">مركز الاتصالات</h1>
         <p class="text-xs text-gray-400 mt-1">
-          نظرة عامة على جميع مكالمات العملاء وتصنيفها حسب الحالة
+          قائمة مكالمات العملاء المخصصة لك اليوم – مرتبة تلقائياً حسب الأولوية
         </p>
       </div>
       <div class="flex items-center gap-2">
         <button
           class="flex items-center gap-1.5 text-xs text-white bg-gray-900 rounded-lg px-3 py-2 hover:bg-gray-700 cursor-pointer transition-colors"
-          @click="resetToDefaultView"
+          @click="router.push({ name: 'Calls' })"
         >
           <ListChecks :size="14" />
           قائمة المكالمات
         </button>
         <button
           class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
-          @click="router.push({ name: 'Calls' })"
+          @click="router.push({ name: 'Customers' })"
         >
           <PhoneCall :size="14" />
-          سجل المكالمات
+          ملخص العملاء
         </button>
       </div>
     </div>
 
     <!-- Stats Row -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <div class="history-panel bg-white rounded-2xl p-6 space-y-6">
+    <div class="history-stats grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
       <button
         v-for="stat in stats"
         :key="stat.key"
@@ -48,7 +49,7 @@
     </div>
 
     <!-- Table Card -->
-    <div class="bg-gray-50 rounded-xl overflow-hidden">
+    <div class="history-table rounded-xl overflow-hidden">
       <!-- Toolbar: search + filters (rightmost in RTL) beside Excel/PDF export (leftmost) -->
       <div
         class="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 flex-wrap"
@@ -58,7 +59,7 @@
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="ابحث عن عميل، رقم هاتف، موظف..."
+              placeholder="ابحث في الصفحة عن عميل، رقم هاتف، موظف..."
               class="w-full h-9 ps-3 pe-8 bg-muted border border-accent/50 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
             />
             <Search
@@ -109,13 +110,17 @@
 
         <div class="flex items-center gap-2 shrink-0">
           <button
-            class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors"
+            class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isExportingExcel || !filteredCalls.length"
+            @click="handleExportExcel"
           >
             <FileSpreadsheet :size="14" />
             Excel
           </button>
           <button
-            class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors"
+            class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isExportingPdf || !filteredCalls.length"
+            @click="handleExportPdf"
           >
             <FileText :size="14" />
             PDF
@@ -124,9 +129,10 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-xs">
+        <table ref="tableElement" class="w-full text-xs">
           <thead class="bg-gray-100 border-b border-gray-200">
             <tr>
+              <th class="px-3"><input type="checkbox" aria-label="تحديد جميع مكالمات الصفحة" :checked="allSelected" @change="toggleAll($event.target.checked)" /></th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 اسم العميل
               </th>
@@ -143,6 +149,12 @@
                 التاريخ
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+                وقت الحديث
+              </th>
+              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+                مدة المكالمة
+              </th>
+              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 الحالة
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
@@ -151,21 +163,32 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
+            <tr v-if="isLoading">
+              <td colspan="10" class="text-center text-gray-400 py-8">...جارٍ التحميل</td>
+            </tr>
+            <tr v-else-if="loadError">
+              <td colspan="10" class="text-center py-8">
+                <p class="text-red-500 mb-2">تعذر تحميل بيانات المكالمات</p>
+                <button
+                  class="text-xs text-white bg-gray-900 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-gray-700 transition-colors"
+                  @click="loadCalls"
+                >
+                  إعادة المحاولة
+                </button>
+              </td>
+            </tr>
+            <template v-else>
             <tr
-              v-for="call in paginatedCalls"
+              v-for="call in filteredCalls"
               :key="call.id"
               class="hover:bg-gray-100 transition-colors"
             >
+              <td class="px-3"><input type="checkbox" v-model="selectedIds" :value="call.id" :aria-label="`تحديد ${call.name}`" /></td>
               <td class="px-4 py-3">
                 <div
                   class="flex items-center gap-2 cursor-pointer"
-                  @click="router.push({ name: 'CustomerProfile', params: { id: call.id } })"
+                  @click="call.leadId && router.push({ name: 'CustomerProfile', params: { id: call.leadId } })"
                 >
-                  <div
-                    class="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0"
-                  >
-                    {{ call.name.charAt(0) }}
-                  </div>
                   <span
                     class="font-medium text-gray-800 whitespace-nowrap hover:text-indigo-600 hover:underline transition-colors"
                     >{{ call.name }}</span
@@ -182,6 +205,8 @@
               <td class="px-4 py-3 text-gray-400 tabular-nums whitespace-nowrap">
                 {{ call.date }}
               </td>
+              <td class="px-4 py-3 tabular-nums text-gray-500" dir="ltr">{{ formatDuration(call.talkDurationSec) }}</td>
+              <td class="px-4 py-3 tabular-nums text-gray-500" dir="ltr">{{ formatDuration(call.durationSec) }}</td>
               <td class="px-4 py-3">
                 <span
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
@@ -195,9 +220,10 @@
               </td>
             </tr>
 
-            <tr v-if="paginatedCalls.length === 0">
-              <td colspan="7" class="text-center text-gray-400 py-8">لا توجد نتائج</td>
+            <tr v-if="filteredCalls.length === 0">
+              <td colspan="10" class="text-center text-gray-400 py-8">لا توجد نتائج</td>
             </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -206,7 +232,7 @@
       <div class="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-t border-gray-200">
         <p class="text-xs text-gray-400">
           عرض {{ filteredCalls.length === 0 ? 0 : startIndex + 1 }}-{{ endIndex }} من أصل
-          {{ filteredCalls.length }} مكالمة
+          {{ totalCalls }} مكالمة
         </p>
         <div class="flex items-center gap-1">
           <button
@@ -249,11 +275,12 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue'
+  import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
   import { useRouter } from 'vue-router'
   import {
     Search,
@@ -270,8 +297,12 @@
     CheckCircle2,
     PhoneCall
   } from '@lucide/vue'
+  import { callsService } from '@/services/calls.service'
+  import { downloadBlob } from '@/utils/downloadFile'
+  import { useNotification } from '@/composables/useNotification'
 
   const router = useRouter()
+  const notification = useNotification()
 
   const searchQuery = ref('')
   const typeFilter = ref('')
@@ -290,172 +321,28 @@
     currentPage.value = 1
   }
 
-  const callsList = [
-    {
-      id: 1,
-      name: 'عبد الله الخالدي',
-      phone: '0505551234',
-      agent: 'سارة أحمد',
-      type: 'وارد',
-      date: '10/6/2026',
-      status: 'مهتم',
-      note: 'تمت الموافقة على صفقة العميل'
-    },
-    {
-      id: 2,
-      name: 'نورا محمد',
-      phone: '0555561234',
-      agent: 'محمد علي',
-      type: 'صادر',
-      date: '14/6/2026',
-      status: 'عميل جديد',
-      note: 'تمت الموافقة على صفقة العميل'
-    },
-    {
-      id: 3,
-      name: 'فاطمة علي',
-      phone: '0555569876',
-      agent: 'هند الفضل',
-      type: 'صادر',
-      date: '16/6/2026',
-      status: 'زيارة مجدولة',
-      note: 'تمت الموافقة على صفقة العميل'
-    },
-    {
-      id: 4,
-      name: 'سالم سعيد',
-      phone: '0555564321',
-      agent: 'إبراهيم أحمد',
-      type: 'وارد',
-      date: '17/6/2026',
-      status: 'قيد المعالجة',
-      note: 'تمت الموافقة على صفقة العميل'
-    },
-    {
-      id: 5,
-      name: 'علي حسن',
-      phone: '0555565078',
-      agent: 'فاطمة حسن',
-      type: 'صادر',
-      date: '18/6/2026',
-      status: 'تم التحويل',
-      note: 'تمت الموافقة على صفقة العميل'
-    },
-    {
-      id: 6,
-      name: 'خالد المطيري',
-      phone: '0555565678',
-      agent: 'يوسف سالم',
-      type: 'صادر',
-      date: '18/6/2026',
-      status: 'إعادة الجدولة',
-      note: 'تعذر التواصل، سيُعاد الاتصال غداً'
-    },
-    {
-      id: 7,
-      name: 'رنا الغامدي',
-      phone: '0557654321',
-      agent: 'سارة أحمد',
-      type: 'وارد',
-      date: '19/6/2026',
-      status: 'مهتم',
-      note: 'طلبت جدولة زيارة ميدانية خلال الأسبوع'
-    },
-    {
-      id: 8,
-      name: 'فهد القحطاني',
-      phone: '0511223344',
-      agent: 'محمد علي',
-      type: 'صادر',
-      date: '20/6/2026',
-      status: 'غير مهتم',
-      note: 'الميزانية غير متوفرة حالياً'
-    },
-    {
-      id: 9,
-      name: 'منى الشمري',
-      phone: '0522334455',
-      agent: 'طارق محمد',
-      type: 'وارد',
-      date: '20/6/2026',
-      status: 'زيارة مجدولة',
-      note: 'تم تحديد موعد الزيارة الأربعاء القادم'
-    },
-    {
-      id: 10,
-      name: 'ياسر العتيبي',
-      phone: '0533445566',
-      agent: 'هند الفضل',
-      type: 'صادر',
-      date: '21/6/2026',
-      status: 'لا يرد',
-      note: 'حاولنا الاتصال 3 مرات دون رد'
-    },
-    {
-      id: 11,
-      name: 'لمياء الحربي',
-      phone: '0544556677',
-      agent: 'إبراهيم أحمد',
-      type: 'وارد',
-      date: '21/6/2026',
-      status: 'مهتم',
-      note: 'وافقت على استلام العرض عبر البريد الإلكتروني'
-    },
-    {
-      id: 12,
-      name: 'ماجد السبيعي',
-      phone: '0555667788',
-      agent: 'فاطمة حسن',
-      type: 'صادر',
-      date: '22/6/2026',
-      status: 'غير مهتم',
-      note: 'يفضل التعامل مع مزود آخر'
-    },
-    {
-      id: 13,
-      name: 'ريم الدوسري',
-      phone: '0566778899',
-      agent: 'يوسف سالم',
-      type: 'وارد',
-      date: '22/6/2026',
-      status: 'زيارة مجدولة',
-      note: 'مهتمة بمشروع سكني، تم جدولة زيارة'
-    },
-    {
-      id: 14,
-      name: 'بندر الحارثي',
-      phone: '0577889900',
-      agent: 'سارة أحمد',
-      type: 'صادر',
-      date: '23/6/2026',
-      status: 'إعادة الجدولة',
-      note: 'طلب التواصل بعد نهاية الشهر'
-    },
-    {
-      id: 15,
-      name: 'هيا العنزي',
-      phone: '0588990011',
-      agent: 'محمد علي',
-      type: 'وارد',
-      date: '23/6/2026',
-      status: 'مهتم',
-      note: 'أبدت اهتماماً وطلبت مزيداً من التفاصيل'
-    },
-    {
-      id: 16,
-      name: 'عمر الزهراني',
-      phone: '0599001122',
-      agent: 'طارق محمد',
-      type: 'صادر',
-      date: '24/6/2026',
-      status: 'لا يرد',
-      note: 'الرقم غير متاح حالياً'
-    }
-  ]
+  const isLoading = ref(true)
+  const loadError = ref(null)
+  const paginatedCalls = ref([])
+  const totalCalls = ref(0)
+  const agentsList = ref([])
+  const rawStats = ref([])
+  const selectedIds = ref([])
+  const tableElement = ref(null)
+  const allSelected = computed(() => filteredCalls.value.length > 0 && filteredCalls.value.every(call => selectedIds.value.includes(call.id)))
+  function toggleAll(checked) { selectedIds.value = checked ? filteredCalls.value.map(call => call.id) : [] }
+  function formatDuration(seconds) {
+    if (seconds == null || seconds === '' || !Number.isFinite(Number(seconds))) return '—'
+    const value = Math.max(0, Math.floor(Number(seconds)))
+    return `${Math.floor(value / 3600)}:${String(Math.floor(value / 60) % 60).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`
+  }
 
-  const agentsList = [...new Set(callsList.map(c => c.agent))]
-
-  const statConfig = {
+  /*
+   * أيقونات وألوان كل حالة عبارة عن إعدادات عرض ثابتة في الواجهة،
+   * أما القيم (label/value) فتأتي من الـ API عبر rawStats.
+   */
+  const statIconConfig = {
+    '': { icon: PhoneCall, iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
     'زيارة مجدولة': { icon: Calendar, iconBg: 'bg-amber-50', iconColor: 'text-amber-500' },
     'إعادة الجدولة': { icon: RefreshCw, iconBg: 'bg-indigo-50', iconColor: 'text-indigo-500' },
     'لا يرد': { icon: PhoneOff, iconBg: 'bg-gray-100', iconColor: 'text-gray-500' },
@@ -463,72 +350,121 @@
     مهتم: { icon: CheckCircle2, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' }
   }
 
-  /*
-   * القيم زي فيجما بالظبط، والترتيب معكوس عشان أول عنصر في الـ DOM
-   * يظهر أقصى الشمال مع RTL (بيرجع يمين).
-   */
-  const statValues = {
-    'زيارة مجدولة': '40',
-    'إعادة الجدولة': '9',
-    'لا يرد': '40',
-    'غير مهتم': '12',
-    مهتم: '120'
-  }
-
-  const stats = computed(() => {
-    const entries = [
-      {
-        key: '',
-        label: 'إجمالي المكالمات',
-        value: '250',
-        icon: PhoneCall,
-        iconBg: 'bg-purple-50',
-        iconColor: 'text-purple-500'
-      },
-      ...Object.keys(statConfig)
-        .reverse()
-        .map(key => ({
-          key,
-          label: key,
-          value: statValues[key],
-          ...statConfig[key]
-        }))
-    ]
-    return entries
-  })
+  const stats = computed(() =>
+    (rawStats.value.length ? rawStats.value : [
+      { key: '', label: 'إجمالي المكالمات', value: '—' },
+      { key: 'مهتم', label: 'مهتم', value: '—' },
+      { key: 'غير مهتم', label: 'غير مهتم', value: '—' },
+      { key: 'لا يرد', label: 'لا يرد', value: '—' },
+      { key: 'إعادة الجدولة', label: 'إعادة الجدولة', value: '—' },
+      { key: 'زيارة مجدولة', label: 'زيارة مجدولة', value: '—' }
+    ]).map(s => ({
+      ...s,
+      ...(statIconConfig[s.key] ?? { icon: PhoneCall, iconBg: 'bg-gray-100', iconColor: 'text-gray-500' })
+    }))
+  )
 
   function toggleStatusFilter(key) {
     statusFilter.value = statusFilter.value === key ? '' : key
     currentPage.value = 1
   }
 
-  const filteredCalls = computed(() => {
-    return callsList.filter(c => {
-      if (statusFilter.value && c.status !== statusFilter.value) return false
-      if (typeFilter.value && c.type !== typeFilter.value) return false
-      if (agentFilter.value && c.agent !== agentFilter.value) return false
-      const q = searchQuery.value.trim().toLowerCase()
-      if (
-        q &&
-        !c.name.toLowerCase().includes(q) &&
-        !c.phone.includes(q) &&
-        !c.agent.toLowerCase().includes(q)
-      ) {
-        return false
-      }
-      return true
-    })
+  const filteredCalls = computed(() => paginatedCalls.value.filter(call => {
+    const query = searchQuery.value.trim().toLocaleLowerCase()
+    return (!query || [call.name, call.phone, call.agent].some(value => String(value ?? '').toLocaleLowerCase().includes(query)))
+      && (!typeFilter.value || call.type === typeFilter.value)
+      && (!agentFilter.value || call.agent === agentFilter.value)
+      && (!statusFilter.value || call.status === statusFilter.value)
+  }))
+
+  const totalPages = computed(() => Math.max(1, Math.ceil(totalCalls.value / pageSize.value)))
+  const startIndex = computed(() => (currentPage.value - 1) * pageSize.value)
+  const endIndex = computed(() => Math.min(startIndex.value + pageSize.value, totalCalls.value))
+
+  function queryParams() {
+    return {
+      search: searchQuery.value.trim() || undefined,
+      type: typeFilter.value || undefined,
+      agent: agentFilter.value || undefined,
+      status: statusFilter.value || undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value
+    }
+  }
+
+  let loadVersion = 0
+  async function loadCalls() {
+    const version = ++loadVersion
+    isLoading.value = true
+    loadError.value = null
+    try {
+      const { items, total, stats: statsData } = await callsService.getList({ page: currentPage.value, limit: pageSize.value })
+      if (version !== loadVersion) return
+      paginatedCalls.value = items
+      totalCalls.value = total
+      rawStats.value = Array.isArray(statsData) ? statsData : []
+      agentsList.value = [...new Set(items.map(call => call.agent).filter(Boolean))]
+      selectedIds.value = []
+    } catch (err) {
+      if (version !== loadVersion) return
+      loadError.value = err
+    } finally {
+      if (version === loadVersion) isLoading.value = false
+    }
+  }
+
+  watch([currentPage, pageSize], loadCalls)
+  onUnmounted(() => { ++loadVersion })
+  watch(pageSize, () => {
+    currentPage.value = 1
   })
 
-  const totalPages = computed(() =>
-    Math.max(1, Math.ceil(filteredCalls.value.length / pageSize.value))
-  )
-  const startIndex = computed(() => (currentPage.value - 1) * pageSize.value)
-  const endIndex = computed(() =>
-    Math.min(startIndex.value + pageSize.value, filteredCalls.value.length)
-  )
+  onMounted(loadCalls)
 
-  const paginatedCalls = computed(() => filteredCalls.value.slice(startIndex.value, endIndex.value))
+  const isExportingExcel = ref(false)
+  const isExportingPdf = ref(false)
+
+  async function handleExportExcel() {
+    if (isExportingExcel.value) return
+    isExportingExcel.value = true
+    try {
+      const { default: ExcelJS } = await import('exceljs')
+      const workbook = new ExcelJS.Workbook()
+      const sheet = workbook.addWorksheet('المكالمات', { views: [{ rightToLeft: true }] })
+      sheet.addRow(['اسم العميل', 'رقم الهاتف', 'الموظف المسؤول', 'النوع', 'التاريخ', 'وقت الحديث', 'مدة المكالمة', 'الحالة', 'ملاحظات'])
+      const rows = selectedIds.value.length ? filteredCalls.value.filter(call => selectedIds.value.includes(call.id)) : filteredCalls.value
+      rows.forEach(call => sheet.addRow([call.name, call.phone, call.agent, call.type, call.date, formatDuration(call.talkDurationSec), formatDuration(call.durationSec), call.status, call.note]))
+      sheet.columns.forEach(column => { column.width = 22 })
+      downloadBlob(new Blob([await workbook.xlsx.writeBuffer()]), 'سجل_المكالمات.xlsx')
+    } catch (err) {
+      notification.error(err?.message || 'تعذر تصدير الملف')
+    } finally {
+      isExportingExcel.value = false
+    }
+  }
+
+  async function handleExportPdf() {
+    if (isExportingPdf.value) return
+    isExportingPdf.value = true
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas-pro'), import('jspdf')])
+      const canvas = await html2canvas(tableElement.value, { scale: 2, backgroundColor: '#ffffff' })
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+      const width = 277
+      const height = canvas.height * width / canvas.width
+      let offset = 0
+      while (offset < height) {
+        if (offset) pdf.addPage()
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10 - offset, width, height)
+        offset += 190
+      }
+      pdf.save('سجل_المكالمات.pdf')
+    } catch (err) {
+      notification.error(err?.message || 'تعذر تصدير الملف')
+    } finally {
+      isExportingPdf.value = false
+    }
+  }
 
   function typeClass(type) {
     return type === 'وارد' ? 'text-emerald-600' : 'text-indigo-600'
@@ -549,3 +485,23 @@
     return map[status] ?? 'bg-gray-100 text-gray-500'
   }
 </script>
+
+<style scoped>
+.call-history > div:first-child h1 { font-size: 18px; }
+.call-history > div:first-child button { min-height: 40px; border: 0; border-radius: 8px; padding-inline: 24px; }
+.call-history > div:first-child button:first-child { background: #4097f4; color: white; }
+.call-history > div:first-child button:last-child { background: #edf6ff; color: #4097f4; }
+.history-stats > button { background: white; border: 1px solid #dbeafe; border-radius: 14px; padding: 22px; min-height: 180px; }
+.history-stats > button > div { width: 48px; height: 48px; margin-bottom: 20px; }
+.history-stats > button > p:first-of-type { font-size: 24px; }
+.history-stats > button > p:last-child { font-size: 16px; color: #222; }
+.history-table > div:first-child { padding: 0 0 20px; border: 0; }
+.history-table input[type='text'] { background: white; min-width: 240px; }
+.history-table > div:first-child > div:last-child button { border: 1px solid #00a478; color: #00a478; min-width: 80px; }
+.history-table > div:first-child > div:last-child button:first-child { background: #009c76; color: white; }
+.history-table thead { background: white; }
+.history-table th, .history-table td { font-size: 12px; padding: 12px 10px; }
+.history-table td span { border-radius: 4px; }
+.history-table input[type='checkbox'] { accent-color: #4097f4; cursor: pointer; }
+@media (max-width: 640px) { .history-panel { padding: 16px; } .history-stats > button { padding: 14px; min-height: 150px; } }
+</style>

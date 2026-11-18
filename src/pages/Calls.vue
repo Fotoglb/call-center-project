@@ -18,6 +18,7 @@
         </button>
         <button
           class="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2 cursor-pointer transition-colors"
+          @click="router.push({ name: 'CallHistory' })"
         >
           <Plus :size="14" />
           قائمة المكالمات
@@ -53,7 +54,7 @@
         <!-- Filter Tabs -->
         <div class="flex items-center gap-1 px-4 py-2 shrink-0 overflow-x-auto">
           <button
-            v-for="f in filterTabs"
+            v-for="f in permittedFilterTabs"
             :key="f.key"
             class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
             :class="
@@ -62,6 +63,7 @@
                 : 'text-gray-500 hover:bg-gray-100'
             "
             @click="activeFilter = f.key"
+            :disabled="isSaving"
           >
             {{ f.label }}
           </button>
@@ -69,6 +71,17 @@
 
         <!-- Customer List -->
         <div class="flex-1 overflow-y-auto">
+          <p v-if="isLoading" class="text-center text-xs text-gray-400 py-8">...جارٍ التحميل</p>
+          <div v-else-if="loadError" class="flex flex-col items-center gap-2 py-8">
+            <p role="alert" class="text-center text-xs text-red-500">{{ loadError.message || 'تعذر تحميل قائمة المكالمات' }}</p>
+            <button
+              class="text-xs text-white bg-gray-900 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-gray-700 transition-colors"
+              @click="loadCalls"
+            >
+              إعادة المحاولة
+            </button>
+          </div>
+          <template v-else>
           <button
             v-for="(call, idx) in filteredCalls"
             :key="call.id"
@@ -131,6 +144,7 @@
           <p v-if="filteredCalls.length === 0" class="text-center text-xs text-gray-400 py-8">
             لا توجد نتائج
           </p>
+          </template>
         </div>
       </div>
 
@@ -195,9 +209,10 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-2 shrink-0">
                   <button
+                    v-if="permissions.can('customerProfile.view') && resultLeadId"
                     class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors"
                     @click="
-                      router.push({ name: 'CustomerProfile', params: { id: selectedCall.id } })
+                      router.push({ name: 'CustomerProfile', params: { id: resultLeadId } })
                     "
                   >
                     <UserRound :size="13" />
@@ -231,7 +246,13 @@
                 <!-- Contact History Tab -->
                 <div v-if="activeTab === 'history'" class="space-y-3">
                   <p class="text-xs font-semibold text-gray-500 mb-3">سجل المحادثات</p>
-                  <div v-for="entry in selectedCall.history" :key="entry.id" class="flex gap-3">
+                  <p v-if="historyLoading" class="text-sm text-gray-500">جارٍ تحميل سجل المكالمات...</p>
+                  <div v-else-if="historyError" role="alert" class="text-sm text-red-500">
+                    <p>{{ historyError }}</p>
+                    <button type="button" class="mt-2 text-blue underline" @click="loadHistory">إعادة المحاولة</button>
+                  </div>
+                  <p v-else-if="!historyEntries.length" class="text-sm text-gray-500">لا توجد مكالمات في هذه الصفحة</p>
+                  <div v-for="entry in historyEntries" :key="entry.id" class="flex gap-3">
                     <!-- Icon -->
                     <div
                       class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
@@ -272,6 +293,12 @@
                   </div>
                 </div>
 
+                <div v-if="activeTab === 'history'" class="flex items-center justify-between gap-3 mt-4">
+                  <button type="button" :disabled="historyLoading || historyPage === 1" class="text-blue disabled:opacity-40" @click="historyPage--">السابق</button>
+                  <span class="text-xs text-gray-500">الصفحة {{ historyPage }}</span>
+                  <button type="button" :disabled="historyLoading || !!historyError || historyEntries.length < historyLimit" class="text-blue disabled:opacity-40" @click="historyPage++">التالي</button>
+                </div>
+
                 <!-- Notes Tab -->
                 <div v-if="activeTab === 'notes'" class="space-y-3">
                   <textarea
@@ -281,9 +308,12 @@
                     class="w-full ps-4 pe-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors resize-none"
                   ></textarea>
                   <button
-                    class="text-xs text-white bg-gray-900 rounded-lg px-4 py-2 hover:bg-gray-700 cursor-pointer transition-colors"
+                    class="text-xs text-white bg-gray-900 rounded-lg px-4 py-2 hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="!noteText.trim() || isSavingNote"
+                    v-if="permissions.can('callCenter.logCall')"
+                    @click="saveNote"
                   >
-                    حفظ الملاحظة
+                    {{ isSavingNote ? 'جارٍ الحفظ...' : 'حفظ الملاحظة' }}
                   </button>
                 </div>
 
@@ -307,7 +337,6 @@
                         <span class="absolute inset-y-0 inset-s-3 flex items-center text-gray-400 pointer-events-none">
                           <Phone :size="16" />
                         </span>
-                        <span class="absolute inset-y-0 inset-e-3 flex items-center text-xs text-gray-400 pointer-events-none">+966</span>
                       </div>
                     </div>
 
@@ -365,21 +394,39 @@
             </div>
           </div>
 
+            <details class="mt-4 text-xs text-gray-500">
+              <summary class="cursor-pointer">بيانات تسجيل المكالمة</summary>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <div class="space-y-1.5">
+                <Label for="resultLeadId">معرّف العميل (Lead ID)</Label>
+                <Input id="resultLeadId" v-model="resultLeadId" :disabled="isSaving" dir="ltr" placeholder="معرّف العميل من النظام" />
+              </div>
+              <div class="space-y-1.5">
+                <Label for="durationSec">مدة المكالمة الصادرة بالثواني</Label>
+                <Input id="durationSec" v-model="durationSec" :disabled="isSaving" type="number" min="0" step="1" />
+              </div>
+            </div>
+            </details>
+
           <!-- Call Result Card -->
-          <div class="bg-gray-50 rounded-xl p-5 shrink-0">
+          <div class="call-result-card bg-white rounded-2xl p-6 shrink-0" dir="rtl">
             <div class="flex items-center justify-between mb-3">
               <p class="text-xs font-semibold text-gray-700">حالة العميل</p>
-              <p class="text-xs text-gray-400">اختر نتيجة واحدة</p>
+              <span class="text-xs text-gray-400">اختر نتيجة واحدة</span>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
               <button
                 v-for="outcome in callOutcomes"
                 :key="outcome.key"
+                type="button"
+                :disabled="isSaving"
+                :aria-pressed="selectedOutcome === outcome.key"
+                :data-outcome="outcome.key"
                 class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border text-xs font-medium transition-colors cursor-pointer"
                 :class="
                   selectedOutcome === outcome.key
                     ? outcome.activeClass
-                    : 'border-gray-200 text-gray-600 hover:bg-white'
+                    : 'border-transparent'
                 "
                 @click="selectedOutcome = outcome.key"
               >
@@ -387,7 +434,7 @@
                   class="w-8 h-8 rounded-lg flex items-center justify-center"
                   :class="outcome.iconBg"
                 >
-                  <component :is="outcome.icon" :size="16" :class="outcome.iconColor" />
+                  <component :is="outcome.icon" :size="22" :class="outcome.iconColor" />
                 </div>
                 <span class="font-semibold">{{ outcome.label }}</span>
                 <span class="text-[10px] text-gray-400 font-normal leading-tight text-center">{{
@@ -396,13 +443,27 @@
               </button>
             </div>
 
+
+              <div v-if="selectedOutcome === 'reschedule'" class="space-y-3 mt-6">
+                <p class="text-sm">موعد الاتصال القادم<span class="text-red-500">*</span></p>
+                <div class="space-y-1.5">
+                  <Label for="nextCallAt">التاريخ<span class="text-red-500">*</span></Label>
+                  <Input id="nextCallAt" v-model="nextCallAt" :disabled="isSaving" type="datetime-local" />
+                </div>
+                <div class="space-y-1.5">
+                  <Label for="rescheduleReason">سبب إعادة الجدولة</Label>
+                  <textarea id="rescheduleReason" v-model="rescheduleReason" :disabled="isSaving" rows="2" class="w-full" placeholder="اكتب ملاحظات العميل هنا ..."></textarea>
+                </div>
+            </div>
+
             <div class="space-y-1.5 mt-4">
               <p class="text-xs text-gray-500 font-medium">
                 نتيجة المكالمة <span class="text-red-400">*</span>
               </p>
               <textarea
                 v-model="resultNote"
-                rows="3"
+                :disabled="isSaving"
+                rows="5"
                 placeholder="اكتب ملاحظات العميل هنا ..."
                 class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors resize-none"
               ></textarea>
@@ -410,11 +471,12 @@
 
             <button
               type="button"
-              class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2.5 mt-3 cursor-pointer transition-colors hover:bg-blue-dark disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!selectedOutcome || !resultNote.trim()"
+              class="result-save flex items-center justify-center gap-2 text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2.5 mt-3 cursor-pointer transition-colors hover:bg-blue-dark disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!selectedOutcome || !resultNote.trim() || isSaving"
+              v-if="permissions.can('callCenter.logCall')"
               @click="saveCallResult"
             >
-              <span>حفظ نتيجة المكالمة ثم الانتقال للعميل التالي</span>
+              <span>{{ isSaving ? 'جارٍ الحفظ...' : 'حفظ نتيجة المكالمة ثم الانتقال للعميل التالي' }}</span>
               <ArrowLeft :size="14" />
             </button>
           </div>
@@ -425,7 +487,9 @@
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue'
+  import { useAuthStore } from '@/stores/auth.store'
+  const permissions = useAuthStore()
+  import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
   import { useRouter } from 'vue-router'
   import {
     Search,
@@ -436,6 +500,8 @@
     MessageSquare,
     UserRound,
     CheckCircle2,
+    Star,
+    ThumbsDown,
     XCircle,
     Clock,
     Calendar,
@@ -447,8 +513,11 @@
   } from '@lucide/vue'
   import Input from '@/components/ui/Input.vue'
   import Label from '@/components/ui/Label.vue'
+  import { callsService } from '@/services/calls.service'
+  import { useNotification } from '@/composables/useNotification'
 
   const router = useRouter()
+  const notification = useNotification()
 
   const todayLabel = new Intl.DateTimeFormat('ar', {
     calendar: 'gregory',
@@ -461,12 +530,26 @@
     .replace('، ', ' ')
 
   const searchQuery = ref('')
-  const selectedCallId = ref(1)
+  const selectedCallId = ref(null)
   const activeTab = ref('data')
   const selectedOutcome = ref('')
   const resultNote = ref('')
+  const resultLeadId = ref('')
+  const durationSec = ref('')
+  const nextCallAt = ref('')
+  const rescheduleReason = ref('')
   const noteText = ref('')
-  const activeFilter = ref('all')
+  const activeFilter = ref(permissions.can('callCenter.queue') ? 'all' : 'إعادة جدولة')
+  const isLoading = ref(true)
+  const loadError = ref(null)
+  const isSaving = ref(false)
+  const isSavingNote = ref(false)
+  const historyEntries = ref([])
+  const historyLoading = ref(false)
+  const historyError = ref('')
+  const historyPage = ref(1)
+  const historyLimit = 20
+  let historyVersion = 0
 
   const filterTabs = [
     { key: 'all', label: 'الكل' },
@@ -481,8 +564,9 @@
     { key: 'notes', label: 'ملاحظات العميل' },
     { key: 'data', label: 'بيانات العميل' }
   ]
+  const permittedFilterTabs = computed(() => filterTabs.filter(tab => permissions.can(tab.key === 'إعادة جدولة' ? 'callCenter.rescheduleList' : 'callCenter.queue')))
 
-  const projectTypes = ['B2B', 'B2C']
+  const projectTypes = computed(() => [...new Set(callsList.value.map(call => call.projectType).filter(Boolean))])
 
   /*
    * الترتيب معكوس عشان أول عنصر في الـ DOM يظهر أقصى اليمين مع RTL
@@ -493,7 +577,7 @@
       key: 'interested',
       label: 'مهتم',
       sub: 'أبدى اهتمام بالشراء',
-      icon: CheckCircle2,
+      icon: Star,
       iconBg: 'bg-emerald-50',
       iconColor: 'text-emerald-600',
       activeClass: 'border-emerald-400 bg-emerald-50 text-emerald-600'
@@ -502,7 +586,7 @@
       key: 'not_interested',
       label: 'غير مهتم',
       sub: 'لا رغبة في الشراء',
-      icon: XCircle,
+      icon: ThumbsDown,
       iconBg: 'bg-red-50',
       iconColor: 'text-red-500',
       activeClass: 'border-red-400 bg-red-50 text-red-600'
@@ -527,145 +611,95 @@
     }
   ]
 
-  const callsList = [
-    {
-      id: 1,
-      name: 'عبد الله الخالدي',
-      phone: '0505551234',
-      status: 'في الانتظار',
-      priority: 'عالي الأهمية',
-      countdown: '5 د',
-      isNew: true,
-      tags: ['سكني', 'إعلانات رقمية'],
-      lastContact: 'أمس 13:30م',
-      lastResult: 'مهتم',
-      workType: 'تجاري، عقاري',
-      source: 'إعلانات رقمية',
-      createdAt: '6/6/2026',
-      projectType: 'B2B',
-      callAttempts: 3,
-      history: [
-        {
-          id: 1,
-          type: 'مكالمة صادر',
-          date: 'أمس 13:30م',
-          duration: '15:12 د',
-          result: 'مهتم',
-          note: 'تم التواصل مع العميل وأبدى اهتماماً بالمنتج، طلب إرسال عرض تفصيلي عبر البريد الإلكتروني.'
-        },
-        {
-          id: 2,
-          type: 'رسالة صادر',
-          date: '4/6/2026 10:00ص',
-          duration: '—',
-          result: 'تم الإرسال',
-          note: 'تم إرسال الكتالوج الإلكتروني الكامل وقائمة الأسعار عبر البريد الإلكتروني.'
-        },
-        {
-          id: 3,
-          type: 'مكالمة وارد',
-          date: '16/6/2026 1:00م',
-          duration: '0 د',
-          result: 'لا يرد',
-          note: 'لم يتم الرد على المكالمة، تم ترك رسالة صوتية للعميل للتواصل.'
-        },
-        {
-          id: 4,
-          type: 'مكالمة صادر',
-          date: '20/6/2026 2:30م',
-          duration: '8:45 د',
-          result: 'متابعة مجدولة',
-          note: 'تواصل العميل وطلب تأجيل اتخاذ القرار لأسبوع، تم جدولة متابعة.'
-        }
-      ]
-    },
-    {
-      id: 2,
-      name: 'نورا محمد',
-      phone: '0555561234',
-      status: 'في الانتظار',
-      priority: 'عالي الأهمية',
-      countdown: '5 د',
-      tags: ['B2C'],
-      lastContact: 'الأسبوع الماضي',
-      lastResult: 'إعادة جدولة',
-      history: []
-    },
-    {
-      id: 3,
-      name: 'فاطمة علي',
-      phone: '0555569876',
-      status: 'مؤجل',
-      priority: 'متوسط الأهمية',
-      countdown: '15 د',
-      tags: ['سكني'],
-      lastContact: 'أمس',
-      lastResult: 'مهتم',
-      history: []
-    },
-    {
-      id: 4,
-      name: 'سالم سعيد',
-      phone: '0555564321',
-      status: 'في الانتظار',
-      priority: 'عالي الأهمية',
-      countdown: '20 د',
-      tags: ['B2B'],
-      lastContact: '3 أيام',
-      lastResult: 'غير مهتم',
-      history: []
-    },
-    {
-      id: 5,
-      name: 'علي حسن',
-      phone: '0555565078',
-      status: 'لا يرد',
-      priority: 'منخفض الأهمية',
-      countdown: '30 د',
-      tags: ['تجاري'],
-      lastContact: 'اليوم',
-      lastResult: 'لا يرد',
-      history: []
-    },
-    {
-      id: 6,
-      name: 'خالد المطيري',
-      phone: '0555565678',
-      status: 'مؤجل',
-      priority: 'متوسط الأهمية',
-      countdown: '45 د',
-      tags: ['سكني'],
-      lastContact: 'أمس',
-      lastResult: 'إعادة جدولة',
-      history: []
-    },
-    {
-      id: 7,
-      name: 'رنا الغامدي',
-      phone: '0557654321',
-      status: 'في الانتظار',
-      priority: 'عالي الأهمية',
-      countdown: '55 د',
-      tags: ['B2C'],
-      lastContact: 'منذ يومين',
-      lastResult: 'مهتم',
-      history: []
+  const callsList = ref([])
+  const isRescheduleList = computed(() => activeFilter.value === 'إعادة جدولة')
+  let loadVersion = 0
+
+  async function loadCalls() {
+    const requestVersion = ++loadVersion
+    isLoading.value = true
+    loadError.value = null
+    callsList.value = []
+    selectedCallId.value = null
+    selectedOutcome.value = ''
+    resultNote.value = ''
+    noteText.value = ''
+    try {
+      const queue = isRescheduleList.value
+        ? await callsService.getRescheduled()
+        : await callsService.getQueue()
+      if (requestVersion !== loadVersion) return
+      if (!Array.isArray(queue)) {
+        throw new Error('تعذّر قراءة استجابة قائمة المكالمات. يلزم تأكيد تنسيق البيانات من توثيق الخدمة.')
+      }
+      callsList.value = queue
+      if (!selectedCallId.value && callsList.value.length) {
+        selectedCallId.value = callsList.value[0].id
+      }
+    } catch (err) {
+      if (requestVersion !== loadVersion) return
+      callsList.value = []
+      selectedCallId.value = null
+      loadError.value = err
+    } finally {
+      if (requestVersion === loadVersion) isLoading.value = false
     }
-  ]
+  }
+
+  onMounted(loadCalls)
+  watch(isRescheduleList, loadCalls, { flush: 'sync' })
+  onUnmounted(() => { loadVersion++; historyVersion++ })
 
   const filteredCalls = computed(() => {
-    let calls = callsList
-    if (activeFilter.value !== 'all') {
-      calls = calls.filter(c => c.lastResult === activeFilter.value)
-    }
-    const q = searchQuery.value.trim().toLowerCase()
-    if (q) {
-      calls = calls.filter(c => c.name.includes(q) || c.phone.includes(q))
-    }
-    return calls
+    const query = searchQuery.value.trim().toLocaleLowerCase()
+    return callsList.value.filter(call => {
+      const matchesSearch = !query || [call.name, call.phone, call.agent]
+        .some(value => String(value ?? '').toLocaleLowerCase().includes(query))
+      const matchesOutcome = activeFilter.value === 'all' || isRescheduleList.value || call.lastResult === activeFilter.value
+      return matchesSearch && matchesOutcome
+    })
   })
 
-  const selectedCall = computed(() => callsList.find(c => c.id === selectedCallId.value) ?? null)
+  const selectedCall = computed(() => callsList.value.find(c => c.id === selectedCallId.value) ?? null)
+  watch(selectedCall, call => {
+    resultLeadId.value = typeof call?.leadId === 'string' ? call.leadId : ''
+    durationSec.value = ''
+    nextCallAt.value = ''
+    rescheduleReason.value = ''
+  })
+
+  async function loadHistory() {
+    const version = ++historyVersion
+    historyEntries.value = []
+    historyError.value = ''
+    historyLoading.value = false
+    if (activeTab.value !== 'history' || !selectedCall.value) return
+    if (!resultLeadId.value.trim()) {
+      historyError.value = 'أدخل معرّف العميل في حقل Lead ID لعرض سجل مكالماته'
+      return
+    }
+    historyLoading.value = true
+    try {
+      const response = await callsService.getCustomerHistory({ leadId: resultLeadId.value, page: historyPage.value, limit: historyLimit })
+      if (version !== historyVersion) return
+      // Do not guess an undocumented pagination envelope or silently show an empty list.
+      const entries = Array.isArray(response) ? response : response?.data
+      if (!Array.isArray(entries)) {
+        throw new Error('تم استلام الرد، لكن يلزم تأكيد تنسيق استجابة سجل المكالمات لعرض بياناته')
+      }
+      historyEntries.value = entries
+    } catch (error) {
+      if (version === historyVersion) historyError.value = error.message || 'تعذّر تحميل سجل المكالمات'
+    } finally {
+      if (version === historyVersion) historyLoading.value = false
+    }
+  }
+
+  watch([selectedCallId, resultLeadId, activeTab], () => {
+    if (historyPage.value !== 1) historyPage.value = 1
+    else loadHistory()
+  })
+  watch(historyPage, loadHistory)
 
   const callAttemptsText = computed({
     get: () => (selectedCall.value?.callAttempts ? String(selectedCall.value.callAttempts) : ''),
@@ -688,34 +722,66 @@
   })
 
   function selectCall(call) {
+    if (isSaving.value) return
     selectedCallId.value = call.id
     selectedOutcome.value = ''
     resultNote.value = ''
+    noteText.value = ''
     activeTab.value = 'data'
   }
 
-  function saveCallResult() {
-    if (!selectedOutcome.value || !resultNote.value.trim() || !selectedCall.value) return
+  async function saveNote() {
+    if (!permissions.can('callCenter.logCall')) return
+    if (!noteText.value.trim() || !selectedCall.value || isSavingNote.value) return
+    isSavingNote.value = true
+    try {
+      await callsService.addNote(selectedCall.value.id, noteText.value.trim())
+      notification.success('تم حفظ الملاحظة')
+      noteText.value = ''
+    } catch (err) {
+      notification.error(err?.message || 'تعذر حفظ الملاحظة')
+    } finally {
+      isSavingNote.value = false
+    }
+  }
 
-    const outcome = callOutcomes.find(o => o.key === selectedOutcome.value)
-    selectedCall.value.history.unshift({
-      id: Date.now(),
-      type: 'مكالمة صادر',
-      date: 'الآن',
-      duration: '—',
-      result: outcome.label,
-      note: resultNote.value.trim()
-    })
-    selectedCall.value.lastResult = outcome.label
+  async function saveCallResult() {
+    if (!permissions.can('callCenter.logCall')) return
+    if (!selectedOutcome.value || !resultNote.value.trim() || !selectedCall.value || isSaving.value) return
+    const seconds = Number(durationSec.value)
+    if (!resultLeadId.value.trim() || durationSec.value === '' || !Number.isInteger(seconds) || seconds < 0) {
+      notification.error('أدخل معرّف العميل ومدة صحيحة للمكالمة بالثواني')
+      return
+    }
+    const payload = {
+      leadId: resultLeadId.value.trim(),
+      direction: 'outbound',
+      outcome: selectedOutcome.value,
+      resultNotes: resultNote.value.trim(),
+      durationSec: seconds,
+    }
+    if (selectedOutcome.value === 'reschedule') {
+      const nextDate = new Date(nextCallAt.value)
+      if (!nextCallAt.value || !Number.isFinite(nextDate.getTime()) || nextDate.getTime() <= Date.now() || !rescheduleReason.value.trim()) {
+        notification.error('أدخل موعدًا قادمًا صحيحًا وسبب إعادة الجدولة')
+        return
+      }
+      payload.nextCallAt = nextDate.toISOString()
+      payload.rescheduleReason = rescheduleReason.value.trim()
+    }
 
-    const idx = filteredCalls.value.findIndex(c => c.id === selectedCallId.value)
-    const nextCall = filteredCalls.value[idx + 1]
-
-    if (nextCall) {
-      selectCall(nextCall)
-    } else {
-      selectedOutcome.value = ''
-      resultNote.value = ''
+    isSaving.value = true
+    try {
+      const currentIndex = filteredCalls.value.findIndex(call => call.id === selectedCallId.value)
+      const nextId = filteredCalls.value[currentIndex + 1]?.id
+      await callsService.saveOutcome(payload)
+      notification.success('تم حفظ نتيجة المكالمة')
+      await loadCalls()
+      if (nextId && callsList.value.some(call => call.id === nextId)) selectedCallId.value = nextId
+    } catch (err) {
+      notification.error(err?.message || 'تعذر حفظ نتيجة المكالمة')
+    } finally {
+      isSaving.value = false
     }
   }
 
@@ -774,3 +840,24 @@
     return map[result] ?? 'bg-gray-100 text-gray-500'
   }
 </script>
+
+<style scoped>
+.call-result-card { padding: 24px; border-radius: 16px; }
+.call-result-card [data-outcome] { min-height: 132px; justify-content: center; gap: 8px; border-radius: 16px; font-size: 14px; }
+.call-result-card [data-outcome] > span:first-of-type { font-weight: 400; }
+.call-result-card [data-outcome] > span:last-child { font-size: 12px; }
+.call-result-card [data-outcome='interested'] { background: #ecfdf5; color: #00a779; }
+.call-result-card [data-outcome='not_interested'] { background: #fff0ee; color: #dc2626; }
+.call-result-card [data-outcome='no_answer'] { background: #f3f4f8; color: #4b5563; }
+.call-result-card [data-outcome='reschedule'] { background: #f6f2ff; color: #9254ff; }
+.call-result-card [data-outcome][aria-pressed='true'] { border-color: currentColor; }
+.call-result-card [data-outcome] > div { background: transparent; }
+.call-result-card :deep(label), .call-result-card > div > p { font-size: 14px; font-weight: 400; color: #222; }
+.call-result-card :deep(input) { min-height: 52px; border: 1px solid #e7e7e7; background: white; border-radius: 10px; }
+.call-result-card textarea { border: 1px solid #e7e7e7; background: white; border-radius: 10px; padding: 14px 18px; font-size: 12px; resize: vertical; }
+.call-result-card textarea::placeholder { color: #a3a3a3; }
+.call-result-card #rescheduleReason { min-height: 72px; }
+.call-result-card textarea[rows='5'] { min-height: 144px; }
+.result-save { width: min(100%, 402px); min-height: 48px; border-radius: 9px; }
+@media (max-width: 640px) { .call-result-card { padding: 16px; } .result-save { width: 100%; } }
+</style>

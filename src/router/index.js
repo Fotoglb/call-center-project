@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
 
 const routes = [
   {
     path: '/',
     component: () => import('@/layouts/DefaultLayout.vue'),
+    meta: { requiresAuth: true },
     children: [
       {
         path: '',
@@ -18,7 +20,27 @@ const routes = [
       {
         path: 'agents',
         name: 'Agents',
+        redirect: { name: 'CallHistory' }
+      },
+      {
+        path: 'calls/history',
+        name: 'CallHistory',
         component: () => import('@/pages/Agents.vue')
+      },
+      {
+        path: 'employees/create',
+        name: 'CreateEmployee',
+        redirect: { name: 'Register' }
+      },
+      {
+        path: 'users',
+        name: 'Users',
+        component: () => import('@/pages/Users.vue')
+      },
+      {
+        path: 'employees',
+        name: 'Employees',
+        redirect: { name: 'Reports' }
       },
       {
         path: 'reports',
@@ -75,6 +97,7 @@ const routes = [
   {
     path: '/auth/register',
     name: 'Register',
+    meta: { requiresAuth: true },
     component: () => import('@/pages/Register.vue')
   },
   {
@@ -88,6 +111,22 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior: () => ({ top: 0 })
+})
+
+router.beforeEach(to => {
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  if (!requiresAuth) return true
+
+  const authStore = useAuthStore()
+  if (!authStore.isAuthenticated) {
+    return { name: 'Login', query: { redirect: to.fullPath } }
+  }
+  const permission = to.name === 'AddCustomer' ? (to.query.editId ? 'customers.viewEdit' : 'customers.create') : null
+  if (!authStore.canOpen(to.path) || (permission && !authStore.can(permission))) {
+    const fallback = ['/', '/customers', '/customers/add', '/calls', '/reports', '/settings'].find(path => authStore.canOpen(path))
+    return { path: fallback || '/settings' }
+  }
+  return true
 })
 
 export default router

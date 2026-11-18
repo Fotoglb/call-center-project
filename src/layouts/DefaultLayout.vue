@@ -17,7 +17,6 @@
     </div>
 
     <AppBottomNav />
-    <AppNotifications />
   </div>
 </template>
 
@@ -26,5 +25,4 @@
   import AppSidebar from '@/components/layout/AppSidebar.vue'
   import AppHeader from '@/components/layout/AppHeader.vue'
   import AppBottomNav from '@/components/layout/AppBottomNav.vue'
-  import AppNotifications from '@/components/common/AppNotifications.vue'
 </script>

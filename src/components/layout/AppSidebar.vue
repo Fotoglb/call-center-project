@@ -36,6 +36,8 @@
       <button
         class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-accent/60 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
         @click="handleLogout"
+        :disabled="authStore.isLoggingOut"
+        :aria-busy="authStore.isLoggingOut"
       >
         <LogOut :size="16" class="shrink-0" />
         <span>تسجيل الخروج</span>
@@ -45,6 +47,7 @@
 </template>
 
 <script setup>
+  import { computed } from 'vue'
   import { useRouter } from 'vue-router'
   import {
     Home,
@@ -54,6 +57,7 @@
     BarChart2,
     Settings,
     HelpCircle,
+    MessageCircleQuestionMark,
     LogOut
   } from '@lucide/vue'
   import { useAuthStore } from '@/stores/auth.store'
@@ -61,18 +65,23 @@
   const router = useRouter()
   const authStore = useAuthStore()
 
-  const navItems = [
+  const allNavItems = [
     { label: 'لوحة التحكم', path: '/', icon: Home, exact: true },
     { label: 'إدارة العملاء', path: '/customers', icon: Users },
-    { label: 'مركز الاتصال', path: '/agents', icon: PhoneIncoming },
+    { label: 'إضافة عميل', path: '/customers/add', icon: Users, createOnly: true },
+    { label: 'مركز الاتصال', path: '/calls/history', icon: PhoneIncoming },
     { label: 'سجل المكالمات', path: '/calls', icon: PhoneCall },
     { label: 'التقارير', path: '/reports', icon: BarChart2 },
+    { label: 'المستخدمون', path: '/users', icon: Users },
+    { label: 'إضافة موظف', path: '/auth/register', icon: MessageCircleQuestionMark },
     { label: 'الإعدادات', path: '/settings', icon: Settings },
     { label: 'المساعدة', path: '/help', icon: HelpCircle }
   ]
 
-  function handleLogout() {
-    authStore.logout()
+  const navItems = computed(() => allNavItems.filter(item => authStore.canOpen(item.path) && (!item.createOnly || (authStore.can('customers.create') && !authStore.can('customers.list')))))
+
+  async function handleLogout() {
+    await authStore.logout()
     router.push({ name: 'Login' })
   }
 </script>

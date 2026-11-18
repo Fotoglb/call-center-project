@@ -5,7 +5,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
       @click.self="onCancel"
     >
-      <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
+      <div role="dialog" aria-modal="true" :aria-label="title" dir="rtl" class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-xl">
         <div
           class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4"
         >
@@ -16,12 +16,14 @@
 
         <div class="flex items-center gap-3 mt-6">
           <button
+            type="button"
             class="flex-1 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg py-2.5 hover:bg-gray-50 cursor-pointer transition-colors"
             @click="onCancel"
           >
             {{ cancelText }}
           </button>
           <button
+            type="button"
             class="flex-1 text-xs font-medium text-white bg-red-500 rounded-lg py-2.5 hover:bg-red-600 cursor-pointer transition-colors"
             @click="onConfirm"
           >

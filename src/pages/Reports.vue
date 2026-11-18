@@ -122,14 +122,17 @@
         <div class="relative">
           <select
             v-model="agentFilter"
-            class="cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white py-2 pe-7 ps-3 text-xs text-gray-600 hover:border-gray-300 focus:border-indigo-400 focus:outline-none"
+            :aria-busy="employeesLoading"
+            class="w-60 max-w-full cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white py-2 pe-7 ps-3 text-xs text-gray-600 hover:border-gray-300 focus:border-indigo-400 focus:outline-none"
           >
             <option value="">جميع الموظفين</option>
+            <option v-if="employeesLoading" disabled>جارٍ تحميل الموظفين...</option>
+            <option v-else-if="!employees.length" disabled>{{ employeesError ? 'تعذّر تحميل الموظفين' : 'لا يوجد موظفون' }}</option>
 
             <option
-              v-for="employee in employeePerformance"
-              :key="employee.name"
-              :value="employee.name"
+              v-for="employee in employees"
+              :key="employee.id"
+              :value="employee.id"
             >
               {{ employee.name }}
             </option>
@@ -207,7 +210,7 @@
     <!-- Statistics -->
     <div class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
       <div
-        v-for="stat in stats"
+        v-for="stat in displayedStats"
         :key="stat.label"
         class="min-w-0 space-y-1 rounded-xl bg-gray-50 p-4"
       >
@@ -255,7 +258,8 @@
 
         <!-- Chart -->
         <div class="chart-container relative h-[250px] w-full min-w-0" dir="ltr">
-          <Line ref="conversionChartRef" :data="conversionTrendData" :options="lineOptions" />
+          <Line v-if="hasChartData(conversionTrendData)" ref="conversionChartRef" :data="conversionTrendData" :options="lineOptions" />
+          <p v-else class="flex h-full items-center justify-center text-xs text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
         </div>
       </div>
 
@@ -267,7 +271,8 @@
 
         <div class="flex min-w-0 flex-col items-center gap-4">
           <div class="relative h-32 w-32 shrink-0">
-            <Doughnut ref="sourceChartRef" :data="sourceChartData" :options="donutOptions" />
+            <Doughnut v-if="hasChartData(sourceChartData)" ref="sourceChartRef" :data="sourceChartData" :options="donutOptions" />
+          <p v-else class="flex h-full items-center justify-center text-xs text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
           </div>
 
           <ul class="w-full min-w-0 space-y-3 text-xs">
@@ -319,7 +324,8 @@
         </div>
 
         <div class="chart-container relative h-52 w-full min-w-0" dir="ltr">
-          <Bar ref="employeeChartRef" :data="employeeTrendData" :options="barOptions" />
+          <Bar v-if="hasChartData(employeeTrendData)" ref="employeeChartRef" :data="employeeTrendData" :options="barOptions" />
+          <p v-else class="flex h-full items-center justify-center text-xs text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
         </div>
       </div>
 
@@ -346,7 +352,8 @@
         </div>
 
         <div class="chart-container relative h-52 w-full min-w-0" dir="ltr">
-          <Bar ref="visitChartRef" :data="visitSuccessData" :options="barOptions" />
+          <Bar v-if="hasChartData(visitSuccessData)" ref="visitChartRef" :data="visitSuccessData" :options="barOptions" />
+          <p v-else class="flex h-full items-center justify-center text-xs text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
         </div>
       </div>
     </div>
@@ -413,17 +420,18 @@
           </thead>
 
           <tbody class="divide-y divide-gray-200">
+            <tr v-if="!employeeRows.length"><td :colspan="isExportingPdf ? 10 : 12" class="px-4 py-8 text-center text-xs text-gray-400" role="status">لا يوجد بيانات</td></tr>
             <tr
-              v-for="employee in employeePerformance"
-              :key="employee.name"
+              v-for="employee in employeeRows"
+              :key="employee.id"
               class="transition-colors hover:bg-gray-100"
             >
               <td v-if="!isExportingPdf" class="px-4 py-3">
                 <input
                   type="checkbox"
                   class="cursor-pointer"
-                  :checked="selectedEmployees.includes(employee.name)"
-                  @change="toggleEmployee(employee.name)"
+                  :checked="selectedEmployees.includes(employee.id)"
+                  @change="toggleEmployee(employee.id)"
                 />
               </td>
 
@@ -436,27 +444,27 @@
               </td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.calls }}
+                {{ employee.calls ?? '—' }}
               </td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.newCustomers }}
+                {{ employee.newCustomers ?? '—' }}
               </td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.conversions }}
+                {{ employee.conversions ?? '—' }}
               </td>
 
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.conversionRate }}%</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.conversionRate == null ? '—' : `${employee.conversionRate}%` }}</td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.visits }}
+                {{ employee.visits ?? '—' }}
               </td>
 
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visitSuccessRate }}%</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visitSuccessRate == null ? '—' : `${employee.visitSuccessRate}%` }}</td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.score }}
+                {{ employee.score ?? '—' }}
               </td>
 
               <td class="px-4 py-3">
@@ -464,7 +472,7 @@
                   class="inline-flex items-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium"
                   :class="performanceClass(employee.performance)"
                 >
-                  {{ employee.performance }}
+                  {{ employee.performance ?? '—' }}
                 </span>
               </td>
 
@@ -472,7 +480,11 @@
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
-                    title="تعديل"
+                    title="إعادة تعيين كلمة المرور"
+                    :aria-label="`إعادة تعيين كلمة مرور ${employee.name}`"
+                    :disabled="employeeBusy || !employee.id"
+                    v-if="permissions.can('employees.manage')"
+                    @click="resetEmployeePassword(employee)"
                     class="cursor-pointer text-gray-400 transition-colors hover:text-indigo-500"
                   >
                     <Pencil :size="14" />
@@ -480,7 +492,11 @@
 
                   <button
                     type="button"
-                    title="حذف"
+                    title="تعطيل الموظف"
+                    :aria-label="`تعطيل الموظف ${employee.name}`"
+                    :disabled="employeeBusy || !employee.id || employee.status === 'inactive'"
+                    v-if="permissions.can('employees.manage')"
+                    @click="deactivateEmployee(employee)"
                     class="cursor-pointer text-gray-400 transition-colors hover:text-red-500"
                   >
                     <Trash2 :size="14" />
@@ -496,6 +512,9 @@
 </template>
 
 <script setup>
+  import { useAuthStore } from '@/stores/auth.store'
+  const permissions = useAuthStore()
+  import { useEmployees } from '@/composables/useEmployees'
   import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
   import { Bar, Doughnut, Line } from 'vue-chartjs'
@@ -527,6 +546,7 @@
   import { useReportShare } from '@/composables/useReportShare'
   import { generateReportPdfBlob } from '@/services/reportPdf.service'
   import { buildPdfFileName } from '@/utils/fileName'
+  import { reportsService } from '@/services/reports.service'
 
   ChartJS.register(
     CategoryScale,
@@ -546,6 +566,8 @@
   const period = ref('daily')
   const agentFilter = ref('')
   const sourceFilter = ref('')
+  const isLoading = ref(true)
+
 
   const periodLabels = {
     daily: 'يومي',
@@ -563,8 +585,12 @@
   const dateRangeRef = ref(null)
   const shareMenuRef = ref(null)
 
-  const dateFrom = ref('2026-06-10')
-  const dateTo = ref('2026-06-16')
+  const reportToday = new Date()
+  const reportStart = new Date(reportToday)
+  reportStart.setDate(reportStart.getDate() - 6)
+  const localDate = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  const dateFrom = ref(localDate(reportStart))
+  const dateTo = ref(localDate(reportToday))
 
   const dateRangeLabel = computed(() => {
     const formatDate = date => {
@@ -602,77 +628,30 @@
    * Statistics
    * -------------------------------------- */
 
-  const stats = [
-    {
-      value: '8.1 يوم',
-      label: 'متوسط وقت الرد'
-    },
-    {
-      value: '18.5%',
-      label: 'معدل التحويل'
-    },
-    {
-      value: '40',
-      label: 'إجمالي الزيارات'
-    },
-    {
-      value: '20%',
-      label: 'معدل النجاح'
-    },
-    {
-      value: '22',
-      label: 'مشاريع تم إنجازها'
-    },
-    {
-      value: '247',
-      label: 'إجمالي العملاء'
-    }
-  ]
+  const stats = ref([])
+  const displayedStats = computed(() => stats.value.length ? stats.value : [
+    'متوسط وقت الرد', 'معدل التحويل', 'إجمالي الزيارات',
+    'معدل النجاح', 'مشاريع تم إنجازها', 'إجمالي العملاء',
+  ].map(label => ({ label, value: isLoading.value ? 'جارٍ التحميل...' : 'لا يوجد بيانات' })))
 
   /* ----------------------------------------
    * Customer sources
    * -------------------------------------- */
 
-  const sourceLegend = [
-    {
-      label: 'مواقع الويب',
-      percent: 38,
-      color: '#3B82F6'
-    },
-    {
-      label: 'إعلانات سوشيال ميديا',
-      percent: 27,
-      color: '#A855F7'
-    },
-    {
-      label: 'توصية عميل',
-      percent: 18,
-      color: '#10B981'
-    },
-    {
-      label: 'إعلانات جوجل',
-      percent: 12,
-      color: '#F59E0B'
-    },
-    {
-      label: 'أخرى',
-      percent: 5,
-      color: '#EF4444'
-    }
-  ]
+  const sourceLegend = ref([])
 
-  const sourceChartData = {
-    labels: sourceLegend.map(item => item.label),
+  const sourceChartData = computed(() => ({
+    labels: sourceLegend.value.map(item => item.label),
 
     datasets: [
       {
-        data: sourceLegend.map(item => item.percent),
-        backgroundColor: sourceLegend.map(item => item.color),
+        data: sourceLegend.value.map(item => item.percent),
+        backgroundColor: sourceLegend.value.map(item => item.color),
         borderWidth: 0,
         hoverOffset: 4
       }
     ]
-  }
+  }))
 
   const donutOptions = {
     responsive: true,
@@ -692,22 +671,18 @@
   }
 
   /* ----------------------------------------
-   * Shared labels
-   * -------------------------------------- */
-
-  const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
-
-  /* ----------------------------------------
    * Conversion line chart
    * -------------------------------------- */
 
-  const conversionTrendData = {
-    labels: days,
+  const conversionTrendRaw = ref({ labels: [], visits: [], calls: [], newCustomers: [] })
+
+  const conversionTrendData = computed(() => ({
+    labels: conversionTrendRaw.value.labels,
 
     datasets: [
       {
         label: 'الزيارات',
-        data: [80, 73, 76, 91, 113, 120, 110],
+        data: conversionTrendRaw.value.visits,
 
         borderColor: '#6C7CFF',
         backgroundColor: '#6C7CFF',
@@ -729,7 +704,7 @@
 
       {
         label: 'المكالمات',
-        data: [44, 56, 64, 68, 71, 74, 77],
+        data: conversionTrendRaw.value.calls,
 
         borderColor: '#DF78F5',
         backgroundColor: '#DF78F5',
@@ -751,7 +726,7 @@
 
       {
         label: 'عملاء جدد',
-        data: [null, null, null, null, null, null, 25],
+        data: conversionTrendRaw.value.newCustomers,
 
         borderColor: 'transparent',
         backgroundColor: '#F472B6',
@@ -769,7 +744,7 @@
         clip: false
       }
     ]
-  }
+  }))
 
   const lineOptions = {
     responsive: true,
@@ -871,13 +846,15 @@
    * Visit success chart
    * -------------------------------------- */
 
-  const visitSuccessData = {
-    labels: days,
+  const visitSuccessRaw = ref({ labels: [], visits: [], newCustomers: [] })
+
+  const visitSuccessData = computed(() => ({
+    labels: visitSuccessRaw.value.labels,
 
     datasets: [
       {
         label: 'الزيارات',
-        data: [8, 12, 10, 14, 16, 11, 9],
+        data: visitSuccessRaw.value.visits,
         backgroundColor: '#14B8A6',
         borderRadius: 4,
         borderSkipped: false,
@@ -886,26 +863,28 @@
 
       {
         label: 'عملاء جدد',
-        data: [4, 6, 5, 8, 9, 6, 5],
+        data: visitSuccessRaw.value.newCustomers,
         backgroundColor: '#FBBF24',
         borderRadius: 4,
         borderSkipped: false,
         maxBarThickness: 18
       }
     ]
-  }
+  }))
 
   /* ----------------------------------------
    * Employee trend chart
    * -------------------------------------- */
 
-  const employeeTrendData = {
-    labels: days,
+  const employeeTrendRaw = ref({ labels: [], calls: [], newCustomers: [] })
+
+  const employeeTrendData = computed(() => ({
+    labels: employeeTrendRaw.value.labels,
 
     datasets: [
       {
         label: 'المكالمات',
-        data: [20, 28, 24, 32, 35, 26, 22],
+        data: employeeTrendRaw.value.calls,
         backgroundColor: '#6366F1',
         borderRadius: 4,
         borderSkipped: false,
@@ -914,14 +893,14 @@
 
       {
         label: 'عملاء جدد',
-        data: [6, 9, 7, 11, 12, 8, 7],
+        data: employeeTrendRaw.value.newCustomers,
         backgroundColor: '#34D399',
         borderRadius: 4,
         borderSkipped: false,
         maxBarThickness: 18
       }
     ]
-  }
+  }))
 
   /* ----------------------------------------
    * Bar chart options
@@ -1012,85 +991,65 @@
    * Employee performance table
    * -------------------------------------- */
 
-  const employeePerformance = [
-    {
-      name: 'سارة أحمد',
-      calls: 156,
-      conversions: 37,
-      conversionRate: 24,
-      visits: 18,
-      visitSuccessRate: 78,
-      newCustomers: 32,
-      score: 92,
-      performance: 'تم التحويل'
-    },
-    {
-      name: 'محمد علي',
-      calls: 142,
-      conversions: 30,
-      conversionRate: 21,
-      visits: 15,
-      visitSuccessRate: 70,
-      newCustomers: 27,
-      score: 85,
-      performance: 'مهتم'
-    },
-    {
-      name: 'هند الفضل',
-      calls: 138,
-      conversions: 26,
-      conversionRate: 19,
-      visits: 14,
-      visitSuccessRate: 65,
-      newCustomers: 24,
-      score: 80,
-      performance: 'عميل جديد'
-    },
-    {
-      name: 'إبراهيم أحمد',
-      calls: 121,
-      conversions: 21,
-      conversionRate: 17,
-      visits: 12,
-      visitSuccessRate: 58,
-      newCustomers: 19,
-      score: 65,
-      performance: 'قيد المعالجة'
-    },
-    {
-      name: 'فاطمة حسن',
-      calls: 130,
-      conversions: 29,
-      conversionRate: 22,
-      visits: 16,
-      visitSuccessRate: 73,
-      newCustomers: 28,
-      score: 90,
-      performance: 'تم التحويل'
-    },
-    {
-      name: 'يوسف سالم',
-      calls: 98,
-      conversions: 13,
-      conversionRate: 13,
-      visits: 9,
-      visitSuccessRate: 48,
-      newCustomers: 14,
-      score: 45,
-      performance: 'غير مهتم'
-    },
-    {
-      name: 'طارق محمد',
-      calls: 115,
-      conversions: 21,
-      conversionRate: 18,
-      visits: 11,
-      visitSuccessRate: 60,
-      newCustomers: 20,
-      score: 63,
-      performance: 'محتمل'
+  const employeePerformance = ref([])
+  const {
+    employees,
+    loading: employeesLoading, error: employeesError, updatingId, resettingId,
+    actionError: employeeActionError, actionSuccess: employeeActionSuccess,
+    loadEmployees,
+    deactivateEmployee, resetEmployeePassword,
+  } = useEmployees()
+  const employeeBusy = computed(() => !!updatingId.value || !!resettingId.value)
+  // Reserved for the upcoming report endpoint; users only populate the employee filter.
+  const employeeRows = ref([])
+
+  /* ----------------------------------------
+   * Load report data from API
+   * -------------------------------------- */
+
+  function reportParams() {
+    return {
+      period: period.value,
+      agent: agentFilter.value || undefined,
+      source: sourceFilter.value || undefined,
+      dateFrom: dateFrom.value,
+      dateTo: dateTo.value
     }
-  ]
+  }
+
+  let reportRequest = 0
+  function hasChartData(data) {
+    return data.datasets.some(dataset => dataset.data.some(value => value != null))
+  }
+
+  async function loadReportData() {
+    const request = ++reportRequest
+    isLoading.value = true
+    const params = reportParams()
+    const sections = [
+      [stats, () => reportsService.getSummary(params), []],
+      [sourceLegend, () => reportsService.getCustomerSources(params), []],
+      [conversionTrendRaw, () => reportsService.getConversionTrend(params), { labels: [], visits: [], calls: [], newCustomers: [] }],
+      [employeePerformance, () => reportsService.getEmployeePerformance(params), []],
+      [visitSuccessRaw, () => reportsService.getVisitSuccess(params), { labels: [], visits: [], newCustomers: [] }],
+      [employeeTrendRaw, () => reportsService.getEmployeeTrend(params), { labels: [], calls: [], newCustomers: [] }],
+    ]
+    await Promise.all(sections.map(async ([target, fetch, empty]) => {
+      target.value = empty
+      try {
+        const result = await fetch()
+        if (request !== reportRequest) return
+        target.value = Array.isArray(empty)
+          ? (Array.isArray(result) ? result : [])
+          : Object.fromEntries(Object.keys(empty).map(key => [key, Array.isArray(result?.[key]) ? result[key] : []]))
+      } catch {
+        if (request === reportRequest) target.value = empty
+      }
+    }))
+    if (request === reportRequest) isLoading.value = false
+  }
+
+  onMounted(loadReportData)
 
   function performanceClass(performance) {
     const classes = {
@@ -1113,8 +1072,8 @@
 
   const allSelected = computed(
     () =>
-      employeePerformance.length > 0 &&
-      selectedEmployees.value.length === employeePerformance.length
+      employeeRows.value.length > 0 &&
+      employeeRows.value.every(employee => selectedEmployees.value.includes(employee.id))
   )
 
   function toggleEmployee(name) {
@@ -1130,7 +1089,7 @@
   function toggleSelectAll() {
     selectedEmployees.value = allSelected.value
       ? []
-      : employeePerformance.map(employee => employee.name)
+      : employeeRows.value.map(employee => employee.id)
   }
 
   /* ----------------------------------------
@@ -1346,7 +1305,7 @@
         { header: 'القيمة', key: 'value' }
       ]
 
-      stats.forEach(stat => {
+      stats.value.forEach(stat => {
         summarySheet.addRow({ label: safeCell(stat.label), value: safeCell(stat.value) })
       })
 
@@ -1357,7 +1316,7 @@
 
       summarySheet.addRow({
         label: 'الموظف المحدد',
-        value: safeCell(agentFilter.value || 'جميع الموظفين')
+        value: safeCell(employees.value.find(employee => employee.id === agentFilter.value)?.name || 'جميع الموظفين')
       })
 
       summarySheet.addRow({
@@ -1377,7 +1336,7 @@
       const trendSheet = newRtlSheet(workbook, 'الاتجاه الزمني')
 
       const trendDatasetByLabel = Object.fromEntries(
-        conversionTrendData.datasets.map(dataset => [dataset.label, dataset.data])
+        conversionTrendData.value.datasets.map(dataset => [dataset.label, dataset.data])
       )
 
       trendSheet.columns = [
@@ -1387,7 +1346,7 @@
         { header: 'عملاء جدد', key: 'newCustomers' }
       ]
 
-      conversionTrendData.labels.forEach((label, index) => {
+      conversionTrendData.value.labels.forEach((label, index) => {
         trendSheet.addRow({
           day: safeCell(label),
           visits: safeCell(trendDatasetByLabel['الزيارات']?.[index]),
@@ -1411,7 +1370,7 @@
         { header: 'اللون', key: 'color' }
       ]
 
-      sourceLegend.forEach(item => {
+      sourceLegend.value.forEach(item => {
         sourcesSheet.addRow({
           label: safeCell(item.label),
           percent: item.percent / 100,
@@ -1424,7 +1383,7 @@
       styleHeaderRow(sourcesSheet.getRow(1))
       styleDataRows(sourcesSheet)
 
-      sourceLegend.forEach((item, index) => {
+      sourceLegend.value.forEach((item, index) => {
         sourcesSheet.getCell(`C${index + 2}`).fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -1453,7 +1412,7 @@
         { header: 'الأداء', key: 'performance' }
       ]
 
-      employeePerformance.forEach(employee => {
+      employeePerformance.value.forEach(employee => {
         detailSheet.addRow({
           name: safeCell(employee.name),
           calls: safeCell(employee.calls),
@@ -1477,11 +1436,11 @@
 
       /* ---------- Sheet 5: أداء الموظفين (رسم المقارنة اليومي) ---------- */
 
-      addSeriesTableSheet(workbook, 'أداء الموظفين', employeeTrendData, 'اليوم')
+      addSeriesTableSheet(workbook, 'أداء الموظفين', employeeTrendData.value, 'اليوم')
 
       /* ---------- Sheet 6: نجاح الزيارات (رسم المقارنة اليومي) ---------- */
 
-      addSeriesTableSheet(workbook, 'نجاح الزيارات', visitSuccessData, 'اليوم')
+      addSeriesTableSheet(workbook, 'نجاح الزيارات', visitSuccessData.value, 'اليوم')
 
       /* ---------- Sheet 7: الرسوم البيانية ---------- */
 
@@ -1503,7 +1462,7 @@
       row = addLegendRows(
         chartsSheet,
         row,
-        conversionTrendData.datasets.map(dataset => ({
+        conversionTrendData.value.datasets.map(dataset => ({
           label: dataset.label,
           color: dataset.backgroundColor
         }))
@@ -1520,7 +1479,7 @@
       row = addLegendRows(
         chartsSheet,
         row,
-        sourceLegend.map(item => ({ label: `${item.label} (${item.percent}%)`, color: item.color }))
+        sourceLegend.value.map(item => ({ label: `${item.label} (${item.percent}%)`, color: item.color }))
       )
 
       row = addChartImage(
@@ -1534,7 +1493,7 @@
       row = addLegendRows(
         chartsSheet,
         row,
-        employeeTrendData.datasets.map(dataset => ({
+        employeeTrendData.value.datasets.map(dataset => ({
           label: dataset.label,
           color: dataset.backgroundColor
         }))
@@ -1551,7 +1510,7 @@
       addLegendRows(
         chartsSheet,
         row,
-        visitSuccessData.datasets.map(dataset => ({
+        visitSuccessData.value.datasets.map(dataset => ({
           label: dataset.label,
           color: dataset.backgroundColor
         }))
@@ -1624,6 +1583,7 @@
 
   watch([period, agentFilter, sourceFilter, dateFrom, dateTo], () => {
     invalidatePreparedReport()
+    loadReportData()
   })
 
   const shareButtonLabel = computed(() => {
