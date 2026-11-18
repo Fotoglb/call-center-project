@@ -3,7 +3,7 @@ import { canAccess, requestPermission } from './permissions'
 import { readSession, clearSession, SESSION_EXPIRED_EVENT } from './auth-session'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://call-center-backend-kvok.onrender.com/api',
   timeout: 0,
   headers: {
     'Content-Type': 'application/json',
