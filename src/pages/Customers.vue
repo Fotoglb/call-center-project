@@ -153,7 +153,8 @@
                     @click="router.push({ name: 'CustomerProfile', params: { id: customer.id } })"
                   >
                     <span
-                      class="font-medium text-gray-800 whitespace-nowrap hover:text-indigo-600 hover:underline transition-colors"
+                      class="block w-[104px] shrink-0 truncate font-medium text-gray-800 hover:text-indigo-600 hover:underline transition-colors"
+                      :title="customer.name"
                       >{{ customer.name }}</span
                     >
                   </div>
@@ -220,43 +221,57 @@
 
       <!-- Pagination -->
       <div
-        class="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-t border-gray-200"
+        dir="rtl"
+        class="flex items-center justify-between flex-wrap gap-4 px-5 py-5 border-t border-gray-100"
       >
-        <p class="text-xs text-gray-400">
+        <p class="sr-only" aria-live="polite">
           عرض {{ paginatedCustomers.length ? startIndex + 1 : 0 }}-{{ endIndex }}
           <template v-if="totalCustomers !== null">من أصل {{ totalCustomers }}</template> سجل
         </p>
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-400">عدد السجلات:</span>
+        <div class="flex items-center gap-4">
+          <label for="customers-page-size" class="text-sm text-gray-400">عرض</label>
+          <div class="relative">
           <select
+            id="customers-page-size"
             v-model="pageSize"
-            class="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 focus:outline-none cursor-pointer"
+            dir="ltr"
+            class="appearance-none w-20 h-11 border border-gray-200 rounded-xl ps-3 pe-8 text-sm text-gray-900 bg-white focus:outline-none focus:border-blue cursor-pointer"
             @change="currentPage = 1"
           >
             <option :value="10">10</option>
             <option :value="20">20</option>
             <option :value="50">50</option>
           </select>
+          <ChevronDown :size="16" class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-900" />
+          </div>
         </div>
-        <div class="flex items-center gap-1">
+        <nav aria-label="صفحات العملاء" class="flex items-center gap-1">
           <button
-            class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
-            :disabled="currentPage === 1"
+            type="button"
+            aria-label="الصفحة السابقة"
+            class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-900 hover:bg-gray-50 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
+            :disabled="isLoading || currentPage === 1"
             @click="currentPage--"
           >
-            <ChevronRight :size="14" />
+            <ChevronRight :size="18" />
           </button>
           <button
             v-for="p in totalPages"
             :key="p"
-            class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium cursor-pointer transition-colors"
-            :class="p === currentPage ? 'bg-blue text-white' : 'text-gray-500 hover:bg-gray-100'"
+            type="button"
+            :aria-label="`الصفحة ${p}`"
+            :aria-current="p === currentPage ? 'page' : undefined"
+            :disabled="isLoading"
+            class="w-9 h-9 flex items-center justify-center rounded-lg border text-sm cursor-pointer transition-colors disabled:cursor-not-allowed"
+            :class="p === currentPage ? 'border-blue text-blue bg-white font-semibold' : 'border-transparent text-gray-900 hover:bg-gray-50'"
             @click="currentPage = p"
           >
             {{ p }}
           </button>
           <button
-            class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
+            type="button"
+            aria-label="الصفحة التالية"
+            class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-900 hover:bg-gray-50 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
             :disabled="
               isLoading ||
               !!loadError ||
@@ -266,9 +281,9 @@
             "
             @click="currentPage++"
           >
-            <ChevronLeft :size="14" />
+            <ChevronLeft :size="18" />
           </button>
-        </div>
+        </nav>
       </div>
     </div>
 

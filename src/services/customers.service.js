@@ -103,7 +103,7 @@ export const customersService = {
     const data = await api.get(ENDPOINTS.customers.list, { params: query })
     const body = data?.data ?? data
     const rows = [body, body?.items, body?.leads, body?.data, data?.items].find(Array.isArray)
-    const rawTotal = body?.total ?? body?.pagination?.total ?? data?.pagination?.total ?? data?.total
+    const rawTotal = body?.total ?? body?.pagination?.total ?? data?.meta?.total ?? data?.pagination?.total ?? data?.total
     const numericTotal = typeof rawTotal === 'string' && /^\d+$/.test(rawTotal) ? Number(rawTotal) : rawTotal
     const total = Number.isSafeInteger(numericTotal) && numericTotal >= 0 ? numericTotal : null
     if (!rows || rows.some(lead => !lead || typeof lead !== 'object' || Array.isArray(lead))) {
