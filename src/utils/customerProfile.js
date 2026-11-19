@@ -21,6 +21,7 @@ export function mapCustomerProfile(response) {
   const lead = profile?.lead
   if (response?.success === false || !lead || typeof lead.fullName !== 'string') throw new Error('تعذر قراءة بيانات ملف العميل')
   const stats = profile.stats ?? {}
+  const assignedRole = lead.assignedTo?.role
   const customer = {
     id: lead.id,
     name: lead.fullName,
@@ -38,7 +39,7 @@ export function mapCustomerProfile(response) {
     lastContact: lead.lastContactAt && Number.isFinite(Date.parse(lead.lastContactAt))
       ? new Date(lead.lastContactAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' }) : '—',
     priority: priorityLabels[lead.priority] ?? lead.priority ?? '—',
-    assignedAgent: { name: lead.assignedTo?.name ?? '—', role: ({ call_center: 'كول سنتر', data_entry: 'مدخل بيانات', admin: 'أدمن', super_admin: 'سوبر أدمن' })[lead.assignedTo?.role] ?? lead.assignedTo?.role ?? '—', phone: lead.assignedTo?.phone ?? null },
+    assignedAgent: { name: lead.assignedTo?.name ?? '—', role: ({ call_center: 'كول سنتر', data_entry: 'مدخل بيانات', admin: 'أدمن', super_admin: 'سوبر أدمن' })[assignedRole] ?? assignedRole ?? '—', phone: lead.assignedTo?.phone ?? null },
     stats: { fieldVisits: stats.totalVisits, totalCalls: stats.totalCalls, interestPoints: stats.interestScore, daysSinceAdded: stats.daysSinceAdded },
     interestScore: stats.interestScore ?? lead.interestScore ?? null
   }
