@@ -55,12 +55,12 @@
     </div>
 
     <!-- Main Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-4 items-start">
       <!-- RIGHT: Sidebar -->
       <div class="space-y-5">
         <!-- Customer Card -->
-        <div class="bg-white rounded-2xl p-6 pt-20 min-h-80">
-          <div class="flex items-center justify-between gap-3 mb-8">
+        <div class="bg-white rounded-2xl p-4">
+          <div class="flex items-center justify-between gap-3 mb-5">
             <div class="min-w-0">
               <p class="text-xl font-bold text-gray-900 break-words">{{ customer.name }}</p>
             </div>
@@ -88,9 +88,9 @@
         </div>
 
         <!-- Customer Details -->
-        <div class="bg-white rounded-2xl p-6">
-          <h3 class="text-base font-bold text-gray-900 mb-6">تفاصيل العميل</h3>
-          <dl class="space-y-5">
+        <div class="bg-white rounded-2xl p-4">
+          <h3 class="text-base font-bold text-gray-900 mb-4">تفاصيل العميل</h3>
+          <dl class="space-y-3">
             <div class="flex items-center justify-between gap-4 text-sm">
               <dt class="flex items-center gap-2 text-gray-400"><Zap :size="14" class="text-blue" />مصدر العميل</dt>
               <dd class="text-gray-700">{{ customer.source }}</dd>
@@ -127,8 +127,8 @@
         </div>
 
         <!-- Assigned Agent -->
-        <div class="bg-white rounded-2xl p-6">
-          <h3 class="text-base font-bold text-gray-900 mb-6">الموظف المسؤول</h3>
+        <div class="bg-white rounded-2xl p-4">
+          <h3 class="text-base font-bold text-gray-900 mb-4">الموظف المسؤول</h3>
           <div class="flex items-center gap-3">
             <div
               class="w-12 h-12 rounded-md bg-violet-50 flex items-center justify-center text-base text-violet-500 shrink-0"
@@ -144,11 +144,11 @@
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-2 gap-5">
+        <div class="grid grid-cols-2 gap-3">
           <div
             v-for="stat in statCards"
             :key="stat.label"
-            class="bg-white rounded-2xl p-5 text-start min-h-44"
+            class="bg-white rounded-2xl p-4 text-start"
           >
             <div class="w-14 h-14 rounded-xl flex items-center justify-center mb-5" :class="stat.color"><component :is="stat.icon" :size="22" /></div>
             <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
@@ -161,7 +161,7 @@
       <div class="min-w-0 space-y-5">
         <!-- Interest Score Card -->
         <div
-          class="rounded-2xl px-6 py-7 min-h-48 flex items-center justify-between gap-6 flex-wrap bg-gradient-to-l from-[#2563eb] to-[#347df4]"
+          class="rounded-2xl p-4 flex items-center justify-between gap-4 flex-wrap bg-gradient-to-l from-[#2563eb] to-[#347df4]"
         >
           <div>
             <div class="flex items-baseline gap-1">
@@ -206,7 +206,7 @@
           </div>
 
           <!-- Timeline -->
-          <div class="p-6 space-y-5">
+          <div class="p-4 space-y-5">
             <p v-if="!filteredActivity.length" class="text-xs text-gray-400 text-center">لا توجد بيانات</p>
             <div v-for="(entry, index) in filteredActivity" :key="entry.id" class="relative flex gap-5">
               <span v-if="index < filteredActivity.length - 1" class="absolute start-4 top-8 -bottom-5 w-px bg-gray-100" aria-hidden="true"></span>
