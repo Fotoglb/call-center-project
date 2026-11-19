@@ -8,17 +8,27 @@
           <p class="text-xs text-gray-400 mt-1">جميع العملاء من حملات الإعلانات والإدخال اليدوي</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
+          <input ref="uploadInput" type="file" accept=".xlsx,.xls" class="hidden" @change="uploadCustomerFile" />
           <button
+            v-if="permissions.can('customers.create')"
+            type="button"
+            :disabled="isUploadingFile"
+            :aria-busy="isUploadingFile"
+            @click="uploadInput?.click()"
             class="flex items-center gap-1.5 text-xs font-medium text-blue border border-blue bg-white rounded-lg sm:px-3 px-1 py-2 hover:bg-blue-light cursor-pointer transition-colors"
           >
             <Plus :size="14" />
-            تحميل الملف
+            {{ isUploadingFile ? 'جارٍ رفع الملف...' : 'تحميل الملف' }}
           </button>
           <button
+            type="button"
+            :disabled="isDownloadingTemplate"
+            :aria-busy="isDownloadingTemplate"
+            @click="downloadTemplate"
             class="flex items-center gap-1.5 text-xs font-medium text-blue bg-blue-light rounded-lg sm:px-3 px-1 py-2 hover:opacity-90 cursor-pointer transition-colors"
           >
             <Plus :size="14" />
-            تنزيل الملف
+            {{ isDownloadingTemplate ? 'جارٍ التنزيل...' : 'تنزيل الملف' }}
           </button>
           <button
             class="flex items-center gap-1.5 text-xs font-medium text-white bg-blue-dark rounded-lg px-3 py-2 hover:opacity-90 cursor-pointer transition-colors"
@@ -99,16 +109,19 @@
                 التاريخ
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+                مسودة
+              </th>
+              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 الإجراءات
               </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr v-if="isLoading">
-              <td colspan="9" class="text-center text-gray-400 py-8">...جارٍ التحميل</td>
+              <td colspan="10" class="text-center text-gray-400 py-8">...جارٍ التحميل</td>
             </tr>
             <tr v-else-if="loadError">
-              <td colspan="9" class="text-center py-8">
+              <td colspan="10" class="text-center py-8">
                 <p class="text-red-500 mb-2">{{ loadError.message || 'تعذر تحميل بيانات العملاء' }}</p>
                 <button
                   class="text-xs text-white bg-gray-900 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-gray-700 transition-colors"
@@ -156,6 +169,9 @@
               <td class="px-4 py-3 text-gray-400 tabular-nums whitespace-nowrap">
                 {{ customer.date }}
               </td>
+              <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
+                {{ customer.isDraft === true ? 'مسودة' : customer.isDraft === false ? 'غير مسودة' : '—' }}
+              </td>
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <button
@@ -179,7 +195,7 @@
               </td>
             </tr>
             <tr v-if="paginatedCustomers.length === 0">
-              <td colspan="9" class="text-center text-gray-400 py-8">لا توجد نتائج</td>
+              <td colspan="10" class="text-center text-gray-400 py-8">لا توجد نتائج</td>
             </tr>
             </template>
           </tbody>
@@ -256,15 +272,50 @@
   import { usersService } from '@/services/users.service'
   import { customerDateRange } from '@/utils/customerDateRange'
   import { useNotification } from '@/composables/useNotification'
+  import { downloadBlob } from '@/utils/downloadFile'
 
   const router = useRouter()
   const notification = useNotification()
+  const uploadInput = ref(null)
+  const isUploadingFile = ref(false)
+  async function uploadCustomerFile(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || isUploadingFile.value || !permissions.can('customers.create')) return
+    if (!/\.(xlsx|xls)$/i.test(file.name) || !file.size) {
+      notification.error('اختر ملف Excel غير فارغ')
+      return
+    }
+    isUploadingFile.value = true
+    try {
+      const response = await customersService.uploadFile(file)
+      notification.success(response?.message || 'تم رفع ملف العملاء بنجاح')
+      await loadCustomers()
+    } catch (error) {
+      notification.error(error.message || 'تعذّر رفع ملف العملاء')
+    } finally {
+      isUploadingFile.value = false
+    }
+  }
+  const isDownloadingTemplate = ref(false)
+  async function downloadTemplate() {
+    if (isDownloadingTemplate.value) return
+    isDownloadingTemplate.value = true
+    try {
+      const { blob, fileName } = await customersService.downloadTemplate()
+      downloadBlob(blob, fileName)
+    } catch (error) {
+      notification.error(error.message || 'تعذّر تنزيل قالب العملاء')
+    } finally {
+      isDownloadingTemplate.value = false
+    }
+  }
 
   const currentPage = ref(1)
   const pageSize = ref(10)
   const searchQuery = ref('')
 
-  const defaultFilters = { date: '', status: '', city: '', agent: '', source: '' }
+  const defaultFilters = { date: '', status: '', city: '', agent: '', source: '', isDraft: '' }
   const activeFilters = ref({ ...defaultFilters })
 
   const meta = ref({ sources: [], cities: [], agents: [], statuses: [], dateRanges: [
@@ -279,7 +330,11 @@
     { key: 'agent', label: 'الموظف', options: meta.value.agents },
     { key: 'city', label: 'المدينة', options: meta.value.cities },
     { key: 'status', label: 'الحالة', options: meta.value.statuses },
-    { key: 'date', label: 'التاريخ', options: meta.value.dateRanges }
+    { key: 'date', label: 'التاريخ', options: meta.value.dateRanges },
+    { key: 'isDraft', label: 'مسودة', options: [
+      { value: 'true', label: 'مسودة' },
+      { value: 'false', label: 'غير مسودة' }
+    ] }
   ])
 
   const isLoading = ref(true)
@@ -294,6 +349,7 @@
       assignedTo: activeFilters.value.agent || undefined,
       city: activeFilters.value.city || undefined,
       callStatus: activeFilters.value.status || undefined,
+      isDraft: activeFilters.value.isDraft === '' ? undefined : activeFilters.value.isDraft === 'true',
       ...customerDateRange(activeFilters.value.date),
       page: currentPage.value,
       limit: pageSize.value

@@ -3,6 +3,40 @@ import { ENDPOINTS } from './endpoints'
 import { normalizeCustomerSearch } from '../utils/customerSearch'
 
 export const customersService = {
+  async uploadFile(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post(ENDPOINTS.customers.bulk, formData, {
+      headers: { 'Content-Type': undefined },
+    })
+    if (response?.success === false) {
+      throw new Error(response.message || 'تعذّر رفع ملف العملاء')
+    }
+    return response
+  },
+  async downloadTemplate() {
+    const response = await api.get(ENDPOINTS.customers.bulkTemplate)
+    if (response?.success === false) {
+      throw new Error(response.message || 'تعذّر تنزيل قالب العملاء')
+    }
+    const file = response?.data
+    if (typeof file?.base64 !== 'string' || !file.base64.trim()) {
+      throw new Error('لم يُرجع السيرفر ملفًا صالحًا للتنزيل')
+    }
+    let bytes
+    try {
+      bytes = Uint8Array.from(atob(file.base64), char => char.charCodeAt(0))
+    } catch {
+      throw new Error('تعذّر قراءة ملف العملاء القادم من السيرفر')
+    }
+    if (!bytes.length) throw new Error('ملف العملاء فارغ')
+    return {
+      blob: new Blob([bytes], {
+        type: file.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+      fileName: file.fileName || 'Leads Template.xlsx',
+    }
+  },
   getSources() {
     return api.get(ENDPOINTS.customers.sources)
   },
@@ -36,6 +70,29 @@ export const customersService = {
     if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       throw new Error('رقم الصفحة أو عدد النتائج غير صحيح؛ الحد الأقصى 100')
     }
+    // Filter the complete result set: the server may ignore the isDraft query.
+    if (params.isDraft !== undefined && params.isDraft !== null && params.isDraft !== '') {
+      if (typeof params.isDraft !== 'boolean') throw new Error('قيمة فلتر المسودة غير صحيحة')
+      const { isDraft, ...otherParams } = params
+      const matches = []
+      const seen = new Set()
+      let fetched = 0
+      for (let scanPage = 1; ; scanPage++) {
+        const result = await customersService.getList({ ...otherParams, page: scanPage, limit: 100 })
+        let added = 0
+        for (const item of result.items) {
+          if (item.id && seen.has(item.id)) continue
+          if (item.id) seen.add(item.id)
+          added++
+          if (item.isDraft === isDraft) matches.push(item)
+        }
+        fetched += result.items.length
+        if (!result.items.length || (result.total !== null && fetched >= result.total)) break
+        if (!added) throw new Error('تعذّر تحميل جميع الصفحات لتصفية المسودات')
+        if (result.total === null && result.items.length < 100) break
+      }
+      return { items: matches.slice((page - 1) * limit, page * limit), total: matches.length }
+    }
     const query = { page, limit }
     for (const key of ['q', 'sourceId', 'assignedTo', 'city', 'callStatus', 'projectType', 'priority', 'from', 'to']) {
       const value = params[key]
@@ -55,6 +112,8 @@ export const customersService = {
     return {
       items: rows.map(lead => ({
         ...lead,
+        isDraft: lead.isDraft === true || lead.isDraft === 'true' || lead.isDraft === 1 ? true
+          : lead.isDraft === false || lead.isDraft === 'false' || lead.isDraft === 0 ? false : null,
         id: lead.id ?? lead._id,
         name: String(lead.fullName ?? lead.name ?? ''),
         type: lead.projectType ?? '',

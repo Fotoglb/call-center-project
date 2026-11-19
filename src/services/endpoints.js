@@ -44,6 +44,8 @@ export const ENDPOINTS = {
   },
 
   customers: {
+    bulkTemplate: '/leads/bulk/template',
+    bulk: '/leads/bulk',
     sources: '/leads/sources',
     list: '/leads',
     detail: id => `/leads/${encodeURIComponent(id)}`,
