@@ -118,6 +118,7 @@ export const customersService = {
         name: String(lead.fullName ?? lead.name ?? ''),
         type: lead.projectType ?? '',
         sourceId: typeof lead.sourceId === 'object' ? lead.sourceId?.id ?? lead.sourceId?._id : lead.sourceId,
+        sourceColor: typeof lead.sourceId === 'object' ? lead.sourceId?.color : null,
         source: typeof lead.sourceId === 'object' ? lead.sourceId?.name ?? '' : typeof lead.source === 'string' ? lead.source : '',
         agent: typeof lead.assignedTo === 'object' ? lead.assignedTo?.name ?? '' : '',
         date: lead.projectCreatedAt ? String(lead.projectCreatedAt).slice(0, 10) : '—',

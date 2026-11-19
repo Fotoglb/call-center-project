@@ -8,7 +8,13 @@
           <p class="text-xs text-gray-400 mt-1">جميع العملاء من حملات الإعلانات والإدخال اليدوي</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <input ref="uploadInput" type="file" accept=".xlsx,.xls" class="hidden" @change="uploadCustomerFile" />
+          <input
+            ref="uploadInput"
+            type="file"
+            accept=".xlsx,.xls"
+            class="hidden"
+            @change="uploadCustomerFile"
+          />
           <button
             v-if="permissions.can('customers.create')"
             type="button"
@@ -61,7 +67,9 @@
             class="appearance-none text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
           >
             <option value="">{{ filter.label }} : الكل</option>
-            <option v-for="opt in filter.options" :key="opt.value ?? opt" :value="opt.value ?? opt">{{ opt.label ?? opt }}</option>
+            <option v-for="opt in filter.options" :key="opt.value ?? opt" :value="opt.value ?? opt">
+              {{ opt.label ?? opt }}
+            </option>
           </select>
           <ChevronDown
             :size="12"
@@ -122,7 +130,9 @@
             </tr>
             <tr v-else-if="loadError">
               <td colspan="10" class="text-center py-8">
-                <p class="text-red-500 mb-2">{{ loadError.message || 'تعذر تحميل بيانات العملاء' }}</p>
+                <p class="text-red-500 mb-2">
+                  {{ loadError.message || 'تعذر تحميل بيانات العملاء' }}
+                </p>
                 <button
                   class="text-xs text-white bg-gray-900 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-gray-700 transition-colors"
                   @click="loadCustomers"
@@ -132,80 +142,89 @@
               </td>
             </tr>
             <template v-else>
-            <tr
-              v-for="customer in paginatedCustomers"
-              :key="customer.id"
-              class="hover:bg-gray-100 transition-colors"
-            >
-              <td class="px-4 py-3">
-                <div
-                  class="flex items-center gap-2 cursor-pointer"
-                  @click="router.push({ name: 'CustomerProfile', params: { id: customer.id } })"
-                >
+              <tr
+                v-for="customer in paginatedCustomers"
+                :key="customer.id"
+                class="hover:bg-gray-100 transition-colors"
+              >
+                <td class="px-4 py-3">
                   <div
-                    class="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0"
+                    class="flex items-center gap-2 cursor-pointer"
+                    @click="router.push({ name: 'CustomerProfile', params: { id: customer.id } })"
                   >
-                    {{ customer.name.charAt(0) }}
+                    <span
+                      class="font-medium text-gray-800 whitespace-nowrap hover:text-indigo-600 hover:underline transition-colors"
+                      >{{ customer.name }}</span
+                    >
                   </div>
+                </td>
+                <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.phone }}</td>
+                <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.email }}</td>
+                <td class="px-4 py-3">
                   <span
-                    class="font-medium text-gray-800 whitespace-nowrap hover:text-indigo-600 hover:underline transition-colors"
-                    >{{ customer.name }}</span
+                    class="inline-block w-32 truncate align-middle text-center px-2 py-0.5 rounded text-xs font-medium"
+                    :style="sourceStyle(customer.sourceColor)"
+                    :title="
+                      meta.sources.find(source => source.value === customer.sourceId)?.label ||
+                      customer.source ||
+                      '—'
+                    "
                   >
-                </div>
-              </td>
-              <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.phone }}</td>
-              <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.email }}</td>
-              <td class="px-4 py-3">
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium whitespace-nowrap cursor-pointer"
-                  :class="sourceClass(customer.source)"
-                >
-                  {{ meta.sources.find(source => source.value === customer.sourceId)?.label || customer.source || '—' }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-gray-500">{{ customer.type }}</td>
-              <td class="px-4 py-3 text-gray-500">{{ customer.city }}</td>
-              <td class="px-4 py-3 text-gray-600">{{ customer.agent }}</td>
-              <td class="px-4 py-3 text-gray-400 tabular-nums whitespace-nowrap">
-                {{ customer.date }}
-              </td>
-              <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
-                {{ customer.isDraft === true ? 'مسودة' : customer.isDraft === false ? 'غير مسودة' : '—' }}
-              </td>
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <button
-                    class="text-blue hover:text-blue-dark cursor-pointer transition-colors"
-                    title="تعديل"
-                    v-if="permissions.can('customers.viewEdit')"
-                    @click="handleEdit(customer)"
-                  >
-                    <Pencil :size="14" />
-                  </button>
-                  <button
-                    type="button"
-                    class="text-red hover:text-red-dark cursor-pointer transition-colors"
-                    title="حذف"
-                    v-if="permissions.can('customers.delete')"
-                    @click="handleDelete(customer)"
-                  >
-                    <Trash2 :size="14" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="paginatedCustomers.length === 0">
-              <td colspan="10" class="text-center text-gray-400 py-8">لا توجد نتائج</td>
-            </tr>
+                    {{
+                      meta.sources.find(source => source.value === customer.sourceId)?.label ||
+                      customer.source ||
+                      '—'
+                    }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-gray-500">{{ customer.type }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ customer.city }}</td>
+                <td class="px-4 py-3 text-gray-600">{{ customer.agent }}</td>
+                <td class="px-4 py-3 text-gray-400 tabular-nums whitespace-nowrap">
+                  {{ customer.date }}
+                </td>
+                <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
+                  {{
+                    customer.isDraft === true ? 'مسودة' : customer.isDraft === false ? 'مكتمل' : '—'
+                  }}
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-3">
+                    <button
+                      class="text-blue hover:text-blue-dark cursor-pointer transition-colors"
+                      title="تعديل"
+                      v-if="permissions.can('customers.viewEdit')"
+                      @click="handleEdit(customer)"
+                    >
+                      <Pencil :size="14" />
+                    </button>
+                    <button
+                      type="button"
+                      class="text-red hover:text-red-dark cursor-pointer transition-colors"
+                      title="حذف"
+                      v-if="permissions.can('customers.delete')"
+                      @click="handleDelete(customer)"
+                    >
+                      <Trash2 :size="14" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="paginatedCustomers.length === 0">
+                <td colspan="10" class="text-center text-gray-400 py-8">لا توجد نتائج</td>
+              </tr>
             </template>
           </tbody>
         </table>
       </div>
 
       <!-- Pagination -->
-      <div class="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-t border-gray-200">
+      <div
+        class="flex items-center justify-between flex-wrap gap-2 px-4 py-3 border-t border-gray-200"
+      >
         <p class="text-xs text-gray-400">
-          عرض {{ paginatedCustomers.length ? startIndex + 1 : 0 }}-{{ endIndex }} <template v-if="totalCustomers !== null">من أصل {{ totalCustomers }}</template> سجل
+          عرض {{ paginatedCustomers.length ? startIndex + 1 : 0 }}-{{ endIndex }}
+          <template v-if="totalCustomers !== null">من أصل {{ totalCustomers }}</template> سجل
         </p>
         <div class="flex items-center gap-2">
           <span class="text-xs text-gray-400">عدد السجلات:</span>
@@ -231,16 +250,20 @@
             v-for="p in totalPages"
             :key="p"
             class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium cursor-pointer transition-colors"
-            :class="
-              p === currentPage ? 'bg-blue text-white' : 'text-gray-500 hover:bg-gray-100'
-            "
+            :class="p === currentPage ? 'bg-blue text-white' : 'text-gray-500 hover:bg-gray-100'"
             @click="currentPage = p"
           >
             {{ p }}
           </button>
           <button
             class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
-            :disabled="isLoading || !!loadError || (totalCustomers === null ? paginatedCustomers.length < pageSize : currentPage >= totalPages)"
+            :disabled="
+              isLoading ||
+              !!loadError ||
+              (totalCustomers === null
+                ? paginatedCustomers.length < pageSize
+                : currentPage >= totalPages)
+            "
             @click="currentPage++"
           >
             <ChevronLeft :size="14" />
@@ -318,12 +341,18 @@
   const defaultFilters = { date: '', status: '', city: '', agent: '', source: '', isDraft: '' }
   const activeFilters = ref({ ...defaultFilters })
 
-  const meta = ref({ sources: [], cities: [], agents: [], statuses: [], dateRanges: [
-    { value: 'today', label: 'اليوم' },
-    { value: 'yesterday', label: 'أمس' },
-    { value: 'week', label: 'آخر 7 أيام' },
-    { value: 'month', label: 'هذا الشهر' }
-  ] })
+  const meta = ref({
+    sources: [],
+    cities: [],
+    agents: [],
+    statuses: [],
+    dateRanges: [
+      { value: 'today', label: 'اليوم' },
+      { value: 'yesterday', label: 'أمس' },
+      { value: 'week', label: 'آخر 7 أيام' },
+      { value: 'month', label: 'هذا الشهر' }
+    ]
+  })
 
   const filters = computed(() => [
     { key: 'source', label: 'المصدر', options: meta.value.sources },
@@ -331,10 +360,14 @@
     { key: 'city', label: 'المدينة', options: meta.value.cities },
     { key: 'status', label: 'الحالة', options: meta.value.statuses },
     { key: 'date', label: 'التاريخ', options: meta.value.dateRanges },
-    { key: 'isDraft', label: 'مسودة', options: [
-      { value: 'true', label: 'مسودة' },
-      { value: 'false', label: 'غير مسودة' }
-    ] }
+    {
+      key: 'isDraft',
+      label: 'مسودة',
+      options: [
+        { value: 'true', label: 'مسودة' },
+        { value: 'false', label: 'مكتمل' }
+      ]
+    }
   ])
 
   const isLoading = ref(true)
@@ -349,7 +382,8 @@
       assignedTo: activeFilters.value.agent || undefined,
       city: activeFilters.value.city || undefined,
       callStatus: activeFilters.value.status || undefined,
-      isDraft: activeFilters.value.isDraft === '' ? undefined : activeFilters.value.isDraft === 'true',
+      isDraft:
+        activeFilters.value.isDraft === '' ? undefined : activeFilters.value.isDraft === 'true',
       ...customerDateRange(activeFilters.value.date),
       page: currentPage.value,
       limit: pageSize.value
@@ -384,7 +418,12 @@
   }
 
   let disposed = false
-  const statusLabels = { interested: 'مهتم', not_interested: 'غير مهتم', no_answer: 'لا يرد', reschedule: 'إعادة جدولة' }
+  const statusLabels = {
+    interested: 'مهتم',
+    not_interested: 'غير مهتم',
+    no_answer: 'لا يرد',
+    reschedule: 'إعادة جدولة'
+  }
   async function loadCustomerFilterOptions() {
     const cities = new Set()
     const statuses = new Set()
@@ -402,11 +441,14 @@
           if (typeof item.city === 'string' && item.city.trim()) cities.add(item.city)
           if (typeof item.callStatus === 'string' && item.callStatus) statuses.add(item.callStatus)
           const assigned = item.assignedTo
-          const id = typeof assigned === 'string' ? assigned : assigned?.id ?? assigned?._id
+          const id = typeof assigned === 'string' ? assigned : (assigned?.id ?? assigned?._id)
           if (id) agents.set(id, assigned?.name || item.agent || id)
         }
         meta.value.cities = [...cities].sort((a, b) => a.localeCompare(b, 'ar'))
-        meta.value.statuses = [...statuses].map(value => ({ value, label: statusLabels[value] || value }))
+        meta.value.statuses = [...statuses].map(value => ({
+          value,
+          label: statusLabels[value] || value
+        }))
         const merged = new Map(meta.value.agents.map(item => [item.value, item.label]))
         for (const [id, name] of agents) if (!merged.has(id)) merged.set(id, name)
         meta.value.agents = [...merged].map(([value, label]) => ({ value, label }))
@@ -443,16 +485,24 @@
   }
 
   let searchDebounce = null
-  watch([searchQuery, activeFilters, pageSize], () => {
-    currentPage.value = 1
-  }, { deep: true, flush: 'sync' })
-  watch([searchQuery, activeFilters, currentPage, pageSize], (values, previous) => {
-    clearTimeout(searchDebounce)
-    ++requestVersion
-    isLoading.value = true
-    loadError.value = null
-    searchDebounce = setTimeout(loadCustomers, values[0] !== previous[0] ? 700 : 0)
-  }, { deep: true })
+  watch(
+    [searchQuery, activeFilters, pageSize],
+    () => {
+      currentPage.value = 1
+    },
+    { deep: true, flush: 'sync' }
+  )
+  watch(
+    [searchQuery, activeFilters, currentPage, pageSize],
+    (values, previous) => {
+      clearTimeout(searchDebounce)
+      ++requestVersion
+      isLoading.value = true
+      loadError.value = null
+      searchDebounce = setTimeout(loadCustomers, values[0] !== previous[0] ? 700 : 0)
+    },
+    { deep: true }
+  )
 
   onBeforeUnmount(() => {
     disposed = true
@@ -496,19 +546,12 @@
     }
   }
 
-  function sourceClass(source) {
-    const map = {
-      'جوجل أدز': 'bg-blue-light text-blue',
-      'إعلانات جوجل': 'bg-blue-light text-blue',
-      'وسائل التواصل': 'bg-emerald-50 text-emerald-600',
-      'الاتصال المباشر': 'bg-amber-50 text-amber-600',
-      'إعلانات تويتر': 'bg-sky-light text-blue-dark',
-      'التسويق الخارجي': 'bg-violet-light text-violet',
-      'إعلانات ميتا': 'bg-indigo-50 text-indigo-600',
-      'مجتمع ميتا': 'bg-indigo-50 text-indigo-600',
-      'تسويق الشبكات': 'bg-pink-50 text-pink-600'
-    }
-    return map[source] ?? 'bg-gray-100 text-gray-600'
+  function sourceStyle(value) {
+    const color =
+      typeof value === 'string' && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value) ? value : '#6b7280'
+    const hex =
+      color.length === 4 ? `#${[...color.slice(1)].map(char => char + char).join('')}` : color
+    return { color: hex, backgroundColor: `${hex}14` }
   }
 
   const hasActiveFilter = computed(
@@ -523,7 +566,13 @@
     currentPage.value = 1
   }
 
-  const totalPages = computed(() => totalCustomers.value === null ? currentPage.value : Math.max(1, Math.ceil(totalCustomers.value / pageSize.value)))
+  const totalPages = computed(() =>
+    totalCustomers.value === null
+      ? currentPage.value
+      : Math.max(1, Math.ceil(totalCustomers.value / pageSize.value))
+  )
   const startIndex = computed(() => (currentPage.value - 1) * pageSize.value)
-  const endIndex = computed(() => paginatedCustomers.value.length ? startIndex.value + paginatedCustomers.value.length : 0)
+  const endIndex = computed(() =>
+    paginatedCustomers.value.length ? startIndex.value + paginatedCustomers.value.length : 0
+  )
 </script>
