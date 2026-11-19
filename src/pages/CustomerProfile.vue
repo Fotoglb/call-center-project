@@ -17,9 +17,8 @@
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center items-start justify-between gap-3">
       <div>
-        <p class="text-xs text-gray-400 mb-1">إدارة العملاء / {{ customer.name }}</p>
-        <h1 class="text-xl font-bold text-gray-900">{{ customer.name }}</h1>
-        <p class="text-xs text-gray-400 mt-0.5">ملف العميل الكامل</p>
+        <h1 class="text-base font-bold text-gray-900"><span class="text-gray-400 font-normal">إدارة العملاء / </span>{{ customer.name }}</h1>
+        <p class="text-xs text-gray-400 mt-2">ملف العميل الشامل</p>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
         <button
@@ -56,98 +55,83 @@
     </div>
 
     <!-- Main Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6 items-start">
       <!-- RIGHT: Sidebar -->
       <div class="space-y-5">
         <!-- Customer Card -->
-        <div class="bg-gray-50 rounded-xl p-5">
-          <div class="flex items-center gap-3 mb-4">
-            <div
-              class="w-11 h-11 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600 shrink-0"
-            >
-              {{ customer.name.charAt(0) }}
+        <div class="bg-white rounded-2xl p-6 pt-20 min-h-80">
+          <div class="flex items-center justify-between gap-3 mb-8">
+            <div class="min-w-0">
+              <p class="text-xl font-bold text-gray-900 break-words">{{ customer.name }}</p>
             </div>
-            <div>
-              <p class="text-sm font-bold text-gray-900">{{ customer.name }}</p>
               <span
-                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1"
+                class="inline-flex shrink-0 items-center px-3 py-1 rounded-md text-xs font-medium"
                 :class="statusClass(customer.status)"
               >
                 {{ customer.status }}
               </span>
-            </div>
           </div>
-          <div class="space-y-2.5">
+          <div class="space-y-4">
             <div class="flex items-center gap-2 text-xs">
-              <Phone :size="13" class="text-gray-400 shrink-0" />
+              <Phone :size="28" class="text-blue bg-blue-light rounded-md p-1.5 shrink-0" />
               <span class="text-gray-600 tabular-nums" dir="ltr">{{ customer.phone }}</span>
             </div>
             <div class="flex items-center gap-2 text-xs">
-              <Mail :size="13" class="text-gray-400 shrink-0" />
+              <Mail :size="28" class="text-violet-500 bg-violet-50 rounded-md p-1.5 shrink-0" />
               <span class="text-gray-600" dir="ltr">{{ customer.email }}</span>
             </div>
             <div class="flex items-center gap-2 text-xs">
-              <IdCard :size="13" class="text-gray-400 shrink-0" />
-              <span class="text-gray-600 tabular-nums">{{ customer.nationalId }}</span>
+              <MapPin :size="28" class="text-rose-500 bg-rose-50 rounded-md p-1.5 shrink-0" />
+              <span class="text-gray-400">{{ customer.location }}</span>
             </div>
           </div>
         </div>
 
         <!-- Customer Details -->
-        <div class="bg-gray-50 rounded-xl p-5">
-          <h3 class="text-sm font-semibold text-gray-900 mb-3">تفاصيل العميل</h3>
-          <dl class="space-y-3">
-            <div class="flex items-center justify-between text-xs">
-              <dt class="flex items-center gap-1.5 text-gray-400">
-                <MapPin :size="13" class="shrink-0" />
-                موقع الخدمات
-              </dt>
-              <dd class="font-semibold text-gray-800">{{ customer.location }}</dd>
+        <div class="bg-white rounded-2xl p-6">
+          <h3 class="text-base font-bold text-gray-900 mb-6">تفاصيل العميل</h3>
+          <dl class="space-y-5">
+            <div class="flex items-center justify-between gap-4 text-sm">
+              <dt class="flex items-center gap-2 text-gray-400"><Zap :size="14" class="text-blue" />مصدر العميل</dt>
+              <dd class="text-gray-700">{{ customer.source }}</dd>
             </div>
-            <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center justify-between gap-4 text-sm">
               <dt class="flex items-center gap-1.5 text-gray-400">
-                <Building2 :size="13" class="shrink-0" />
-                نوع العمل
-              </dt>
-              <dd class="font-semibold text-gray-800">{{ customer.workType }}</dd>
-            </div>
-            <div class="flex items-center justify-between text-xs">
-              <dt class="flex items-center gap-1.5 text-gray-400">
-                <Briefcase :size="13" class="shrink-0" />
+                <Briefcase :size="14" class="shrink-0 text-violet-500" />
                 نوع المشروع
               </dt>
-              <dd class="font-semibold text-gray-800">{{ customer.projectType }}</dd>
+              <dd class="text-gray-700">{{ customer.projectType }}</dd>
             </div>
-            <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center justify-between gap-4 text-sm">
               <dt class="flex items-center gap-1.5 text-gray-400">
-                <Wallet :size="13" class="shrink-0" />
-                الميزانية
+                <Wallet :size="14" class="shrink-0 text-emerald-500" />
+                الميزانية / باقة المشروع
               </dt>
-              <dd class="font-semibold text-gray-800 tabular-nums">{{ customer.budget }} ريال</dd>
+              <dd class="text-gray-700 tabular-nums whitespace-nowrap">{{ formattedBudget }}</dd>
             </div>
-            <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center justify-between gap-4 text-sm">
               <dt class="flex items-center gap-1.5 text-gray-400">
-                <Calendar :size="13" class="shrink-0" />
-                تاريخ الإنشاء
+                <Calendar :size="14" class="shrink-0 text-amber-500" />
+                تاريخ الإضافة
               </dt>
-              <dd class="font-semibold text-gray-800 tabular-nums">{{ customer.createdAt }}</dd>
+              <dd class="text-gray-700 tabular-nums" dir="ltr">{{ customer.addedAt }}</dd>
             </div>
-            <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center justify-between gap-4 text-sm">
               <dt class="flex items-center gap-1.5 text-gray-400">
-                <Star :size="13" class="shrink-0" />
-                الأولوية
+                <Clock :size="14" class="shrink-0 text-rose-500" />
+                آخر تواصل
               </dt>
-              <dd class="font-semibold text-gray-800">{{ customer.priority }}</dd>
+              <dd class="text-gray-700 text-xs">{{ customer.lastContact }}</dd>
             </div>
           </dl>
         </div>
 
         <!-- Assigned Agent -->
-        <div class="bg-gray-50 rounded-xl p-5">
-          <h3 class="text-sm font-semibold text-gray-900 mb-3">الموظف المسؤول</h3>
+        <div class="bg-white rounded-2xl p-6">
+          <h3 class="text-base font-bold text-gray-900 mb-6">الموظف المسؤول</h3>
           <div class="flex items-center gap-3">
             <div
-              class="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-600 shrink-0"
+              class="w-12 h-12 rounded-md bg-violet-50 flex items-center justify-center text-base text-violet-500 shrink-0"
             >
               {{ customer.assignedAgent.name.charAt(0) }}
             </div>
@@ -155,63 +139,53 @@
               <p class="text-xs font-semibold text-gray-800">{{ customer.assignedAgent.name }}</p>
               <p class="text-xs text-gray-400">{{ customer.assignedAgent.role }}</p>
             </div>
+            <a v-if="customer.assignedAgent.phone" :href="`tel:${customer.assignedAgent.phone}`" aria-label="الاتصال بالموظف المسؤول" class="ms-auto w-9 h-9 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-500"><Phone :size="18" /></a>
           </div>
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 xsm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-5">
           <div
             v-for="stat in statCards"
             :key="stat.label"
-            class="bg-gray-50 rounded-xl p-4 text-center"
+            class="bg-white rounded-2xl p-5 text-start min-h-44"
           >
-            <p class="text-lg font-bold text-gray-900">{{ stat.value }}</p>
-            <p class="text-xs text-gray-400 mt-1">{{ stat.label }}</p>
+            <div class="w-14 h-14 rounded-xl flex items-center justify-center mb-5" :class="stat.color"><component :is="stat.icon" :size="22" /></div>
+            <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
+            <p class="text-sm text-gray-700 mt-2">{{ stat.label }}</p>
           </div>
         </div>
       </div>
 
       <!-- LEFT: col-span-2 -->
-      <div class="lg:col-span-2 space-y-5">
+      <div class="min-w-0 space-y-5">
         <!-- Interest Score Card -->
         <div
-          class="rounded-2xl p-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-5 bg-gradient-to-l from-blue to-blue-dark"
+          class="rounded-2xl px-6 py-7 min-h-48 flex items-center justify-between gap-6 flex-wrap bg-gradient-to-l from-[#2563eb] to-[#347df4]"
         >
           <div>
             <div class="flex items-baseline gap-1">
-              <p class="text-sm font-bold text-white">نقاط الاهتمام</p>
+              <p class="text-xs font-normal text-white">نقاط الاهتمام</p>
             </div>
             <div class="flex items-baseline gap-1 mt-1">
-              <span class="text-[55px] font-bold text-white">{{ customer.interestScore ?? '—' }}</span>
-              <span class="text-xs text-white/70">/100</span>
+              <span class="text-5xl font-medium text-white">{{ customer.interestScore ?? '—' }}</span>
+              <span class="text-lg text-white">/100</span>
             </div>
             <p class="text-xs text-white/70 mt-1 leading-relaxed">
               {{ customer.interestScore === null ? 'لا توجد بيانات' : '' }}
             </p>
           </div>
-          <div class="relative w-35 h-35 shrink-0">
-            <svg class="w-35 h-35 -rotate-90" viewBox="0 0 80 80">
-              <circle cx="40" cy="40" r="34" fill="none" stroke="#ffffff4d" stroke-width="8" />
-              <circle
-                cx="40"
-                cy="40"
-                r="34"
-                fill="none"
-                stroke="#ffffff"
-                stroke-width="8"
-                stroke-linecap="round"
-                :stroke-dasharray="circumference"
-                :stroke-dashoffset="circumference * (1 - (customer.interestScore ?? 0) / 100)"
-              />
+          <div class="relative w-32 h-32 shrink-0" role="img" :aria-label="`نقاط الاهتمام: ${customer.interestScore ?? 'لا توجد بيانات'}`">
+            <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90" aria-hidden="true">
+              <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="8" />
+              <circle cx="50" cy="50" r="43" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" pathLength="100" stroke-dasharray="100" :stroke-dashoffset="100 - Math.min(100, Math.max(0, Number(customer.interestScore) || 0))" />
             </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-              <span class="text-[40px] font-bold text-white">{{ customer.interestScore === null ? '—' : `${customer.interestScore}%` }}</span>
-            </div>
+            <span class="absolute inset-0 flex items-center justify-center text-3xl text-white" dir="ltr">{{ customer.interestScore === null ? '—' : `${customer.interestScore}%` }}</span>
           </div>
         </div>
 
         <!-- Activity Timeline -->
-        <div class="bg-gray-50 rounded-xl flex flex-col">
+        <div class="bg-white rounded-2xl flex flex-col">
           <!-- Tabs -->
           <div
             class="flex items-center gap-1 px-5 pt-4 border-b border-gray-200 shrink-0 overflow-x-auto"
@@ -222,7 +196,7 @@
               class="px-4 py-2 text-xs font-medium rounded-t-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
               :class="
                 activeActivityTab === tab.key
-                  ? 'text-indigo-600 border-b-2 border-indigo-500 bg-indigo-50/40'
+                  ? 'text-blue border-b-2 border-blue'
                   : 'text-gray-500 hover:text-gray-700'
               "
               @click="activeActivityTab = tab.key"
@@ -232,38 +206,36 @@
           </div>
 
           <!-- Timeline -->
-          <div class="p-5 space-y-3">
+          <div class="p-6 space-y-5">
             <p v-if="!filteredActivity.length" class="text-xs text-gray-400 text-center">لا توجد بيانات</p>
-            <div v-for="entry in filteredActivity" :key="entry.id" class="flex gap-3">
+            <div v-for="(entry, index) in filteredActivity" :key="entry.id" class="relative flex gap-5">
+              <span v-if="index < filteredActivity.length - 1" class="absolute start-4 top-8 -bottom-5 w-px bg-gray-100" aria-hidden="true"></span>
               <div
                 v-if="entry.category === 'calls'"
-                class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                :class="entry.answered === false ? 'bg-red-50' : 'bg-blue-light'"
+                class="w-8 h-8 rounded-md flex items-center justify-center shrink-0 mt-0.5"
+                :class="entry.answered === false ? 'bg-red-50' : 'bg-emerald-50'"
               >
                 <component
                   :is="entry.answered === false ? PhoneMissed : Phone"
                   :size="14"
-                  :class="entry.answered === false ? 'text-red-500' : 'text-blue'"
+                  :class="entry.answered === false ? 'text-red-500' : 'text-emerald-500'"
                 />
               </div>
               <div
                 v-else-if="entry.category === 'system'"
-                class="w-8 h-8 rounded-full bg-blue-light flex items-center justify-center shrink-0 mt-0.5"
+                class="w-8 h-8 rounded-md bg-blue-light flex items-center justify-center shrink-0 mt-0.5"
               >
                 <UserPlus :size="14" class="text-blue" />
               </div>
-              <span v-else class="w-5 h-5 rounded-md border border-gray-300 shrink-0 mt-0.5"></span>
+              <div v-else class="w-8 h-8 rounded-md flex items-center justify-center shrink-0 mt-0.5" :class="entry.category === 'visits' ? 'bg-amber-50 text-amber-500' : 'bg-violet-50 text-violet-500'">
+                <component :is="entry.category === 'visits' ? MapPin : MessageSquare" :size="14" />
+              </div>
               <div
-                class="flex-1 min-w-0 rounded-xl p-3"
-                :class="
-                  entry.category === 'calls' && entry.answered === false
-                    ? 'border-2 border-blue bg-sky-lighter'
-                    : 'bg-white'
-                "
+                class="flex-1 min-w-0 rounded-lg p-4 bg-gray-50"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-xs font-semibold text-gray-800">{{ entry.title }}</span>
+                    <span class="text-sm font-medium text-gray-900">{{ entry.title }}</span>
                     <span
                       v-if="entry.tag"
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
@@ -275,17 +247,16 @@
                     >{{ entry.time }} {{ entry.period }} - {{ entry.date }}</span
                   >
                 </div>
-                <p class="text-xs text-gray-500 leading-relaxed mb-1">{{ entry.note }}</p>
-                <p class="text-xs text-gray-400">{{ entry.meta }}</p>
+                <p v-if="entry.meta" class="text-xs text-gray-400 mb-4">بواسطة {{ entry.meta }}</p>
+                <p class="text-sm text-gray-400 leading-relaxed">{{ entry.note }}</p>
               </div>
             </div>
 
             <div v-if="activeActivityTab === 'timeline'" class="pt-2 space-y-2">
-              <input
+              <textarea
                 v-model="newActivityNote"
-                type="text"
-                placeholder="موقع إلكتروني خاص بنوع عقارات سكنية"
-                class="w-full h-11 px-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors"
+                placeholder="أضف ملاحظة..."
+                class="w-full h-24 p-4 resize-none bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors"
                 disabled
                 title="إضافة النشاط غير متاحة حاليًا"
               />
@@ -317,11 +288,12 @@
     ArrowRight,
     Pencil,
     PhoneCall,
+    MessageSquare,
     Phone,
     Mail,
-    IdCard,
+    Zap,
     MapPin,
-    Building2,
+    Clock,
     Briefcase,
     Wallet,
     Calendar,
@@ -336,19 +308,20 @@
   const route = useRoute()
   const router = useRouter()
 
-  const circumference = 2 * Math.PI * 34
 
   const isLoading = ref(true)
   const loadError = ref(null)
   const customer = ref(null)
+  const formattedBudget = computed(() => typeof customer.value?.budget === 'number'
+    ? `${new Intl.NumberFormat('en-US').format(customer.value.budget)} ريال` : '—')
 
   const statCards = computed(() => {
     if (!customer.value) return []
     return [
-      { label: 'الزيارات الميدانية', value: customer.value.stats.fieldVisits ?? 'لا توجد بيانات' },
-      { label: 'إجمالي المكالمات', value: customer.value.stats.totalCalls ?? 'لا توجد بيانات' },
-      { label: 'نقاط الاهتمام', value: customer.value.stats.interestPoints ?? 'لا توجد بيانات' },
-      { label: 'أيام منذ الإضافة', value: customer.value.stats.daysSinceAdded ?? 'لا توجد بيانات' }
+      { label: 'إجمالي المكالمات', value: customer.value.stats.totalCalls ?? '—', icon: Phone, color: 'bg-blue-50 text-blue-500' },
+      { label: 'الزيارات الميدانية', value: customer.value.stats.fieldVisits ?? '—', icon: MapPin, color: 'bg-emerald-50 text-emerald-500' },
+      { label: 'أيام منذ الإضافة', value: customer.value.stats.daysSinceAdded ?? '—', icon: Clock, color: 'bg-amber-50 text-amber-500' },
+      { label: 'نقاط الاهتمام', value: customer.value.stats.interestPoints ?? '—', icon: Star, color: 'bg-violet-50 text-violet-500' }
     ]
   })
 
@@ -391,6 +364,9 @@
   function statusClass(status) {
     const map = {
       'عميل جديد': 'bg-indigo-50 text-indigo-600',
+      'مهتم': 'bg-emerald-50 text-emerald-600',
+      'غير مهتم': 'bg-red-50 text-red-500',
+      'إعادة جدولة': 'bg-violet-50 text-violet-500',
       منتظم: 'bg-emerald-50 text-emerald-600',
       'قيد الدراسة': 'bg-orange-50 text-orange-500'
     }

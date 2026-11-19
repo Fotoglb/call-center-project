@@ -29,12 +29,16 @@ export function mapCustomerProfile(response) {
     nationalId: lead.nationalId ?? '—',
     status: statusLabels[lead.callStatus] ?? lead.callStatus ?? '—',
     location: lead.city ?? '—',
+    source: lead.sourceId?.name ?? '—',
     workType: lead.businessType ?? '—',
     projectType: lead.projectType ?? '—',
     budget: lead.budget ?? '—',
     createdAt: lead.projectCreatedAt ? String(lead.projectCreatedAt).slice(0, 10) : '—',
+    addedAt: lead.createdAt && Number.isFinite(Date.parse(lead.createdAt)) ? new Date(lead.createdAt).toLocaleDateString('en-GB') : '—',
+    lastContact: lead.lastContactAt && Number.isFinite(Date.parse(lead.lastContactAt))
+      ? new Date(lead.lastContactAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' }) : '—',
     priority: priorityLabels[lead.priority] ?? lead.priority ?? '—',
-    assignedAgent: { name: lead.assignedTo?.name ?? '—', role: lead.assignedTo?.role ?? '—' },
+    assignedAgent: { name: lead.assignedTo?.name ?? '—', role: ({ call_center: 'كول سنتر', data_entry: 'مدخل بيانات', admin: 'أدمن', super_admin: 'سوبر أدمن' })[lead.assignedTo?.role] ?? lead.assignedTo?.role ?? '—', phone: lead.assignedTo?.phone ?? null },
     stats: { fieldVisits: stats.totalVisits, totalCalls: stats.totalCalls, interestPoints: stats.interestScore, daysSinceAdded: stats.daysSinceAdded },
     interestScore: stats.interestScore ?? lead.interestScore ?? null
   }
