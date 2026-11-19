@@ -148,11 +148,11 @@
           <div
             v-for="stat in statCards"
             :key="stat.label"
-            class="bg-white rounded-2xl p-4 text-start"
+            class="bg-white rounded-2xl p-3 text-start"
           >
-            <div class="w-14 h-14 rounded-xl flex items-center justify-center mb-5" :class="stat.color"><component :is="stat.icon" :size="22" /></div>
+            <div class="w-14 h-14 rounded-xl flex items-center justify-center mb-2" :class="stat.color"><component :is="stat.icon" :size="22" /></div>
             <p class="text-2xl font-bold text-gray-900">{{ stat.value }}</p>
-            <p class="text-sm text-gray-700 mt-2">{{ stat.label }}</p>
+            <p class="text-sm text-gray-700 mt-1">{{ stat.label }}</p>
           </div>
         </div>
       </div>
