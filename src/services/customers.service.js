@@ -14,29 +14,6 @@ export const customersService = {
     }
     return response
   },
-  async downloadTemplate() {
-    const response = await api.get(ENDPOINTS.customers.bulkTemplate)
-    if (response?.success === false) {
-      throw new Error(response.message || 'تعذّر تنزيل قالب العملاء')
-    }
-    const file = response?.data
-    if (typeof file?.base64 !== 'string' || !file.base64.trim()) {
-      throw new Error('لم يُرجع السيرفر ملفًا صالحًا للتنزيل')
-    }
-    let bytes
-    try {
-      bytes = Uint8Array.from(atob(file.base64), char => char.charCodeAt(0))
-    } catch {
-      throw new Error('تعذّر قراءة ملف العملاء القادم من السيرفر')
-    }
-    if (!bytes.length) throw new Error('ملف العملاء فارغ')
-    return {
-      blob: new Blob([bytes], {
-        type: file.mimeType || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      }),
-      fileName: file.fileName || 'Leads Template.xlsx',
-    }
-  },
   getSources() {
     return api.get(ENDPOINTS.customers.sources)
   },

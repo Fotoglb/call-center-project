@@ -26,7 +26,7 @@
           <h2 class="text-sm font-semibold text-gray-900">معلومات العميل</h2>
           <p class="text-xs text-gray-500 mt-1 mb-6">جميع الحقول التي تحمل علامة <span class="text-red-500">*</span> مطلوبة.</p>
 
-          <div class="space-y-4">
+          <div class="customer-fields space-y-4">
             <!-- Row 1: Full Name + Email -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="space-y-1.5">
@@ -37,7 +37,7 @@
                   <input
                     v-model="form.name"
                     type="text"
-                    placeholder="أدخل الاسم الكامل"
+                    placeholder="أدخل اسمك بالكامل"
                     class="w-full h-10 ps-4 pe-9 bg-white border rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                     :class="errors.name ? 'border-red-300' : 'border-gray-200'"
                   />
@@ -101,7 +101,7 @@
                     />
                     <Phone
                       :size="14"
-                      class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                      class="absolute inset-s-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                     />
                   </div>
                 </div>
@@ -115,12 +115,14 @@
                 <div class="relative">
                   <select
                     v-model="form.source"
+                    data-source-select
                     class="w-full appearance-none h-10 ps-4 pe-9 bg-white border rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer transition-colors"
                     :class="errors.source ? 'border-red-300' : 'border-gray-200'"
                   >
                     <option value="">اختر المصدر</option>
                     <option v-for="src in sourceOptions" :key="src.value" :value="src.value">{{ src.label }}</option>
                   </select>
+                  <Mail :size="20" class="absolute inset-s-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <ChevronDown
                     :size="12"
                     class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -129,13 +131,13 @@
                 <p v-if="errors.source" class="text-xs text-red-500">{{ errors.source }}</p>
               </div>
             <div class="space-y-1.5">
-                <label for="priority" class="text-xs font-medium text-gray-700">الأولوية</label>
+                <label for="priority" class="text-xs font-medium text-gray-700">حالة العميل</label>
                 <div class="relative">
                   <select id="priority" v-model="form.priority" class="w-full appearance-none h-10 ps-4 pe-9 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 cursor-pointer">
                     <option value="">اختر الأولوية</option>
-                    <option value="high">عالية</option>
-                    <option value="medium">متوسطة</option>
-                    <option value="low">منخفضة</option>
+                    <option value="high">عالي الأهمية</option>
+                    <option value="medium">متوسط الأهمية</option>
+                    <option value="low">منخفض الأهمية</option>
                   </select>
                   <ChevronDown :size="12" class="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
@@ -170,10 +172,6 @@
                     type="date"
                     class="w-full h-10 ps-4 pe-9 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                   />
-                  <CalendarDays
-                    :size="14"
-                    class="absolute inset-s-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
                 </div>
                 <p v-if="errors.projectCreatedAt" class="text-xs text-red-500">{{ errors.projectCreatedAt }}</p>
               </div>
@@ -184,7 +182,7 @@
               <div class="space-y-1.5">
                 <label class="text-xs font-medium text-gray-700">
                   المدينة
-                  <span class="text-gray-400 font-normal">(الاختياري)</span>
+                  <span>(اختياري)</span>
                 </label>
                 <div class="relative">
                   <input
@@ -310,7 +308,6 @@
     Mail,
     Phone,
     ChevronDown,
-    CalendarDays,
     CheckCircle
   } from '@lucide/vue'
   import { customersService } from '@/services/customers.service'
@@ -521,18 +518,30 @@
 .customer-editor { padding: 4px 0 16px; }
 .customer-columns { align-items: start; }
 .customer-form-card { padding: 24px; }
+.customer-form-card h2 { font-size: 20px; font-weight: 700; }
+.customer-fields > * + * { margin-top: 24px; }
+.customer-fields > .grid { gap: 22px; }
+.customer-form-card label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 14px; }
 .customer-form-card input,
-.customer-form-card select { height: 44px; border-radius: 9px; font-size: 12px; text-align: right; }
-.customer-form-card input { padding-inline: 36px 16px; }
-.customer-form-card select { padding-inline: 16px 32px; }
-.customer-form-card textarea { border-radius: 9px; font-size: 12px; }
-.customer-form-card textarea[rows='1'] { height: 44px; }
-.customer-form-card textarea[rows='5'] { min-height: 120px; }
-.customer-form-card label { font-weight: 600; font-size: 12px; }
-.phone-field { border: 1px solid #e5e7eb; border-radius: 9px; background: white; align-items: center; }
+.customer-form-card select { height: 56px; border-radius: 11px; font-size: 14px; text-align: right; }
+.customer-form-card input { padding-inline: 20px; }
+.customer-form-card input[type='text']:has(+ svg),
+.customer-form-card input[type='email'],
+.customer-form-card input[type='tel'] { padding-inline: 48px 20px; }
+.customer-form-card select { padding-inline: 20px 44px; }
+.customer-form-card select[data-source-select] { padding-inline-start: 48px; }
+.customer-form-card textarea { border-radius: 11px; font-size: 14px; padding: 16px 20px; }
+.customer-form-card textarea[rows='1'] { height: 56px; }
+.customer-form-card textarea[rows='5'] { min-height: 158px; }
+.customer-fields .relative > svg { width: 20px; height: 20px; }
+.customer-form-card input[type='date'] { direction: ltr; }
+.customer-form-card input[type='date']::-webkit-datetime-edit { text-align: right; padding-right: 10px; }
+.customer-form-card input[type='date']::-webkit-calendar-picker-indicator { width: 20px; height: 20px; opacity: .5; cursor: pointer; }
+.phone-field { border: 1px solid #e5e7eb; border-radius: 11px; background: white; align-items: center; }
 .phone-field input,
 .phone-field select { border: 0; background: transparent; }
-.phone-field > .shrink-0 { width: 62px; border-inline-start: 1px solid #e5e7eb; }
+.phone-field > .shrink-0 { width: 64px; border-inline-start: 1px solid #d1d5db; }
+.phone-field > .shrink-0 select { height: 24px; }
 .phone-field select { width: 100%; padding: 0 6px; direction: ltr; text-align: center; appearance: none; }
 .phone-field > .shrink-0 svg { display: none; }
 .phone-field > .flex-1 { min-width: 0; }

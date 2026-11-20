@@ -340,10 +340,33 @@
     if (isDownloadingTemplate.value) return
     isDownloadingTemplate.value = true
     try {
-      const { blob, fileName } = await customersService.downloadTemplate()
-      downloadBlob(blob, fileName)
+      const { isDraft, ...params } = queryParams()
+      const rows = []
+      const seen = new Set()
+      let fetched = 0
+      for (let page = 1; ; page++) {
+        const result = await customersService.getList({ ...params, page, limit: 100 })
+        let added = 0
+        for (const row of result.items) {
+          if (row.id && seen.has(row.id)) continue
+          if (row.id) seen.add(row.id)
+          added++
+          if (isDraft === undefined || row.isDraft === isDraft) rows.push(row)
+        }
+        fetched += result.items.length
+        if (!result.items.length || (result.total !== null && fetched >= result.total)) break
+        if (!added) throw new Error('تعذّر جلب جميع العملاء للتصدير')
+        if (result.total === null && result.items.length < 100) break
+      }
+      if (!rows.length) {
+        notification.error('لا توجد بيانات للتصدير')
+        return
+      }
+      const { exportCustomers } = await import('@/utils/exportCustomers')
+      const blob = await exportCustomers(rows)
+      downloadBlob(blob, 'العملاء.xlsx')
     } catch (error) {
-      notification.error(error.message || 'تعذّر تنزيل قالب العملاء')
+      notification.error(error.message || 'تعذّر تصدير العملاء')
     } finally {
       isDownloadingTemplate.value = false
     }

@@ -36,7 +36,6 @@ export function requestPermission(url, method = 'get') {
   if (path === '/leads') return method === 'post' ? 'customers.create' : 'customers.list'
   if (/^\/leads\/[^/]+\/profile$/.test(path)) return 'customerProfile.view'
   if (path === '/leads/sources') return 'customers.list|customers.create|customers.viewEdit'
-  if (path === '/leads/bulk/template') return 'customers.list|customers.create|customers.viewEdit'
   if (path === '/leads/bulk') return 'customers.create'
   if (path === '/leads/check-duplicate') return 'customers.create|customers.viewEdit'
   if (/^\/leads\//.test(path)) return method === 'delete' ? 'customers.delete' : 'customers.viewEdit'
