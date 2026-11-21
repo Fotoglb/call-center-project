@@ -1,5 +1,6 @@
 <template>
   <div class="register-page" dir="rtl">
+    <div class="register-decoration" aria-hidden="true"></div>
     <main class="register-card">
 
       <!-- Header -->
@@ -78,83 +79,74 @@
       </form>
 
       <!-- ────────── Step 2: اختيار الدور ────────── -->
-      <form v-else-if="currentStep === 2" class="space-y-5" @submit.prevent="nextStep">
+      <form v-else-if="currentStep === 2" class="register-role-form" @submit.prevent="nextStep">
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="role-options">
           <label
             v-for="role in roles"
             :key="role.value"
-            class="relative flex flex-col items-center justify-between gap-2 border rounded-xl p-4 cursor-pointer transition-all hover:border-gray-400 focus-within:ring-2 focus-within:ring-blue"
+            class="role-option relative flex flex-col items-center border cursor-pointer transition-all focus-within:ring-2 focus-within:ring-blue"
             :class="form.role === role.value ? 'border-blue bg-blue' : 'border-gray-200 bg-white'"
           >
             <input type="radio" v-model="form.role" :value="role.value" class="sr-only" />
             <div
-              class="w-12 h-12 rounded-full flex items-center justify-center"
-              :class="form.role === role.value ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'"
+              class="role-icon flex items-center justify-center"
+              :class="form.role === role.value ? 'text-white' : 'text-gray-800'"
             >
               <component :is="role.icon" :size="22" />
             </div>
             <span
-              class="text-xs font-semibold text-center leading-tight"
-              :class="form.role === role.value ? 'text-white' : 'text-gray-800'"
+              class="role-title text-center"
+              :class="form.role === role.value ? 'text-white' : 'text-gray-400'"
             >{{ role.label }}</span>
             <span
-              class="text-xs flex items-center gap-1"
+              class="role-subtitle flex items-center justify-between"
               :class="form.role === role.value ? 'text-white' : 'text-gray-400'"
             >
-              <ChevronLeft :size="12" />
               {{ role.sub }}
+              <ArrowLeft :size="14" />
             </span>
           </label>
         </div>
 
-        <div class="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-400">
-          <Info :size="14" class="mt-0.5 shrink-0" />
-          <span>اختر دور الحساب؛ يحدد السيرفر صلاحية إنشاء الحساب بهذا الدور</span>
+        <div class="role-notice flex items-center gap-2 text-xs text-gray-400">
+          <Info :size="20" class="shrink-0" />
+          <span>أدوار المشرف والمدير يتم تعيينها من قبل إدارة النظام</span>
         </div>
 
-        <div class="space-y-3 pt-1">
+        <div class="role-actions">
           <Button type="submit" size="full" class="flex items-center justify-center gap-2">
             <span>التالي</span>
             <ArrowLeft :size="16" />
           </Button>
           <Button type="button" variant="outline" size="full" :disabled="isSubmitting" class="flex items-center justify-center gap-2" @click="prevStep">
-            <span>السابق</span>
             <ArrowRight :size="16" />
+            <span>السابق</span>
           </Button>
         </div>
       </form>
 
       <!-- ────────── Step 3: مراجعة البيانات ────────── -->
-      <div v-else class="space-y-5">
+      <div v-else class="register-review">
 
-        <div class="border border-gray-200 rounded-2xl divide-y divide-gray-100">
-          <div class="flex items-center justify-between px-5 py-4">
-            <span class="text-sm text-gray-400 truncate max-w-50">{{ form.fullName }}</span>
-            <div class="flex items-center gap-2 text-gray-500 text-sm font-medium shrink-0 ms-3">
-              <span>الاسم</span>
-              <User :size="16" class="text-gray-400" />
-            </div>
+        <div class="review-details">
+          <div class="review-row">
+            <User :size="24" aria-hidden="true" />
+            <p><span>الاسم | </span><bdi dir="auto">{{ form.fullName }}</bdi></p>
           </div>
 
-          <div class="flex items-center justify-between px-5 py-4">
-            <span class="text-sm text-gray-400 truncate max-w-50">{{ form.email }}</span>
-            <div class="flex items-center gap-2 text-gray-500 text-sm font-medium shrink-0 ms-3">
-              <span>البريد الإلكتروني</span>
-              <Mail :size="16" class="text-gray-400" />
-            </div>
+          <div class="review-row">
+            <Mail :size="24" aria-hidden="true" />
+            <p><span>البريد الإلكتروني | </span><bdi dir="ltr">{{ form.email }}</bdi></p>
           </div>
 
-          <div class="flex items-center justify-between px-5 py-4">
-            <span class="text-sm text-gray-400">{{ roleLabel[form.role] }}</span>
-            <div class="flex items-center gap-2 text-gray-500 text-sm font-medium">
-              <span>الدور</span>
-              <ClipboardList :size="16" class="text-gray-400" />
-            </div>
+          <div class="review-row">
+            <ClipboardList :size="24" aria-hidden="true" />
+            <p><span>الدور | </span>{{ roleLabel[form.role] }}</p>
           </div>
         </div>
 
-        <div class="space-y-3 pt-1">
+        <div class="review-actions">
           <Button
             size="full"
             class="flex items-center justify-center gap-2"
@@ -164,8 +156,8 @@
             {{ isSubmitting ? 'جارٍ إنشاء الحساب...' : 'إنشاء الحساب الآن' }}
           </Button>
           <Button type="button" variant="outline" size="full" class="flex items-center justify-center gap-2" @click="prevStep">
-            <span>السابق</span>
             <ArrowRight :size="16" />
+            <span>السابق</span>
           </Button>
         </div>
       </div>
@@ -179,8 +171,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   User, Mail,
-  ArrowLeft, ArrowRight, ChevronLeft,
-  PhoneCall, ClipboardList, ShieldCheck, Info,
+  ArrowLeft, ArrowRight,
+  PhoneCall, ClipboardList, Info,
 } from '@lucide/vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
@@ -194,7 +186,7 @@ const notification = useNotification()
 const currentStep = ref(1)
 const isSubmitting = ref(false)
 const formError = ref('')
-const headings = ['أدخل بياناتك للبدء', 'أدخل بياناتك للبدء', 'راجع بياناتك لإنشاء الحساب']
+const headings = ['أدخل بياناتك للبدء', 'أدخل بياناتك للبدء', 'أدخل بياناتك للبدء']
 
 const form = ref({
   fullName: '',
@@ -209,10 +201,9 @@ const steps = [
 ]
 
 const roles = [
-  { value: 'data_entry', label: 'موظف إدخال بيانات', sub: 'قائمة العملاء', icon: ClipboardList, apiRole: 'data_entry' },
+  { value: 'data_entry', label: 'موظف إدخال بيانات', sub: 'قائمة العملاء', icon: User, apiRole: 'data_entry' },
   { value: 'call_center', label: 'موظف الكول سنتر', sub: 'قائمة الاتصالات', icon: PhoneCall, apiRole: 'call_center' },
-  { value: 'admin', label: 'مدير', sub: 'إدارة النظام', icon: ShieldCheck, apiRole: 'admin' },
-  { value: 'super_admin', label: 'مدير النظام الرئيسي', sub: 'إدارة النظام', icon: ShieldCheck, apiRole: 'super_admin' },
+  { value: 'admin', label: 'المشرف / الأدمن', sub: 'لوحة التحكم', icon: PhoneCall, apiRole: 'admin' },
 ]
 const roleLabel = Object.fromEntries(roles.map(role => [role.value, role.label]))
 
@@ -284,19 +275,50 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.register-page { min-height: 100vh; position: relative; isolation: isolate; overflow: hidden; background: #f8f9fa; padding: 32px 20px; display: flex; align-items: center; justify-content: center; }
+.register-page { min-height: 100vh; position: relative; isolation: isolate; overflow: hidden; background: #f0f5f9; padding: 40px 20px; display: flex; align-items: center; justify-content: center; }
 .register-decoration { position: absolute; z-index: -1; inset: 0 0 0 auto; width: 26%; background: #e3f1fb; overflow: hidden; }
-.register-decoration::before, .register-decoration::after { content: ''; position: absolute; width: 360px; height: 360px; border: 70px solid #d9ecfa; border-radius: 45%; transform: rotate(30deg); }
+.register-decoration::before, .register-decoration::after { content: ''; position: absolute; width: 280px; height: 280px; background: #dceefa; border-radius: 50%; }
 .register-decoration::before { top: -110px; right: -150px; }
 .register-decoration::after { bottom: -90px; right: -120px; width: 480px; height: 480px; }
-.register-card { width: 100%; max-width: 512px; padding: 32px; border: 1px solid #e2e5eb; border-radius: 16px; background: #fff; box-shadow: 0 3px 5px #00000026; }
-.register-steps { margin: 32px 0; }
+.register-card { width: 100%; max-width: 700px; padding: 44px 60px 60px; border: 0; border-radius: 24px; background: #fcfcfc; box-shadow: none; }
+.register-steps { max-width: 430px; margin: 52px 0 50px; }
+.register-steps > div > div { width: 48px; height: 48px; font-size: 20px; font-weight: 400; }
+.register-steps > div > div.bg-white { background: transparent; color: #121212; border-color: #dedede; }
+.register-steps > div > div.bg-blue { background: #4098f4; border-color: #b7d9fb; }
+.register-steps > .flex-1 { margin-inline: 0; margin-bottom: 27px; }
+.role-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; direction: rtl; }
+.role-option { min-width: 0; min-height: 148px; padding: 26px 12px 22px; border-radius: 10px; border-color: #d4d4d4; background: transparent; }
+.role-option.bg-blue { background: #4098f4; border-color: #b7d9fb; }
+.role-icon { margin-bottom: 22px; }
+.role-title { font-size: 13px; font-weight: 400; line-height: 1.5; overflow-wrap: anywhere; }
+.role-subtitle { width: 100%; margin-top: 8px; font-size: 11px; }
+.role-notice { min-height: 56px; margin-top: 24px; padding: 14px 20px; border-radius: 10px; background: #f6f6f6; }
+.role-actions { display: grid; gap: 8px; margin-top: 48px; }
+.role-actions :deep(button) { min-height: 52px; border-radius: 10px; box-shadow: none; font-size: 14px; }
+.role-actions :deep(button[type='submit']) { background: #4098f4; }
+.role-actions :deep(button[type='button']) { background: transparent; border: 1px solid #d4d4d4; color: #4098f4; }
+.register-card { text-align: start; }
+.register-review { padding-top: 20px; }
+.review-details { padding: 12px 24px; background: #fafafa; border-radius: 12px; }
+.review-row { display: flex; align-items: center; justify-content: flex-start; gap: 10px; min-height: 56px; color: #a3a3a3; font-size: 14px; font-weight: 400; }
+.review-row + .review-row { border-top: 1px solid #e5e5e5; }
+.review-row > svg { flex-shrink: 0; stroke-width: 1.5; }
+.review-row > p { min-width: 0; overflow-wrap: anywhere; margin: 0; }
+.review-row bdi { unicode-bidi: isolate; }
+.review-actions { display: grid; gap: 8px; margin-top: 68px; }
+.review-actions :deep(button) { width: 100%; min-height: 50px; border-radius: 10px; font-size: 14px; box-shadow: none; }
+.review-actions :deep(button:first-child) { background: #4098f4; color: white; }
+.review-actions :deep(button:last-child) { background: transparent; border: 1px solid #b7d9fb; color: #4098f4; }
 .register-steps > div:first-child, .register-steps > div:last-child { min-width: 50px; }
 .register-form :deep(input) { height: 54px; border-radius: 10px; border-color: #d6d6d6; background: transparent; }
 .register-form :deep(label) { font-size: 14px; font-weight: 600; }
 .register-form :deep(button[type='submit']) { height: 52px; border-radius: 10px; margin-top: 26px; box-shadow: none; }
 .register-form :deep(svg) { width: 21px; height: 21px; stroke-width: 1.5; }
 @media (max-width: 600px) {
+  .role-options { gap: 8px; }
+  .role-option { min-height: 138px; padding: 22px 6px 18px; }
+  .role-title { font-size: 11px; }
+  .role-subtitle { font-size: 10px; gap: 4px; }
   .register-page { padding: 16px; align-items: flex-start; }
   .register-card { min-height: auto; padding: 32px 22px; border-radius: 18px; }
   .register-steps { margin: 36px 0; }
