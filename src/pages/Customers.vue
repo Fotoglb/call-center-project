@@ -255,9 +255,9 @@
           >
             <ChevronRight :size="18" />
           </button>
-          <button
-            v-for="p in totalPages"
-            :key="p"
+          <template v-for="p in visiblePages" :key="p">
+          <span v-if="typeof p === 'string'" class="w-6 text-center text-gray-400" aria-hidden="true">…</span>
+          <button v-else
             type="button"
             :aria-label="`الصفحة ${p}`"
             :aria-current="p === currentPage ? 'page' : undefined"
@@ -268,6 +268,7 @@
           >
             {{ p }}
           </button>
+          </template>
           <button
             type="button"
             aria-label="الصفحة التالية"
@@ -610,6 +611,18 @@
       : Math.max(1, Math.ceil(totalCustomers.value / pageSize.value))
   )
   const startIndex = computed(() => (currentPage.value - 1) * pageSize.value)
+  const visiblePages = computed(() => {
+    const total = totalPages.value
+    if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1)
+    const start = Math.max(2, Math.min(currentPage.value - 1, total - 4))
+    const end = Math.min(total - 1, Math.max(currentPage.value + 1, 5))
+    const pages = [1]
+    if (start > 2) pages.push('start-gap')
+    for (let page = start; page <= end; page++) pages.push(page)
+    if (end < total - 1) pages.push('end-gap')
+    pages.push(total)
+    return pages
+  })
   const endIndex = computed(() =>
     paginatedCustomers.value.length ? startIndex.value + paginatedCustomers.value.length : 0
   )

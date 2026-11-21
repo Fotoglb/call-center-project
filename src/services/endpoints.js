@@ -37,7 +37,6 @@ export const ENDPOINTS = {
     queue: '/calls/queue',
     reschedule: '/calls/reschedule',
     create: '/calls',
-    notes: id => `/calls/${id}/notes`,
     list: '/calls',
     exportExcel: '/calls/export/excel',
     exportPdf: '/calls/export/pdf'

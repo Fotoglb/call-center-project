@@ -168,7 +168,7 @@
             </tr>
             <tr v-else-if="loadError">
               <td colspan="10" class="text-center py-8">
-                <p class="text-red-500 mb-2">تعذر تحميل بيانات المكالمات</p>
+                <p class="text-red-500 mb-2">{{ loadError.message || 'تعذر تحميل بيانات المكالمات' }}</p>
                 <button
                   class="text-xs text-white bg-gray-900 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-gray-700 transition-colors"
                   @click="loadCalls"
@@ -344,7 +344,7 @@
   const statIconConfig = {
     '': { icon: PhoneCall, iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
     'زيارة مجدولة': { icon: Calendar, iconBg: 'bg-amber-50', iconColor: 'text-amber-500' },
-    'إعادة الجدولة': { icon: RefreshCw, iconBg: 'bg-indigo-50', iconColor: 'text-indigo-500' },
+    'إعادة جدولة': { icon: RefreshCw, iconBg: 'bg-indigo-50', iconColor: 'text-indigo-500' },
     'لا يرد': { icon: PhoneOff, iconBg: 'bg-gray-100', iconColor: 'text-gray-500' },
     'غير مهتم': { icon: XCircle, iconBg: 'bg-red-50', iconColor: 'text-red-500' },
     مهتم: { icon: CheckCircle2, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' }
@@ -356,7 +356,7 @@
       { key: 'مهتم', label: 'مهتم', value: '—' },
       { key: 'غير مهتم', label: 'غير مهتم', value: '—' },
       { key: 'لا يرد', label: 'لا يرد', value: '—' },
-      { key: 'إعادة الجدولة', label: 'إعادة الجدولة', value: '—' },
+      { key: 'إعادة جدولة', label: 'إعادة الجدولة', value: '—' },
       { key: 'زيارة مجدولة', label: 'زيارة مجدولة', value: '—' }
     ]).map(s => ({
       ...s,

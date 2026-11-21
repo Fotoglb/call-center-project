@@ -248,7 +248,9 @@
                   >
                 </div>
                 <p v-if="entry.meta" class="text-xs text-gray-400 mb-4">بواسطة {{ entry.meta }}</p>
-                <p class="text-sm text-gray-400 leading-relaxed">{{ entry.note }}</p>
+                <p v-if="entry.duration !== null" class="text-xs text-gray-500 mb-2">مدة المكالمة: <span dir="ltr">{{ entry.duration }}</span></p>
+                <p v-if="typeof entry.note === 'string' && entry.note" class="text-sm text-gray-400 leading-relaxed">{{ entry.note }}</p>
+                <a v-if="entry.fileUrl" :href="entry.fileUrl" target="_blank" rel="noopener noreferrer" class="inline-flex text-sm text-blue underline mt-2">فتح الوثيقة</a>
               </div>
             </div>
 
@@ -258,14 +260,12 @@
                 placeholder="أضف ملاحظة..."
                 class="w-full h-24 p-4 resize-none bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors"
                 disabled
-                title="إضافة النشاط غير متاحة حاليًا"
               />
               <div class="flex">
                 <button
                   type="button"
                   class="ms-auto text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2 hover:bg-blue-dark cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled
-                  title="إضافة النشاط غير متاحة حاليًا"
                 >
                   إضافة
                 </button>
@@ -366,6 +366,7 @@
       'عميل جديد': 'bg-indigo-50 text-indigo-600',
       'مهتم': 'bg-emerald-50 text-emerald-600',
       'غير مهتم': 'bg-red-50 text-red-500',
+      'لا يرد': 'bg-gray-100 text-gray-500',
       'إعادة جدولة': 'bg-violet-50 text-violet-500',
       منتظم: 'bg-emerald-50 text-emerald-600',
       'قيد الدراسة': 'bg-orange-50 text-orange-500'

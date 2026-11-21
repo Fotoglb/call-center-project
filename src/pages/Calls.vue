@@ -29,7 +29,7 @@
     <!-- Main Content -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
       <!-- LEFT: Calls List -->
-      <div class="bg-gray-50 rounded-xl flex flex-col min-h-0">
+      <div class="call-queue bg-white rounded-2xl flex flex-col min-h-0">
         <!-- Scheduled Label -->
         <p class="text-base font-medium text-gray-900 px-4 pt-4">
           قائمة المكالمات المجدولة – {{ todayLabel }}
@@ -42,11 +42,11 @@
               v-model="searchQuery"
               type="text"
               placeholder="ابحث عن عميل، رقم هاتف، موظف..."
-              class="w-full h-9 ps-3 pe-8 bg-muted border border-accent/50 rounded-[10px] text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
+              class="w-full h-[52px] ps-10 pe-3 bg-white border border-gray-300 rounded-[10px] text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
             />
             <Search
-              :size="13"
-              class="absolute inset-e-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              :size="22"
+              class="absolute inset-s-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
             />
           </div>
         </div>
@@ -56,7 +56,7 @@
           <button
             v-for="f in permittedFilterTabs"
             :key="f.key"
-            class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
+            class="px-3 py-4 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
             :class="
               activeFilter === f.key
                 ? 'bg-blue-light text-blue-dark'
@@ -70,7 +70,7 @@
         </div>
 
         <!-- Customer List -->
-        <div class="flex-1 overflow-y-auto">
+        <div class="flex-1 overflow-y-auto px-4 pb-4">
           <p v-if="isLoading" class="text-center text-xs text-gray-400 py-8">...جارٍ التحميل</p>
           <div v-else-if="loadError" class="flex flex-col items-center gap-2 py-8">
             <p role="alert" class="text-center text-xs text-red-500">{{ loadError.message || 'تعذر تحميل قائمة المكالمات' }}</p>
@@ -85,7 +85,7 @@
           <button
             v-for="(call, idx) in filteredCalls"
             :key="call.id"
-            class="relative w-full flex items-center gap-3 px-4 py-3 transition-colors text-start cursor-pointer rounded-[10px] mb-2 border-r-4"
+            class="queue-entry relative w-full flex items-start gap-3 px-3 py-4 transition-colors text-start cursor-pointer rounded-md border-r-4"
             :class="
               selectedCallId === call.id
                 ? 'bg-blue-light border-blue-dark'
@@ -95,50 +95,34 @@
           >
             <!-- Number badge -->
             <div
-              class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-gray-100 text-gray-500"
+              class="text-sm shrink-0 text-gray-400"
             >
-              {{ idx + 1 }}
+              {{ call.position ?? idx + 1 }}
             </div>
 
             <!-- Info -->
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-semibold truncate text-gray-800">
+              <div class="flex items-center justify-between gap-3">
+              <p class="text-base font-bold truncate text-gray-700">
                 {{ call.name }}
               </p>
-              <p class="text-xs tabular-nums mt-0.5 text-end text-gray-400" dir="ltr">
+              <span class="text-xs px-3 py-1.5 rounded-lg shrink-0" :class="call.callStatus === 'new' ? 'bg-emerald-50 text-emerald-600' : historyResultClass(call.lastResult)">{{ call.callStatus === 'new' ? 'جديد' : call.lastResult }}</span>
+              </div>
+              <p class="text-sm tabular-nums mt-2 text-end text-gray-600" dir="ltr">
                 {{ call.phone }}
               </p>
               <!-- Badges row -->
-              <div class="flex items-center flex-wrap gap-1 mt-1.5">
+              <div class="flex items-center justify-between gap-2 mt-4">
                 <span
-                  class="text-xs px-1.5 py-0.5 rounded-md font-medium"
+                  class="text-xs px-4 py-1.5 rounded-lg font-medium"
                   :class="priorityClass(call.priority)"
                 >
                   {{ call.priority }}
                 </span>
-                <span
-                  class="text-xs px-1.5 py-0.5 rounded-md font-medium"
-                  :class="callStatusClass(call.status)"
-                >
-                  {{ call.status }}
-                </span>
+                <span class="flex items-center gap-2 text-xs text-gray-400" :title="call.durationError ? 'تعذر تحميل مدة آخر مكالمة' : 'مدة آخر مكالمة مسجلة'"><Clock :size="14" /><span>{{ call.durationLoading ? '…' : formatCallDuration(call.lastDurationSec) }}</span></span>
               </div>
             </div>
 
-            <!-- Countdown + Avatar -->
-            <div class="flex flex-col items-end gap-2 shrink-0">
-              <!-- New badge -->
-              <span
-                v-if="call.isNew"
-                class="text-xs font-semibold px-2 py-1 rounded-lg shrink-0 bg-emerald-50 text-emerald-600"
-                >جديد</span
-              >
-              <!-- Countdown -->
-              <div class="flex items-center gap-1 text-gray-400">
-                <Clock :size="11" />
-                <span class="text-xs tabular-nums">{{ call.countdown }}</span>
-              </div>
-            </div>
           </button>
 
           <p v-if="filteredCalls.length === 0" class="text-center text-xs text-gray-400 py-8">
@@ -168,39 +152,39 @@
         <!-- Selected Customer -->
         <template v-else>
           <!-- Customer Header + Tabs/Content Card -->
-          <div class="flex-1 bg-gray-50 rounded-xl flex flex-col min-h-0">
-            <div class="p-5 shrink-0">
+          <div class="call-customer-card flex-1 bg-white rounded-2xl flex flex-col min-h-0">
+            <div class="p-6 shrink-0">
               <div class="flex items-start justify-between flex-wrap gap-3">
                 <!-- Info -->
-                <div class="flex items-start gap-3">
+                <div class="flex items-center gap-4">
                   <div
-                    class="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center text-sm font-bold text-secondary shrink-0"
+                    class="w-16 h-16 rounded-xl border border-blue bg-blue-light flex items-center justify-center text-xl font-bold text-blue shrink-0"
                   >
                     {{ selectedCall.name.charAt(0) }}
                   </div>
                   <div>
                     <div class="flex items-center gap-2">
-                      <h2 class="text-base font-bold text-gray-900">{{ selectedCall.name }}</h2>
+                      <h2 class="text-xl font-bold text-gray-700">{{ selectedCall.name }}</h2>
                       <span
-                        class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                        class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium"
                         :class="callStatusClass(selectedCall.status)"
                       >
                         {{ selectedCall.status }}
                       </span>
                     </div>
-                    <div class="flex items-center flex-wrap gap-1.5 mt-2">
-                      <p class="text-xs text-gray-400 tabular-nums" dir="ltr">
+                    <div class="customer-summary flex items-center flex-wrap gap-1.5 mt-2">
+                      <p class="tabular-nums" dir="ltr">
                         {{ selectedCall.phone }}
                       </p>
 
                       <span
-                        v-for="tag in selectedCall.tags"
+                        v-for="tag in headerTags"
                         :key="tag"
-                        class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"
-                        >{{ tag }}</span
+                        class="summary-tag"
+                        >· {{ tag }}</span
                       >
-                      <span class="text-xs text-gray-400"
-                        >آخر تواصل: {{ selectedCall.lastContact }}</span
+                      <span
+                        >· آخر تواصل: {{ lastContactLabel }}</span
                       >
                     </div>
                   </div>
@@ -210,12 +194,11 @@
                 <div class="flex items-center gap-2 shrink-0">
                   <button
                     v-if="permissions.can('customerProfile.view') && resultLeadId"
-                    class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors"
+                    class="flex items-center justify-center text-sm text-gray-900 bg-slate-50 border border-slate-200 rounded-xl w-28 h-12 hover:bg-white cursor-pointer transition-colors"
                     @click="
                       router.push({ name: 'CustomerProfile', params: { id: resultLeadId } })
                     "
                   >
-                    <UserRound :size="13" />
                     عرض الملف
                   </button>
                 </div>
@@ -225,11 +208,11 @@
             <!-- Tabs + History -->
             <div class="flex-1 flex flex-col min-h-0 border-t border-gray-200">
               <!-- Tabs -->
-              <div class="flex items-center gap-1 px-5 pt-4 shrink-0 overflow-x-auto">
+              <div class="flex items-center gap-1 mx-6 pt-3 border-b border-gray-100 shrink-0 overflow-x-auto">
                 <button
                   v-for="tab in tabs"
                   :key="tab.key"
-                  class="px-4 py-2 font-medium rounded-t-lg transition-colors cursor-pointer shrink-0"
+                  class="px-4 py-4 text-sm font-medium transition-colors cursor-pointer shrink-0"
                   :class="
                     activeTab === tab.key
                       ? 'text-blue-dark border-b-2 border-blue-dark font-bold '
@@ -242,25 +225,29 @@
               </div>
 
               <!-- Tab Content -->
-              <div class="flex-1 overflow-y-auto p-5">
+              <div class="flex-1 overflow-y-auto p-6">
                 <!-- Contact History Tab -->
                 <div v-if="activeTab === 'history'" class="space-y-3">
-                  <p class="text-xs font-semibold text-gray-500 mb-3">سجل المحادثات</p>
+                  <div class="flex items-center justify-between gap-3 mb-3">
+                    <p class="text-base font-medium text-gray-900">سجل المحادثات</p>
+                    <span v-if="!historyLoading && !historyError" class="text-sm text-gray-400">{{ historyTotal }} تفاعلات</span>
+                  </div>
+                  <p v-if="profileError" role="alert" class="text-xs text-red-500">{{ profileError }}</p>
                   <p v-if="historyLoading" class="text-sm text-gray-500">جارٍ تحميل سجل المكالمات...</p>
                   <div v-else-if="historyError" role="alert" class="text-sm text-red-500">
                     <p>{{ historyError }}</p>
                     <button type="button" class="mt-2 text-blue underline" @click="loadHistory">إعادة المحاولة</button>
                   </div>
                   <p v-else-if="!historyEntries.length" class="text-sm text-gray-500">لا توجد مكالمات في هذه الصفحة</p>
-                  <div v-for="entry in historyEntries" :key="entry.id" class="flex gap-3">
+                  <div v-for="entry in historyEntries" :key="entry.id" class="history-entry flex items-center gap-4 py-4">
                     <!-- Icon -->
                     <div
-                      class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                      class="w-16 h-16 rounded-xl flex items-center justify-center shrink-0"
                       :class="historyIconBg(entry.type)"
                     >
                       <component
                         :is="historyIcon(entry.type)"
-                        :size="14"
+                        :size="24"
                         :class="historyIconColor(entry.type)"
                       />
                     </div>
@@ -270,7 +257,7 @@
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0 flex-1">
                           <div class="flex items-center gap-2 mb-1">
-                            <span class="text-xs font-semibold text-gray-800">{{
+                            <span class="text-sm font-bold text-gray-800">{{
                               entry.type
                             }}</span>
                             <div class="flex items-center gap-1 text-gray-400">
@@ -279,8 +266,9 @@
                             </div>
                           </div>
                           <p class="text-xs text-gray-500 leading-relaxed">{{ entry.note }}</p>
+                          <p class="text-xs text-gray-400 mt-1">بواسطة {{ entry.agent }}</p>
                         </div>
-                        <div class="flex flex-col items-end gap-1 shrink-0">
+                        <div class="history-meta flex items-center gap-2 shrink-0">
                           <span
                             class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                             :class="historyResultClass(entry.result)"
@@ -293,33 +281,25 @@
                   </div>
                 </div>
 
-                <div v-if="activeTab === 'history'" class="flex items-center justify-between gap-3 mt-4">
-                  <button type="button" :disabled="historyLoading || historyPage === 1" class="text-blue disabled:opacity-40" @click="historyPage--">السابق</button>
-                  <span class="text-xs text-gray-500">الصفحة {{ historyPage }}</span>
-                  <button type="button" :disabled="historyLoading || !!historyError || historyEntries.length < historyLimit" class="text-blue disabled:opacity-40" @click="historyPage++">التالي</button>
-                </div>
-
-                <!-- Notes Tab -->
-                <div v-if="activeTab === 'notes'" class="space-y-3">
-                  <textarea
-                    v-model="noteText"
-                    rows="5"
-                    placeholder="أضف ملاحظة حول هذا العميل..."
-                    class="w-full ps-4 pe-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors resize-none"
-                  ></textarea>
-                  <button
-                    class="text-xs text-white bg-gray-900 rounded-lg px-4 py-2 hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="!noteText.trim() || isSavingNote"
-                    v-if="permissions.can('callCenter.logCall')"
-                    @click="saveNote"
-                  >
-                    {{ isSavingNote ? 'جارٍ الحفظ...' : 'حفظ الملاحظة' }}
-                  </button>
-                </div>
-
                 <!-- Customer Data Tab -->
-                <div v-if="activeTab === 'data'" class="space-y-3">
+                <div v-if="activeTab === 'data'" class="customer-call-data space-y-3">
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1.5">
+                      <Label for="dataAgent">الموظف المسؤول</Label>
+                      <select id="dataAgent" v-model="selectedCall.assignedTo" :disabled="isSaving || !permissions.can('employees.manage')" class="w-full border border-gray-200 rounded-lg bg-white">
+                        <option value="">اختر الموظف المسؤول</option>
+                        <option v-if="selectedCall.assignedTo && !employeeOptions.some(item => item.id === selectedCall.assignedTo)" :value="selectedCall.assignedTo">{{ selectedCall.agent }}</option>
+                        <option v-for="employee in employeeOptions" :key="employee.id" :value="employee.id">{{ employee.name }}</option>
+                      </select>
+                      <p v-if="employeeOptionsError" class="text-xs text-red-500">{{ employeeOptionsError }}</p>
+                    </div>
+                    <div class="space-y-1.5">
+                      <Label for="dataDirection">نوع المكالمة</Label>
+                      <select id="dataDirection" v-model="callDirection" :disabled="isSaving" class="w-full border border-gray-200 rounded-lg bg-white">
+                        <option value="outbound">صادر</option>
+                        <option value="inbound">وارد</option>
+                      </select>
+                    </div>
                     <div class="space-y-1.5">
                       <Label for="dataFullName">الاسم بالكامل <span class="text-red-400">*</span></Label>
                       <div class="relative">
@@ -333,7 +313,7 @@
                     <div class="space-y-1.5">
                       <Label for="dataPhone">رقم الجوال <span class="text-red-400">*</span></Label>
                       <div class="relative">
-                        <Input id="dataPhone" v-model="selectedCall.phone" type="text" dir="ltr" class="ps-10 pe-12" />
+                        <Input id="dataPhone" v-model="selectedCall.phone" type="text" dir="ltr" class="text-right" />
                         <span class="absolute inset-y-0 inset-s-3 flex items-center text-gray-400 pointer-events-none">
                           <Phone :size="16" />
                         </span>
@@ -347,13 +327,18 @@
 
                     <div class="space-y-1.5">
                       <Label for="dataSource">مصدر العميل</Label>
-                      <Input id="dataSource" v-model="selectedCall.source" type="text" />
+                      <select id="dataSource" v-model="selectedCall.sourceId" :disabled="isSaving" class="w-full border border-gray-200 rounded-lg bg-white">
+                        <option value="">اختر المصدر</option>
+                        <option v-if="selectedCall.sourceId && !sourceOptions.some(item => item.value === selectedCall.sourceId)" :value="selectedCall.sourceId">{{ selectedCall.source }}</option>
+                        <option v-for="source in sourceOptions" :key="source.value" :value="source.value">{{ source.label }}</option>
+                      </select>
+                      <p v-if="sourceOptionsError" class="text-xs text-red-500">{{ sourceOptionsError }}</p>
                     </div>
 
                     <div class="space-y-1.5">
                       <Label for="dataCreatedAt">تاريخ الإنشاء</Label>
                       <div class="relative">
-                        <Input id="dataCreatedAt" v-model="selectedCall.createdAt" type="text" class="pe-10" />
+                        <Input id="dataCreatedAt" v-model="selectedCall.projectCreatedAt" type="text" class="pe-10" placeholder="YYYY-MM-DD" />
                         <span class="absolute inset-y-0 inset-e-3 flex items-center text-gray-400 pointer-events-none">
                           <Calendar :size="16" />
                         </span>
@@ -377,16 +362,26 @@
                     </div>
 
                     <div class="space-y-1.5">
-                      <Label for="dataCallAttempts">محاولات الاتصال</Label>
+                      <Label for="durationSec">مدة المكالمة بالثواني</Label>
                       <div class="relative">
-                        <Input id="dataCallAttempts" v-model="callAttemptsText" type="text" inputmode="numeric" class="pe-16" />
-                        <span class="absolute inset-y-0 inset-e-3 flex items-center text-xs text-gray-400 pointer-events-none">اتصالات</span>
+                        <Input id="durationSec" v-model="durationSec" :disabled="isSaving" type="number" min="0" step="1" />
                       </div>
                     </div>
 
                     <div class="space-y-1.5">
-                      <Label for="dataPriority">الأولوية</Label>
-                      <Input id="dataPriority" v-model="selectedCall.priority" type="text" />
+                      <Label for="dataTalkTime">وقت الحديث</Label>
+                      <Input id="dataTalkTime" :model-value="selectedCall.talkDurationSec ?? ''" readonly />
+                    </div>
+                    <div class="space-y-1.5">
+                      <Label for="dataOutcome">الحالة</Label>
+                      <select id="dataOutcome" v-model="selectedOutcome" :disabled="isSaving" class="w-full border border-gray-200 rounded-lg bg-white">
+                        <option value="">اختر الحالة</option>
+                        <option v-for="outcome in callOutcomes" :key="outcome.key" :value="outcome.key">{{ outcome.label }}</option>
+                      </select>
+                    </div>
+                    <div class="space-y-1.5">
+                      <Label for="dataNotes">ملاحظات</Label>
+                      <Input id="dataNotes" v-model="resultNote" :disabled="isSaving" />
                     </div>
                   </div>
                 </div>
@@ -394,19 +389,6 @@
             </div>
           </div>
 
-            <details class="mt-4 text-xs text-gray-500">
-              <summary class="cursor-pointer">بيانات تسجيل المكالمة</summary>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-              <div class="space-y-1.5">
-                <Label for="resultLeadId">معرّف العميل (Lead ID)</Label>
-                <Input id="resultLeadId" v-model="resultLeadId" :disabled="isSaving" dir="ltr" placeholder="معرّف العميل من النظام" />
-              </div>
-              <div class="space-y-1.5">
-                <Label for="durationSec">مدة المكالمة الصادرة بالثواني</Label>
-                <Input id="durationSec" v-model="durationSec" :disabled="isSaving" type="number" min="0" step="1" />
-              </div>
-            </div>
-            </details>
 
           <!-- Call Result Card -->
           <div class="call-result-card bg-white rounded-2xl p-6 shrink-0" dir="rtl">
@@ -472,7 +454,7 @@
             <button
               type="button"
               class="result-save flex items-center justify-center gap-2 text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2.5 mt-3 cursor-pointer transition-colors hover:bg-blue-dark disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!selectedOutcome || !resultNote.trim() || isSaving"
+              :disabled="isSaving"
               v-if="permissions.can('callCenter.logCall')"
               @click="saveCallResult"
             >
@@ -514,6 +496,8 @@
   import Input from '@/components/ui/Input.vue'
   import Label from '@/components/ui/Label.vue'
   import { callsService } from '@/services/calls.service'
+  import { customersService } from '@/services/customers.service'
+  import { usersService } from '@/services/users.service'
   import { useNotification } from '@/composables/useNotification'
 
   const router = useRouter()
@@ -536,15 +520,32 @@
   const resultNote = ref('')
   const resultLeadId = ref('')
   const durationSec = ref('')
+  const callDirection = ref('outbound')
   const nextCallAt = ref('')
   const rescheduleReason = ref('')
-  const noteText = ref('')
   const activeFilter = ref(permissions.can('callCenter.queue') ? 'all' : 'إعادة جدولة')
   const isLoading = ref(true)
   const loadError = ref(null)
   const isSaving = ref(false)
-  const isSavingNote = ref(false)
   const historyEntries = ref([])
+  const historyTotal = ref(0)
+  const headerProfile = ref(null)
+  const profileError = ref('')
+  let profileVersion = 0
+  const headerTags = computed(() => [...new Set([
+    headerProfile.value?.lead?.sourceId?.name || selectedCall.value?.source,
+    headerProfile.value?.lead?.businessType || selectedCall.value?.workType,
+    ...(selectedCall.value?.tags ?? [])
+  ].filter(Boolean))])
+  const lastContactLabel = computed(() => {
+    const profile = headerProfile.value
+    const dates = [profile?.lead?.lastContactAt,
+      ...(profile?.calls ?? []).map(call => call.startedAt || call.createdAt)]
+      .filter(Boolean).map(value => new Date(value)).filter(date => Number.isFinite(date.getTime()))
+    if (dates.length) return new Date(Math.max(...dates.map(date => date.getTime())))
+      .toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' })
+    return selectedCall.value?.lastContact || '—'
+  })
   const historyLoading = ref(false)
   const historyError = ref('')
   const historyPage = ref(1)
@@ -553,20 +554,50 @@
 
   const filterTabs = [
     { key: 'all', label: 'الكل' },
-    { key: 'إعادة جدولة', label: 'إعادة جدولة' },
-    { key: 'لا يرد', label: 'لا يرد' },
+    { key: 'مهتم', label: 'مهتم' },
     { key: 'غير مهتم', label: 'غير مهتم' },
-    { key: 'مهتم', label: 'مهتم' }
+    { key: 'لا يرد', label: 'لا يرد' },
+    { key: 'إعادة جدولة', label: 'إعادة جدولة' }
   ]
 
   const tabs = [
     { key: 'history', label: 'تاريخ التواصل' },
-    { key: 'notes', label: 'ملاحظات العميل' },
     { key: 'data', label: 'بيانات العميل' }
   ]
   const permittedFilterTabs = computed(() => filterTabs.filter(tab => permissions.can(tab.key === 'إعادة جدولة' ? 'callCenter.rescheduleList' : 'callCenter.queue')))
 
-  const projectTypes = computed(() => [...new Set(callsList.value.map(call => call.projectType).filter(Boolean))])
+  const projectTypes = ['B2B', 'B2C', 'SME', 'Enterprise', 'Startup', 'E-commerce', 'Retail', 'Manufacturing', 'Service', 'Non-profit', 'Education']
+  const sourceOptions = ref([])
+  const employeeOptions = ref([])
+  const sourceOptionsError = ref('')
+  const employeeOptionsError = ref('')
+  onMounted(async () => {
+    await Promise.allSettled([
+      (async () => {
+        if (!permissions.can('customers.list|customers.create|customers.viewEdit')) return
+        try { sourceOptions.value = (await customersService.getMeta()).sources }
+        catch (error) { sourceOptionsError.value = error.message }
+      })(),
+      (async () => {
+        if (!permissions.can('employees.manage')) return
+        try {
+          const seen = new Set()
+          for (let page = 1; ; page++) {
+            const response = await usersService.list({ page, limit: 100 })
+            const rows = Array.isArray(response) ? response : response?.data
+            if (!Array.isArray(rows)) throw new Error('تعذّر قراءة قائمة الموظفين')
+            const fresh = rows.filter(row => !seen.has(row.id ?? row._id))
+            for (const row of fresh) {
+              const id = row.id ?? row._id
+              seen.add(id)
+              employeeOptions.value.push({ id, name: row.name })
+            }
+            if (rows.length < 100 || !fresh.length) break
+          }
+        } catch (error) { employeeOptionsError.value = error.message }
+      })(),
+    ])
+  })
 
   /*
    * الترتيب معكوس عشان أول عنصر في الـ DOM يظهر أقصى اليمين مع RTL
@@ -612,18 +643,62 @@
   ]
 
   const callsList = ref([])
+  const callProfiles = new Map()
+  function getCallProfile(leadId) {
+    if (!callProfiles.has(leadId)) {
+      const request = customersService.getProfile(leadId).then(response => {
+        if (response?.success === false) throw new Error(response.message || 'تعذر تحميل ملف العميل')
+        return response
+      })
+      callProfiles.set(leadId, request)
+      request.catch(() => {
+        if (callProfiles.get(leadId) === request) callProfiles.delete(leadId)
+      })
+    }
+    return callProfiles.get(leadId)
+  }
+  function formatCallDuration(seconds) {
+    if (seconds == null || !Number.isInteger(Number(seconds)) || Number(seconds) < 0) return '—'
+    const minutes = Math.floor(Number(seconds) / 60)
+    const remaining = Number(seconds) % 60
+    return minutes ? `${minutes} د${remaining ? ` ${remaining} ث` : ''}` : `${remaining} ث`
+  }
+  async function loadQueueDurations(version) {
+    if (!permissions.can('customerProfile.view')) return
+    const pending = [...callsList.value]
+    await Promise.all(Array.from({ length: Math.min(3, pending.length) }, async () => {
+      while (pending.length && version === loadVersion) {
+        const call = pending.shift()
+        if (!call.leadId) continue
+        call.durationLoading = true
+        try {
+          const response = await getCallProfile(call.leadId)
+          if (version !== loadVersion) return
+          const records = response?.data?.calls
+          if (!Array.isArray(records)) throw new Error('تعذر قراءة سجل المكالمات')
+          const latest = records.filter(record => Number.isFinite(Date.parse(record.startedAt ?? record.createdAt)))
+            .sort((a, b) => Date.parse(b.startedAt ?? b.createdAt) - Date.parse(a.startedAt ?? a.createdAt))[0]
+          call.lastDurationSec = latest?.durationSec ?? null
+        } catch {
+          if (version === loadVersion) call.durationError = true
+        } finally {
+          if (version === loadVersion) call.durationLoading = false
+        }
+      }
+    }))
+  }
   const isRescheduleList = computed(() => activeFilter.value === 'إعادة جدولة')
   let loadVersion = 0
 
   async function loadCalls() {
     const requestVersion = ++loadVersion
+    callProfiles.clear()
     isLoading.value = true
     loadError.value = null
     callsList.value = []
     selectedCallId.value = null
     selectedOutcome.value = ''
     resultNote.value = ''
-    noteText.value = ''
     try {
       const queue = isRescheduleList.value
         ? await callsService.getRescheduled()
@@ -636,6 +711,7 @@
       if (!selectedCallId.value && callsList.value.length) {
         selectedCallId.value = callsList.value[0].id
       }
+      void loadQueueDurations(requestVersion)
     } catch (err) {
       if (requestVersion !== loadVersion) return
       callsList.value = []
@@ -648,7 +724,7 @@
 
   onMounted(loadCalls)
   watch(isRescheduleList, loadCalls, { flush: 'sync' })
-  onUnmounted(() => { loadVersion++; historyVersion++ })
+  onUnmounted(() => { loadVersion++; historyVersion++; profileVersion++ })
 
   const filteredCalls = computed(() => {
     const query = searchQuery.value.trim().toLocaleLowerCase()
@@ -661,9 +737,36 @@
   })
 
   const selectedCall = computed(() => callsList.value.find(c => c.id === selectedCallId.value) ?? null)
+  watch(() => selectedCall.value?.leadId, async leadId => {
+    const version = ++profileVersion
+    headerProfile.value = null
+    profileError.value = ''
+    if (!leadId || !permissions.can('customerProfile.view')) return
+    try {
+      const response = await getCallProfile(leadId)
+      if (version !== profileVersion) return
+      if (response?.success === false) throw new Error(response.message)
+      headerProfile.value = response?.data ?? response
+    } catch {
+      if (version === profileVersion) profileError.value = 'تعذر تحميل معلومات العميل الإضافية'
+    }
+  })
+  const originalCustomerFields = ref({})
+  function editableCustomerFields(call) {
+    return {
+      fullName: call?.name ?? '', phone: call?.phone ?? '',
+      sourceId: call?.sourceId ?? '', assignedTo: call?.assignedTo ?? '',
+      businessType: call?.workType ?? '', projectType: call?.projectType ?? '',
+      projectCreatedAt: call?.projectCreatedAt ?? '',
+    }
+  }
   watch(selectedCall, call => {
+    originalCustomerFields.value = editableCustomerFields(call)
+    selectedOutcome.value = callOutcomes.some(outcome => outcome.key === call?.callStatus) ? call.callStatus : ''
+    resultNote.value = ''
     resultLeadId.value = typeof call?.leadId === 'string' ? call.leadId : ''
     durationSec.value = ''
+    callDirection.value = 'outbound'
     nextCallAt.value = ''
     rescheduleReason.value = ''
   })
@@ -671,6 +774,7 @@
   async function loadHistory() {
     const version = ++historyVersion
     historyEntries.value = []
+    historyTotal.value = 0
     historyError.value = ''
     historyLoading.value = false
     if (activeTab.value !== 'history' || !selectedCall.value) return
@@ -680,14 +784,14 @@
     }
     historyLoading.value = true
     try {
-      const response = await callsService.getCustomerHistory({ leadId: resultLeadId.value, page: historyPage.value, limit: historyLimit })
+      const response = await callsService.getCustomerHistory({ leadId: resultLeadId.value, page: historyPage.value, limit: historyLimit, includeMeta: true })
       if (version !== historyVersion) return
-      // Do not guess an undocumented pagination envelope or silently show an empty list.
-      const entries = Array.isArray(response) ? response : response?.data
+      const entries = response.items
       if (!Array.isArray(entries)) {
         throw new Error('تم استلام الرد، لكن يلزم تأكيد تنسيق استجابة سجل المكالمات لعرض بياناته')
       }
       historyEntries.value = entries
+      historyTotal.value = response.total
     } catch (error) {
       if (version === historyVersion) historyError.value = error.message || 'تعذّر تحميل سجل المكالمات'
     } finally {
@@ -702,7 +806,7 @@
   watch(historyPage, loadHistory)
 
   const callAttemptsText = computed({
-    get: () => (selectedCall.value?.callAttempts ? String(selectedCall.value.callAttempts) : ''),
+    get: () => (selectedCall.value?.callAttempts != null ? String(selectedCall.value.callAttempts) : ''),
     set: val => {
       if (!selectedCall.value) return
       selectedCall.value.callAttempts = val === '' ? null : Number(val)
@@ -724,38 +828,41 @@
   function selectCall(call) {
     if (isSaving.value) return
     selectedCallId.value = call.id
-    selectedOutcome.value = ''
-    resultNote.value = ''
-    noteText.value = ''
     activeTab.value = 'data'
   }
 
-  async function saveNote() {
-    if (!permissions.can('callCenter.logCall')) return
-    if (!noteText.value.trim() || !selectedCall.value || isSavingNote.value) return
-    isSavingNote.value = true
-    try {
-      await callsService.addNote(selectedCall.value.id, noteText.value.trim())
-      notification.success('تم حفظ الملاحظة')
-      noteText.value = ''
-    } catch (err) {
-      notification.error(err?.message || 'تعذر حفظ الملاحظة')
-    } finally {
-      isSavingNote.value = false
-    }
-  }
-
   async function saveCallResult() {
-    if (!permissions.can('callCenter.logCall')) return
-    if (!selectedOutcome.value || !resultNote.value.trim() || !selectedCall.value || isSaving.value) return
+    if (isSaving.value) return
+    if (!permissions.can('callCenter.logCall')) {
+      notification.error('ليس لديك صلاحية حفظ نتيجة المكالمة')
+      return
+    }
+    if (!selectedCall.value) {
+      notification.error('اختر العميل أولًا')
+      return
+    }
+    if (!selectedOutcome.value) {
+      notification.error('اختر حالة العميل أولًا')
+      return
+    }
+    if (!resultNote.value.trim()) {
+      notification.error('اكتب نتيجة المكالمة أولًا')
+      return
+    }
+    const leadId = selectedCall.value.leadId
+    if (typeof leadId !== 'string' || !leadId.trim()) {
+      notification.error('معرّف العميل غير موجود في بيانات القائمة؛ أعد تحميلها')
+      return
+    }
     const seconds = Number(durationSec.value)
-    if (!resultLeadId.value.trim() || durationSec.value === '' || !Number.isInteger(seconds) || seconds < 0) {
-      notification.error('أدخل معرّف العميل ومدة صحيحة للمكالمة بالثواني')
+    if (durationSec.value === '' || durationSec.value == null || !Number.isInteger(seconds) || seconds < 0) {
+      notification.error('أدخل مدة المكالمة بالثواني في تبويب بيانات العميل')
+      activeTab.value = 'data'
       return
     }
     const payload = {
-      leadId: resultLeadId.value.trim(),
-      direction: 'outbound',
+      leadId: leadId.trim(),
+      direction: callDirection.value,
       outcome: selectedOutcome.value,
       resultNotes: resultNote.value.trim(),
       durationSec: seconds,
@@ -770,16 +877,62 @@
       payload.rescheduleReason = rescheduleReason.value.trim()
     }
 
+    const fields = editableCustomerFields(selectedCall.value)
+    const customerPatch = Object.fromEntries(Object.entries(fields).filter(([key, value]) => value !== originalCustomerFields.value[key]))
+    if (Object.keys(customerPatch).length && !permissions.can('customers.viewEdit')) {
+      notification.error('ليس لديك صلاحية تعديل بيانات العميل')
+      return
+    }
+    if ('fullName' in customerPatch && customerPatch.fullName.trim().length < 3) {
+      notification.error('اسم العميل يجب أن يحتوي على 3 أحرف على الأقل')
+      return
+    }
+    if ('phone' in customerPatch && !/^\+[1-9]\d{7,14}$/.test(customerPatch.phone.trim())) {
+      notification.error('أدخل رقم الجوال بالصيغة الدولية مثل +9665…')
+      return
+    }
+    if (('sourceId' in customerPatch && !customerPatch.sourceId) || ('projectType' in customerPatch && !customerPatch.projectType)) {
+      notification.error('اختر المصدر ونوع المشروع قبل الحفظ')
+      return
+    }
+    if ('projectCreatedAt' in customerPatch) {
+      const date = new Date(`${customerPatch.projectCreatedAt}T00:00:00.000Z`)
+      if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== customerPatch.projectCreatedAt) {
+        notification.error('أدخل تاريخ الإنشاء بصيغة YYYY-MM-DD')
+        return
+      }
+      customerPatch.projectCreatedAt = date.toISOString()
+    }
     isSaving.value = true
+    let customerSaved = false
     try {
-      const currentIndex = filteredCalls.value.findIndex(call => call.id === selectedCallId.value)
-      const nextId = filteredCalls.value[currentIndex + 1]?.id
-      await callsService.saveOutcome(payload)
-      notification.success('تم حفظ نتيجة المكالمة')
+      if ('phone' in customerPatch) {
+        const matches = await customersService.checkDuplicates(customerPatch.phone.trim())
+        if (matches.some(item => (item.id ?? item._id) !== leadId)) throw new Error('رقم الجوال مسجل لعميل آخر')
+      }
+      if (Object.keys(customerPatch).length) {
+        await customersService.update(leadId, customerPatch)
+        originalCustomerFields.value = fields
+        customerSaved = true
+      }
+      const response = await callsService.saveOutcome(payload)
+      notification.success(response?.message || 'تم حفظ نتيجة المكالمة')
       await loadCalls()
-      if (nextId && callsList.value.some(call => call.id === nextId)) selectedCallId.value = nextId
+      const nextLead = response?.data?.nextLead
+      if (nextLead && (nextLead.id || nextLead._id)) {
+        const nextLeadId = nextLead.id ?? nextLead._id
+        const index = callsList.value.findIndex(call => call.leadId === nextLeadId)
+        const nextCall = callsService.mapNextLead(nextLead, index >= 0 ? callsList.value[index] : {})
+        if (index >= 0) callsList.value.splice(index, 1, nextCall)
+        else callsList.value.push(nextCall)
+        if (!isRescheduleList.value) activeFilter.value = 'all'
+        searchQuery.value = ''
+        selectedCallId.value = nextCall.id
+      } else if (response?.data && Object.hasOwn(response.data, 'nextLead')) {
+        selectedCallId.value = null
+      }
     } catch (err) {
-      notification.error(err?.message || 'تعذر حفظ نتيجة المكالمة')
+      notification.error(`${customerSaved ? 'تم حفظ بيانات العميل، لكن لم تُحفظ نتيجة المكالمة: ' : ''}${err?.message || 'تعذر حفظ نتيجة المكالمة'}`)
     } finally {
       isSaving.value = false
     }
@@ -787,7 +940,7 @@
 
   function callStatusClass(status) {
     const map = {
-      'في الانتظار': 'bg-amber-50 text-amber-600',
+      'في الانتظار': 'bg-blue-50 text-blue-500',
       'على الأعمدة': 'bg-secondary/10 text-secondary',
       منتظم: 'bg-emerald-50 text-emerald-600',
       مكتمل: 'bg-gray-100 text-gray-500'
@@ -842,6 +995,30 @@
 </script>
 
 <style scoped>
+.customer-summary { font-size: 14px; font-weight: 400; color: #737373; line-height: 1.7; }
+.queue-entry { min-height: 132px; }
+.history-entry { min-height: 104px; }
+@media (max-width: 1280px) { .history-meta { flex-direction: column; align-items: flex-end; white-space: normal; } }
+.call-queue { overflow: hidden; }
+.customer-call-data > .grid { gap: 24px; }
+.customer-call-data :deep(input), .customer-call-data select { height: 56px; border-radius: 10px; padding-inline: 16px; font-size: 13px; border-color: #d4d4d4; background-color: white; color: #737373; }
+.customer-call-data select { appearance: none; padding-inline-end: 40px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23999999' stroke-width='1.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 16px center; }
+.customer-call-data .relative:has(select) > span { display: none; }
+.customer-call-data :deep(#dataPhone) { padding-right: 40px; padding-left: 16px; }
+.customer-call-data :deep(label) { font-size: 13px; font-weight: 600; }
+.customer-call-data :deep(#dataFullName), .customer-call-data :deep(#dataPhone) { padding-inline-start: 40px; }
+.customer-call-data > .grid > :has(#dataFullName) { order: 1; }
+.customer-call-data > .grid > :has(#dataPhone) { order: 2; }
+.customer-call-data > .grid > :has(#dataAgent) { order: 3; }
+.customer-call-data > .grid > :has(#dataDirection) { order: 4; }
+.customer-call-data > .grid > :has(#dataSource) { order: 5; }
+.customer-call-data > .grid > :has(#dataWorkType) { order: 6; }
+.customer-call-data > .grid > :has(#dataProjectType) { order: 7; }
+.customer-call-data > .grid > :has(#dataCreatedAt) { order: 8; }
+.customer-call-data > .grid > :has(#dataTalkTime) { order: 9; }
+.customer-call-data > .grid > :has(#durationSec) { order: 10; }
+.customer-call-data > .grid > :has(#dataOutcome) { order: 11; }
+.customer-call-data > .grid > :has(#dataNotes) { order: 12; }
 .call-result-card { padding: 24px; border-radius: 16px; }
 .call-result-card [data-outcome] { min-height: 132px; justify-content: center; gap: 8px; border-radius: 16px; font-size: 14px; }
 .call-result-card [data-outcome] > span:first-of-type { font-weight: 400; }

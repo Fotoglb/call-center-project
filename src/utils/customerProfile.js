@@ -2,14 +2,31 @@ const statusLabels = { new: 'عميل جديد', interested: 'مهتم', not_int
 const priorityLabels = { high: 'عالية', medium: 'متوسطة', low: 'منخفضة' }
 
 function entryView(record, category, index, at) {
-  const date = new Date(at ?? record.createdAt)
+  const date = new Date(at ?? record.startedAt ?? record.uploadedAt ?? record.createdAt)
   const validDate = Number.isFinite(date.getTime())
+  const duration = Number(record.durationSec)
+  let fileUrl = null
+  if (typeof record.fileUrl === 'string') {
+    const rawUrl = record.fileUrl.match(/^\[[^\]]*\]\((https?:\/\/[^\s]+)\)$/)?.[1] ?? record.fileUrl
+    try {
+      const url = new URL(rawUrl)
+      if (['http:', 'https:'].includes(url.protocol)) fileUrl = url.href
+    } catch { /* Invalid document URLs are displayed without a link. */ }
+  }
   return {
-    id: record.id ?? `${category}-${index}`,
+    id: record.id ?? record._id ?? `${category}-${index}`,
     category,
-    title: record.action === 'lead_added' ? 'إضافة العميل' : ({ system: 'نشاط', calls: 'مكالمة', visits: 'زيارة', documents: 'وثيقة' })[category] ?? 'نشاط',
-    note: record.description ?? record.resultNotes ?? '',
-    meta: record.userId?.name ?? '',
+    title: category === 'calls' ? ({ outbound: 'مكالمة صادرة', inbound: 'مكالمة واردة' })[record.direction] ?? 'مكالمة'
+      : category === 'documents' ? record.fileName ?? 'وثيقة'
+      : category === 'messages' ? 'رسالة'
+      : record.action === 'lead_added' ? 'إضافة العميل' : ({ system: 'نشاط', visits: 'زيارة' })[category] ?? 'نشاط',
+    note: record.description ?? record.resultNotes ?? record.text ?? record.body ?? record.content ?? '',
+    meta: record.userId?.name ?? record.uploadedBy?.name ?? '',
+    fileUrl,
+    duration: category === 'calls' && record.durationSec != null && Number.isInteger(duration) && duration >= 0
+      ? `${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, '0')}` : null,
+    tag: category === 'calls' ? statusLabels[record.outcome] ?? record.outcome ?? '' : '',
+    tagClass: ({ interested: 'bg-emerald-50 text-emerald-600', not_interested: 'bg-red-50 text-red-500', no_answer: 'bg-gray-100 text-gray-500', reschedule: 'bg-violet-50 text-violet-500' })[record.outcome] ?? 'bg-gray-100 text-gray-500',
     date: validDate ? date.toLocaleDateString('ar', { calendar: 'gregory' }) : '—',
     time: validDate ? date.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) : '',
     answered: record.outcome === 'no_answer' ? false : null
@@ -44,7 +61,7 @@ export function mapCustomerProfile(response) {
     interestScore: stats.interestScore ?? lead.interestScore ?? null
   }
   const activities = {
-    timeline: (Array.isArray(profile.timeline) ? profile.timeline : []).map((entry, index) => entryView(entry.data ?? {}, ({ activity: 'system', call: 'calls', visit: 'visits', document: 'documents' })[entry.type] ?? entry.type, index, entry.at))
+    timeline: (Array.isArray(profile.timeline) ? profile.timeline : []).map((entry, index) => entryView(entry.data ?? {}, ({ activity: 'system', call: 'calls', message: 'messages', visit: 'visits', document: 'documents' })[entry.type] ?? entry.type, index, entry.at))
   }
   for (const category of ['calls', 'visits', 'documents']) {
     activities[category] = (Array.isArray(profile[category]) ? profile[category] : []).map((record, index) => entryView(record, category, index))
