@@ -30,6 +30,7 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   response => response.data,
   error => {
+    if (axios.isCancel(error) || error.code === 'ERR_CANCELED') return Promise.reject(error)
     if (error.permissionDenied) return Promise.reject(error)
     const isAuthEndpoint = AUTH_ENDPOINTS.includes(error.config?.url)
     if (error.response?.status === 401 && !isAuthEndpoint) {

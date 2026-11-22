@@ -20,7 +20,7 @@ export function canVisit(session, path) {
   if (screen && session?.screens?.[screen] !== true) return false
   if (path === '/calls') return canAccess(session, 'callCenter.queue|callCenter.rescheduleList')
   if (screen === 'reports') return ['currentRepPerformance', 'periodicRepPerformance', 'cdr', 'daily', 'sources', 'conversionRate'].some(action => canAccess(session, `reports.${action}`))
-  if (path === '/calls/history' || path === '/agents') return canAccess(session, 'callCenter.queue|customerProfile.view')
+  if (path === '/calls/history' || path === '/agents') return canAccess(session, 'callCenter.rescheduleList')
   if (path === '/customers') return canAccess(session, 'customers.list')
   if (path === '/customers/add') return canAccess(session, 'customers.create') || canAccess(session, 'customers.viewEdit')
   if (screen === 'customerProfile') return canAccess(session, 'customerProfile.view')

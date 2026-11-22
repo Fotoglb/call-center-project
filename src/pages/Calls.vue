@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col lg:h-full gap-4">
+  <div class="flex flex-col min-h-0 gap-4">
     <!-- Page Header -->
-    <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="flex flex-wrap items-start justify-between gap-3 shrink-0">
       <div>
         <h2 class="text-sm font-bold text-gray-900">مركز الاتصالات</h2>
         <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">
@@ -27,9 +27,9 @@
     </div>
 
     <!-- Main Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+    <div class="calls-columns grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0" dir="rtl">
       <!-- LEFT: Calls List -->
-      <div class="call-queue bg-white rounded-2xl flex flex-col min-h-0">
+      <div class="call-queue bg-white rounded-2xl flex flex-col min-h-0 min-w-0">
         <!-- Scheduled Label -->
         <p class="text-base font-medium text-gray-900 px-4 pt-4">
           قائمة المكالمات المجدولة – {{ todayLabel }}
@@ -70,7 +70,7 @@
         </div>
 
         <!-- Customer List -->
-        <div class="flex-1 overflow-y-auto px-4 pb-4">
+        <div class="flex-1 min-h-0 overflow-y-auto overscroll-auto px-4 pb-4">
           <p v-if="isLoading" class="text-center text-xs text-gray-400 py-8">...جارٍ التحميل</p>
           <div v-else-if="loadError" class="flex flex-col items-center gap-2 py-8">
             <p role="alert" class="text-center text-xs text-red-500">{{ loadError.message || 'تعذر تحميل قائمة المكالمات' }}</p>
@@ -119,7 +119,7 @@
                 >
                   {{ call.priority }}
                 </span>
-                <span class="flex items-center gap-2 text-xs text-gray-400" :title="call.durationError ? 'تعذر تحميل مدة آخر مكالمة' : 'مدة آخر مكالمة مسجلة'"><Clock :size="14" /><span>{{ call.durationLoading ? '…' : formatCallDuration(call.lastDurationSec) }}</span></span>
+                <span class="flex items-center gap-2 text-xs text-gray-400" title="مدة آخر مكالمة مسجلة"><Clock :size="14" /><span>{{ formatCallDuration(call.lastDurationSec) }}</span></span>
               </div>
             </div>
 
@@ -133,26 +133,35 @@
       </div>
 
       <!-- RIGHT: Customer Detail -->
-      <div class="lg:col-span-2 flex flex-col gap-4 min-h-0">
+      <div class="call-detail-column lg:col-span-2 flex flex-col gap-4 min-w-0">
         <!-- No Selection State -->
         <div
           v-if="!selectedCall"
-          class="flex-1 bg-gray-50 rounded-xl flex items-center justify-center"
+          class="min-h-80 sm:min-h-96 bg-white rounded-2xl border border-gray-100 flex items-center justify-center px-6 py-12"
+          role="status"
+          aria-live="polite"
+          :aria-busy="isLoading"
         >
-          <div class="text-center">
+          <div class="text-center max-w-sm">
             <div
-              class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3"
+              class="w-20 h-20 rounded-2xl bg-blue-light flex items-center justify-center mx-auto mb-6"
             >
-              <Phone :size="22" class="text-gray-400" />
+              <RefreshCw v-if="isLoading" :size="28" class="text-blue motion-safe:animate-spin" aria-hidden="true" />
+              <Phone v-else :size="28" class="text-blue" aria-hidden="true" />
             </div>
-            <p class="text-sm font-medium text-gray-500">اختر عميلاً من القائمة لعرض التفاصيل</p>
+            <h3 class="text-base font-bold text-gray-800 mb-2">
+              {{ isLoading ? 'جارٍ تحميل المكالمات' : loadError ? 'تعذّر تحميل المكالمات' : !callsList.length ? 'لا توجد مكالمات لعرضها' : !filteredCalls.length ? 'لا توجد نتائج مطابقة' : 'اختر عميلاً لعرض التفاصيل' }}
+            </h3>
+            <p class="text-sm text-gray-400 leading-7">
+              {{ isLoading ? 'ستظهر بيانات العملاء هنا عند اكتمال التحميل.' : loadError ? 'أعد المحاولة من قائمة المكالمات.' : !callsList.length ? 'عند توفر مكالمات في القائمة، يمكنك اختيار عميل لعرض بياناته وسجل التواصل.' : !filteredCalls.length ? 'جرّب تغيير البحث أو الفلتر لعرض العملاء.' : 'اختر عميلاً من قائمة المكالمات لعرض بياناته وسجل التواصل وتسجيل نتيجة المكالمة.' }}
+            </p>
           </div>
         </div>
 
         <!-- Selected Customer -->
         <template v-else>
           <!-- Customer Header + Tabs/Content Card -->
-          <div class="call-customer-card flex-1 bg-white rounded-2xl flex flex-col min-h-0">
+          <div class="call-customer-card shrink-0 bg-white rounded-2xl flex flex-col">
             <div class="p-6 shrink-0">
               <div class="flex items-start justify-between flex-wrap gap-3">
                 <!-- Info -->
@@ -225,14 +234,13 @@
               </div>
 
               <!-- Tab Content -->
-              <div class="flex-1 overflow-y-auto p-6">
+              <div class="p-6">
                 <!-- Contact History Tab -->
                 <div v-if="activeTab === 'history'" class="space-y-3">
                   <div class="flex items-center justify-between gap-3 mb-3">
                     <p class="text-base font-medium text-gray-900">سجل المحادثات</p>
                     <span v-if="!historyLoading && !historyError" class="text-sm text-gray-400">{{ historyTotal }} تفاعلات</span>
                   </div>
-                  <p v-if="profileError" role="alert" class="text-xs text-red-500">{{ profileError }}</p>
                   <p v-if="historyLoading" class="text-sm text-gray-500">جارٍ تحميل سجل المكالمات...</p>
                   <div v-else-if="historyError" role="alert" class="text-sm text-red-500">
                     <p>{{ historyError }}</p>
@@ -338,10 +346,7 @@
                     <div class="space-y-1.5">
                       <Label for="dataCreatedAt">تاريخ الإنشاء</Label>
                       <div class="relative">
-                        <Input id="dataCreatedAt" v-model="selectedCall.projectCreatedAt" type="text" class="pe-10" placeholder="YYYY-MM-DD" />
-                        <span class="absolute inset-y-0 inset-e-3 flex items-center text-gray-400 pointer-events-none">
-                          <Calendar :size="16" />
-                        </span>
+                        <Input id="dataCreatedAt" v-model="selectedCall.projectCreatedAt" type="date" dir="ltr" :disabled="isSaving" />
                       </div>
                     </div>
 
@@ -370,7 +375,7 @@
 
                     <div class="space-y-1.5">
                       <Label for="dataTalkTime">وقت الحديث</Label>
-                      <Input id="dataTalkTime" :model-value="selectedCall.talkDurationSec ?? ''" readonly />
+                      <Input id="dataTalkTime" v-model="selectedCall.talkDurationSec" :disabled="isSaving" />
                     </div>
                     <div class="space-y-1.5">
                       <Label for="dataOutcome">الحالة</Label>
@@ -451,6 +456,7 @@
               ></textarea>
             </div>
 
+            <p v-if="saveError" role="alert" class="mt-3 text-sm text-red-500">{{ saveError }}</p>
             <button
               type="button"
               class="result-save flex items-center justify-center gap-2 text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2.5 mt-3 cursor-pointer transition-colors hover:bg-blue-dark disabled:opacity-50 disabled:cursor-not-allowed"
@@ -471,11 +477,12 @@
 <script setup>
   import { useAuthStore } from '@/stores/auth.store'
   const permissions = useAuthStore()
-  import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+  import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
   import { useRouter } from 'vue-router'
   import {
     Search,
     Phone,
+    RefreshCw,
     PhoneIncoming,
     PhoneOutgoing,
     PhoneMissed,
@@ -518,6 +525,11 @@
   const activeTab = ref('data')
   const selectedOutcome = ref('')
   const resultNote = ref('')
+  const saveError = ref('')
+  function reportSaveError(message) {
+    saveError.value = message
+    notification.error(message)
+  }
   const resultLeadId = ref('')
   const durationSec = ref('')
   const callDirection = ref('outbound')
@@ -529,23 +541,12 @@
   const isSaving = ref(false)
   const historyEntries = ref([])
   const historyTotal = ref(0)
-  const headerProfile = ref(null)
-  const profileError = ref('')
-  let profileVersion = 0
   const headerTags = computed(() => [...new Set([
-    headerProfile.value?.lead?.sourceId?.name || selectedCall.value?.source,
-    headerProfile.value?.lead?.businessType || selectedCall.value?.workType,
+    selectedCall.value?.source,
+    selectedCall.value?.workType,
     ...(selectedCall.value?.tags ?? [])
   ].filter(Boolean))])
-  const lastContactLabel = computed(() => {
-    const profile = headerProfile.value
-    const dates = [profile?.lead?.lastContactAt,
-      ...(profile?.calls ?? []).map(call => call.startedAt || call.createdAt)]
-      .filter(Boolean).map(value => new Date(value)).filter(date => Number.isFinite(date.getTime()))
-    if (dates.length) return new Date(Math.max(...dates.map(date => date.getTime())))
-      .toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' })
-    return selectedCall.value?.lastContact || '—'
-  })
+  const lastContactLabel = computed(() => selectedCall.value?.lastContact)
   const historyLoading = ref(false)
   const historyError = ref('')
   const historyPage = ref(1)
@@ -643,56 +644,17 @@
   ]
 
   const callsList = ref([])
-  const callProfiles = new Map()
-  function getCallProfile(leadId) {
-    if (!callProfiles.has(leadId)) {
-      const request = customersService.getProfile(leadId).then(response => {
-        if (response?.success === false) throw new Error(response.message || 'تعذر تحميل ملف العميل')
-        return response
-      })
-      callProfiles.set(leadId, request)
-      request.catch(() => {
-        if (callProfiles.get(leadId) === request) callProfiles.delete(leadId)
-      })
-    }
-    return callProfiles.get(leadId)
-  }
   function formatCallDuration(seconds) {
     if (seconds == null || !Number.isInteger(Number(seconds)) || Number(seconds) < 0) return '—'
     const minutes = Math.floor(Number(seconds) / 60)
     const remaining = Number(seconds) % 60
     return minutes ? `${minutes} د${remaining ? ` ${remaining} ث` : ''}` : `${remaining} ث`
   }
-  async function loadQueueDurations(version) {
-    if (!permissions.can('customerProfile.view')) return
-    const pending = [...callsList.value]
-    await Promise.all(Array.from({ length: Math.min(3, pending.length) }, async () => {
-      while (pending.length && version === loadVersion) {
-        const call = pending.shift()
-        if (!call.leadId) continue
-        call.durationLoading = true
-        try {
-          const response = await getCallProfile(call.leadId)
-          if (version !== loadVersion) return
-          const records = response?.data?.calls
-          if (!Array.isArray(records)) throw new Error('تعذر قراءة سجل المكالمات')
-          const latest = records.filter(record => Number.isFinite(Date.parse(record.startedAt ?? record.createdAt)))
-            .sort((a, b) => Date.parse(b.startedAt ?? b.createdAt) - Date.parse(a.startedAt ?? a.createdAt))[0]
-          call.lastDurationSec = latest?.durationSec ?? null
-        } catch {
-          if (version === loadVersion) call.durationError = true
-        } finally {
-          if (version === loadVersion) call.durationLoading = false
-        }
-      }
-    }))
-  }
   const isRescheduleList = computed(() => activeFilter.value === 'إعادة جدولة')
   let loadVersion = 0
 
   async function loadCalls() {
     const requestVersion = ++loadVersion
-    callProfiles.clear()
     isLoading.value = true
     loadError.value = null
     callsList.value = []
@@ -711,7 +673,6 @@
       if (!selectedCallId.value && callsList.value.length) {
         selectedCallId.value = callsList.value[0].id
       }
-      void loadQueueDurations(requestVersion)
     } catch (err) {
       if (requestVersion !== loadVersion) return
       callsList.value = []
@@ -724,7 +685,7 @@
 
   onMounted(loadCalls)
   watch(isRescheduleList, loadCalls, { flush: 'sync' })
-  onUnmounted(() => { loadVersion++; historyVersion++; profileVersion++ })
+  onUnmounted(() => { loadVersion++; historyVersion++ })
 
   const filteredCalls = computed(() => {
     const query = searchQuery.value.trim().toLocaleLowerCase()
@@ -737,20 +698,6 @@
   })
 
   const selectedCall = computed(() => callsList.value.find(c => c.id === selectedCallId.value) ?? null)
-  watch(() => selectedCall.value?.leadId, async leadId => {
-    const version = ++profileVersion
-    headerProfile.value = null
-    profileError.value = ''
-    if (!leadId || !permissions.can('customerProfile.view')) return
-    try {
-      const response = await getCallProfile(leadId)
-      if (version !== profileVersion) return
-      if (response?.success === false) throw new Error(response.message)
-      headerProfile.value = response?.data ?? response
-    } catch {
-      if (version === profileVersion) profileError.value = 'تعذر تحميل معلومات العميل الإضافية'
-    }
-  })
   const originalCustomerFields = ref({})
   function editableCustomerFields(call) {
     return {
@@ -761,6 +708,7 @@
     }
   }
   watch(selectedCall, call => {
+    saveError.value = ''
     originalCustomerFields.value = editableCustomerFields(call)
     selectedOutcome.value = callOutcomes.some(outcome => outcome.key === call?.callStatus) ? call.callStatus : ''
     resultNote.value = ''
@@ -833,31 +781,34 @@
 
   async function saveCallResult() {
     if (isSaving.value) return
+    saveError.value = ''
     if (!permissions.can('callCenter.logCall')) {
-      notification.error('ليس لديك صلاحية حفظ نتيجة المكالمة')
+      reportSaveError('ليس لديك صلاحية حفظ نتيجة المكالمة')
       return
     }
     if (!selectedCall.value) {
-      notification.error('اختر العميل أولًا')
+      reportSaveError('اختر العميل أولًا')
       return
     }
     if (!selectedOutcome.value) {
-      notification.error('اختر حالة العميل أولًا')
+      reportSaveError('اختر حالة العميل أولًا')
       return
     }
     if (!resultNote.value.trim()) {
-      notification.error('اكتب نتيجة المكالمة أولًا')
+      reportSaveError('اكتب نتيجة المكالمة أولًا')
       return
     }
     const leadId = selectedCall.value.leadId
     if (typeof leadId !== 'string' || !leadId.trim()) {
-      notification.error('معرّف العميل غير موجود في بيانات القائمة؛ أعد تحميلها')
+      reportSaveError('معرّف العميل غير موجود في بيانات القائمة؛ أعد تحميلها')
       return
     }
     const seconds = Number(durationSec.value)
     if (durationSec.value === '' || durationSec.value == null || !Number.isInteger(seconds) || seconds < 0) {
-      notification.error('أدخل مدة المكالمة بالثواني في تبويب بيانات العميل')
+      reportSaveError('أدخل مدة المكالمة بالثواني في تبويب بيانات العميل')
       activeTab.value = 'data'
+      await nextTick()
+      document.getElementById('durationSec')?.focus()
       return
     }
     const payload = {
@@ -870,7 +821,7 @@
     if (selectedOutcome.value === 'reschedule') {
       const nextDate = new Date(nextCallAt.value)
       if (!nextCallAt.value || !Number.isFinite(nextDate.getTime()) || nextDate.getTime() <= Date.now() || !rescheduleReason.value.trim()) {
-        notification.error('أدخل موعدًا قادمًا صحيحًا وسبب إعادة الجدولة')
+        reportSaveError('أدخل موعدًا قادمًا صحيحًا وسبب إعادة الجدولة')
         return
       }
       payload.nextCallAt = nextDate.toISOString()
@@ -880,25 +831,25 @@
     const fields = editableCustomerFields(selectedCall.value)
     const customerPatch = Object.fromEntries(Object.entries(fields).filter(([key, value]) => value !== originalCustomerFields.value[key]))
     if (Object.keys(customerPatch).length && !permissions.can('customers.viewEdit')) {
-      notification.error('ليس لديك صلاحية تعديل بيانات العميل')
+      reportSaveError('ليس لديك صلاحية تعديل بيانات العميل')
       return
     }
     if ('fullName' in customerPatch && customerPatch.fullName.trim().length < 3) {
-      notification.error('اسم العميل يجب أن يحتوي على 3 أحرف على الأقل')
+      reportSaveError('اسم العميل يجب أن يحتوي على 3 أحرف على الأقل')
       return
     }
     if ('phone' in customerPatch && !/^\+[1-9]\d{7,14}$/.test(customerPatch.phone.trim())) {
-      notification.error('أدخل رقم الجوال بالصيغة الدولية مثل +9665…')
+      reportSaveError('أدخل رقم الجوال بالصيغة الدولية مثل +9665…')
       return
     }
     if (('sourceId' in customerPatch && !customerPatch.sourceId) || ('projectType' in customerPatch && !customerPatch.projectType)) {
-      notification.error('اختر المصدر ونوع المشروع قبل الحفظ')
+      reportSaveError('اختر المصدر ونوع المشروع قبل الحفظ')
       return
     }
     if ('projectCreatedAt' in customerPatch) {
       const date = new Date(`${customerPatch.projectCreatedAt}T00:00:00.000Z`)
       if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== customerPatch.projectCreatedAt) {
-        notification.error('أدخل تاريخ الإنشاء بصيغة YYYY-MM-DD')
+        reportSaveError('أدخل تاريخ الإنشاء بصيغة YYYY-MM-DD')
         return
       }
       customerPatch.projectCreatedAt = date.toISOString()
@@ -932,7 +883,7 @@
         selectedCallId.value = null
       }
     } catch (err) {
-      notification.error(`${customerSaved ? 'تم حفظ بيانات العميل، لكن لم تُحفظ نتيجة المكالمة: ' : ''}${err?.message || 'تعذر حفظ نتيجة المكالمة'}`)
+      reportSaveError(`${customerSaved ? 'تم حفظ بيانات العميل، لكن لم تُحفظ نتيجة المكالمة: ' : ''}${err?.message || 'تعذر حفظ نتيجة المكالمة'}`)
     } finally {
       isSaving.value = false
     }
@@ -999,7 +950,10 @@
 .queue-entry { min-height: 132px; }
 .history-entry { min-height: 104px; }
 @media (max-width: 1280px) { .history-meta { flex-direction: column; align-items: flex-end; white-space: normal; } }
-.call-queue { overflow: hidden; }
+.call-queue { overflow: hidden; height: clamp(460px, 78vh, 800px); align-self: start; }
+@media (min-width: 1024px) {
+  .calls-columns { align-items: start; }
+}
 .customer-call-data > .grid { gap: 24px; }
 .customer-call-data :deep(input), .customer-call-data select { height: 56px; border-radius: 10px; padding-inline: 16px; font-size: 13px; border-color: #d4d4d4; background-color: white; color: #737373; }
 .customer-call-data select { appearance: none; padding-inline-end: 40px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23999999' stroke-width='1.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 16px center; }

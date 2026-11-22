@@ -61,16 +61,30 @@
           />
         </div>
         <div v-for="filter in filters" :key="filter.key" class="relative">
+          <input v-if="filter.key === 'city'" v-model.lazy.trim="activeFilters.city" list="customer-city-suggestions"
+            @keydown.enter.prevent="activeFilters.city = $event.target.value.trim()"
+            :aria-label="filter.label" placeholder="المدينة : الكل"
+            title="اكتب اسم المدينة كاملًا ثم اضغط Enter أو انتقل إلى حقل آخر"
+            class="appearance-none w-36 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400"
+          />
           <select
+            v-else
             v-model="activeFilters[filter.key]"
             :aria-label="filter.label"
+            :aria-busy="filterLoading[filterGroup(filter.key)] || false"
+            @focus="prepareFilter(filter.key)"
+            @pointerdown="prepareFilter(filter.key)"
             class="appearance-none text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
           >
             <option value="">{{ filter.label }} : الكل</option>
+            <option v-if="filterLoading[filterGroup(filter.key)]" disabled>جارٍ تحميل الخيارات...</option>
             <option v-for="opt in filter.options" :key="opt.value ?? opt" :value="opt.value ?? opt">
               {{ opt.label ?? opt }}
             </option>
           </select>
+          <datalist v-if="filter.key === 'city'" id="customer-city-suggestions">
+            <option v-for="city in meta.cities" :key="city" :value="city" />
+          </datalist>
           <ChevronDown
             :size="12"
             class="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -224,7 +238,7 @@
         dir="rtl"
         class="flex items-center justify-between flex-wrap gap-4 px-5 py-5 border-t border-gray-100"
       >
-        <p class="sr-only" aria-live="polite">
+        <p class="text-xs text-gray-400" aria-live="polite">
           عرض {{ paginatedCustomers.length ? startIndex + 1 : 0 }}-{{ endIndex }}
           <template v-if="totalCustomers !== null">من أصل {{ totalCustomers }}</template> سجل
         </p>
@@ -310,6 +324,7 @@
   import { customersService } from '@/services/customers.service'
   import { usersService } from '@/services/users.service'
   import { customerDateRange } from '@/utils/customerDateRange'
+  import { normalizeCustomerSearch } from '@/utils/customerSearch'
   import { useNotification } from '@/composables/useNotification'
   import { downloadBlob } from '@/utils/downloadFile'
 
@@ -341,7 +356,7 @@
     if (isDownloadingTemplate.value) return
     isDownloadingTemplate.value = true
     try {
-      const { isDraft, ...params } = queryParams()
+      const params = queryParams()
       const rows = []
       const seen = new Set()
       let fetched = 0
@@ -352,7 +367,7 @@
           if (row.id && seen.has(row.id)) continue
           if (row.id) seen.add(row.id)
           added++
-          if (isDraft === undefined || row.isDraft === isDraft) rows.push(row)
+          rows.push(row)
         }
         fetched += result.items.length
         if (!result.items.length || (result.total !== null && fetched >= result.total)) break
@@ -384,7 +399,13 @@
     sources: [],
     cities: [],
     agents: [],
-    statuses: [],
+    statuses: [
+      { value: 'new', label: 'عميل جديد' },
+      { value: 'interested', label: 'مهتم' },
+      { value: 'not_interested', label: 'غير مهتم' },
+      { value: 'no_answer', label: 'لا يرد' },
+      { value: 'reschedule', label: 'إعادة جدولة' }
+    ],
     dateRanges: [
       { value: 'today', label: 'اليوم' },
       { value: 'yesterday', label: 'أمس' },
@@ -416,7 +437,7 @@
 
   function queryParams() {
     return {
-      q: searchQuery.value.trim() || undefined,
+      q: normalizeCustomerSearch(searchQuery.value) || undefined,
       sourceId: activeFilters.value.source || undefined,
       assignedTo: activeFilters.value.agent || undefined,
       city: activeFilters.value.city || undefined,
@@ -430,74 +451,96 @@
   }
 
   let requestVersion = 0
+  let listController = null
+  let activeRequestKey = null
+  let activeRequest = null
+  function cancelCustomerRequest() {
+    ++requestVersion
+    listController?.abort()
+    activeRequestKey = null
+    activeRequest = null
+  }
   async function loadCustomers() {
+    clearTimeout(searchDebounce)
+    const params = queryParams()
+    const key = JSON.stringify(params)
+    if (activeRequest && activeRequestKey === key) return activeRequest
+    cancelCustomerRequest()
     const version = ++requestVersion
+    const controller = new AbortController()
+    listController = controller
+    activeRequestKey = key
     isLoading.value = true
     loadError.value = null
+    const task = (async () => {
     try {
-      const { items, total } = await customersService.getList(queryParams())
+      const { items, total } = await customersService.getList(params, { signal: controller.signal })
       if (version !== requestVersion) return
+      if (total === null) throw new Error('استجابة العملاء لا تحتوي على إجمالي النتائج؛ يلزم meta.total لحساب الصفحات بدقة')
+      const lastPage = Math.max(1, Math.ceil(total / params.limit))
+      if (params.page > lastPage) { currentPage.value = lastPage; return }
       paginatedCustomers.value = items
       totalCustomers.value = total
+      meta.value.cities = [...new Set(items.map(item => item.city).filter(Boolean))]
+      if (!permissions.can('employees.manage')) {
+        const agents = new Map(meta.value.agents.map(item => [item.value, item.label]))
+        for (const item of items) {
+          const assigned = item.assignedTo
+          const id = typeof assigned === 'string' ? assigned : assigned?.id ?? assigned?._id
+          if (id) agents.set(id, assigned?.name || item.agent || id)
+        }
+        meta.value.agents = [...agents].map(([value, label]) => ({ value, label }))
+      }
     } catch (err) {
-      if (version !== requestVersion) return
+      if (version !== requestVersion || controller.signal.aborted || err.code === 'ERR_CANCELED') return
       loadError.value = err
+      paginatedCustomers.value = []
+      totalCustomers.value = null
     } finally {
-      if (version === requestVersion) isLoading.value = false
+      if (version === requestVersion) {
+        isLoading.value = false
+        activeRequest = null
+        activeRequestKey = null
+      }
     }
+    })()
+    activeRequest = task
+    return task
   }
 
   async function loadMeta() {
     try {
       const result = await customersService.getMeta()
       meta.value.sources = result.sources
+      return true
     } catch (error) {
       notification.error(error.message || 'تعذّر تحميل مصادر العملاء')
     }
   }
-
   let disposed = false
-  const statusLabels = {
-    interested: 'مهتم',
-    not_interested: 'غير مهتم',
-    no_answer: 'لا يرد',
-    reschedule: 'إعادة جدولة'
+  const filterLoading = ref({})
+  const loadedFilters = new Set()
+  const pendingFilters = new Map()
+  function filterGroup(key) {
+    if (key === 'source') return 'sources'
+    if (key === 'agent' && permissions.can('employees.manage')) return 'employees'
+    return ''
   }
-  async function loadCustomerFilterOptions() {
-    const cities = new Set()
-    const statuses = new Set()
-    const agents = new Map()
-    try {
-      // Collect options across pages, independently of the current table filters.
-      let previousSignature = null
-      for (let page = 1; !disposed; page++) {
-        const { items, total } = await customersService.getList({ page, limit: 100 })
-        if (disposed) return
-        const signature = JSON.stringify(items.map(item => item.id))
-        if (items.length && signature === previousSignature) break
-        previousSignature = signature
-        for (const item of items) {
-          if (typeof item.city === 'string' && item.city.trim()) cities.add(item.city)
-          if (typeof item.callStatus === 'string' && item.callStatus) statuses.add(item.callStatus)
-          const assigned = item.assignedTo
-          const id = typeof assigned === 'string' ? assigned : (assigned?.id ?? assigned?._id)
-          if (id) agents.set(id, assigned?.name || item.agent || id)
-        }
-        meta.value.cities = [...cities].sort((a, b) => a.localeCompare(b, 'ar'))
-        meta.value.statuses = [...statuses].map(value => ({
-          value,
-          label: statusLabels[value] || value
-        }))
-        const merged = new Map(meta.value.agents.map(item => [item.value, item.label]))
-        for (const [id, name] of agents) if (!merged.has(id)) merged.set(id, name)
-        meta.value.agents = [...merged].map(([value, label]) => ({ value, label }))
-        if (items.length < 100 || (total !== null && page * 100 >= total)) break
-      }
-    } catch (error) {
-      if (!disposed) notification.error(error.message || 'تعذّر تحميل خيارات فلترة العملاء')
-    }
+  function prepareFilter(key) {
+    const group = filterGroup(key)
+    if (!group || loadedFilters.has(group) || disposed) return
+    if (pendingFilters.has(group)) return pendingFilters.get(group)
+    filterLoading.value[group] = true
+    const loader = { sources: loadMeta, employees: loadEmployeeOptions }[group]
+    const task = loader().then(success => {
+      if (success && !disposed) loadedFilters.add(group)
+    }).finally(() => {
+      filterLoading.value[group] = false
+      pendingFilters.delete(group)
+    })
+    pendingFilters.set(group, task)
+    return task
   }
-
   async function loadEmployeeOptions() {
     if (!permissions.can('employees.manage')) return
     try {
@@ -518,6 +561,7 @@
         meta.value.agents = [...agents].map(([value, label]) => ({ value, label }))
         if (rows.length < 100) break
       }
+      return !disposed
     } catch (error) {
       if (!disposed) notification.error(error.message || 'تعذّر تحميل الموظفين')
     }
@@ -532,28 +576,27 @@
     { deep: true, flush: 'sync' }
   )
   watch(
-    [searchQuery, activeFilters, currentPage, pageSize],
-    (values, previous) => {
+    () => JSON.stringify(queryParams()),
+    (key, previousKey) => {
+      const params = JSON.parse(key)
+      const previous = JSON.parse(previousKey)
       clearTimeout(searchDebounce)
-      ++requestVersion
+      cancelCustomerRequest()
       isLoading.value = true
       loadError.value = null
-      searchDebounce = setTimeout(loadCustomers, values[0] !== previous[0] ? 700 : 0)
+      searchDebounce = setTimeout(loadCustomers, params.q !== previous.q ? 400 : 0)
     },
-    { deep: true }
+    { flush: 'post' }
   )
 
   onBeforeUnmount(() => {
     disposed = true
     clearTimeout(searchDebounce)
-    ++requestVersion
+    cancelCustomerRequest()
   })
 
   onMounted(() => {
-    loadMeta()
     loadCustomers()
-    loadCustomerFilterOptions()
-    loadEmployeeOptions()
   })
 
   function handleEdit(customer) {

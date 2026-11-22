@@ -16,6 +16,11 @@ function entryView(record, category, index, at) {
   return {
     id: record.id ?? record._id ?? `${category}-${index}`,
     category,
+    callData: category === 'calls' ? {
+      leadId: typeof record.leadId === 'object' ? record.leadId?.id ?? record.leadId?._id : record.leadId,
+      direction: record.direction, outcome: record.outcome, durationSec: record.durationSec,
+      nextCallAt: record.nextCallAt, rescheduleReason: record.rescheduleReason,
+    } : null,
     title: category === 'calls' ? ({ outbound: 'مكالمة صادرة', inbound: 'مكالمة واردة' })[record.direction] ?? 'مكالمة'
       : category === 'documents' ? record.fileName ?? 'وثيقة'
       : category === 'messages' ? 'رسالة'
@@ -31,6 +36,29 @@ function entryView(record, category, index, at) {
     time: validDate ? date.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) : '',
     answered: record.outcome === 'no_answer' ? false : null
   }
+}
+
+export function buildTimelineCallPayload(entry, leadId, note) {
+  const call = entry?.callData
+  if (!call) throw new Error('اختر مكالمة من الجدول الزمني أولًا')
+  if (!note.trim()) throw new Error('اكتب الملاحظة أولًا')
+  if (call.leadId && call.leadId !== leadId) throw new Error('المكالمة لا تخص هذا العميل')
+  if (!['inbound', 'outbound'].includes(call.direction)
+    || !['interested', 'not_interested', 'no_answer', 'reschedule'].includes(call.outcome)
+    || call.durationSec == null || call.durationSec === ''
+    || !Number.isInteger(Number(call.durationSec)) || Number(call.durationSec) < 0) {
+    throw new Error('بيانات المكالمة المختارة غير مكتملة')
+  }
+  const payload = { leadId, direction: call.direction, outcome: call.outcome,
+    durationSec: Number(call.durationSec), resultNotes: note.trim() }
+  if (call.outcome === 'reschedule') {
+    if (!call.nextCallAt || !Number.isFinite(Date.parse(call.nextCallAt)) || !call.rescheduleReason?.trim()) {
+      throw new Error('المكالمة المختارة لا تحتوي على موعد وسبب إعادة الجدولة')
+    }
+    payload.nextCallAt = new Date(call.nextCallAt).toISOString()
+    payload.rescheduleReason = call.rescheduleReason.trim()
+  }
+  return payload
 }
 
 export function mapCustomerProfile(response) {

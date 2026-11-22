@@ -42,33 +42,10 @@ export const customersService = {
     }
   },
 
-  async getList(params = {}) {
+  async getList(params = {}, { signal } = {}) {
     const { page = 1, limit = 10 } = params
     if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       throw new Error('رقم الصفحة أو عدد النتائج غير صحيح؛ الحد الأقصى 100')
-    }
-    // Filter the complete result set: the server may ignore the isDraft query.
-    if (params.isDraft !== undefined && params.isDraft !== null && params.isDraft !== '') {
-      if (typeof params.isDraft !== 'boolean') throw new Error('قيمة فلتر المسودة غير صحيحة')
-      const { isDraft, ...otherParams } = params
-      const matches = []
-      const seen = new Set()
-      let fetched = 0
-      for (let scanPage = 1; ; scanPage++) {
-        const result = await customersService.getList({ ...otherParams, page: scanPage, limit: 100 })
-        let added = 0
-        for (const item of result.items) {
-          if (item.id && seen.has(item.id)) continue
-          if (item.id) seen.add(item.id)
-          added++
-          if (item.isDraft === isDraft) matches.push(item)
-        }
-        fetched += result.items.length
-        if (!result.items.length || (result.total !== null && fetched >= result.total)) break
-        if (!added) throw new Error('تعذّر تحميل جميع الصفحات لتصفية المسودات')
-        if (result.total === null && result.items.length < 100) break
-      }
-      return { items: matches.slice((page - 1) * limit, page * limit), total: matches.length }
     }
     const query = { page, limit }
     for (const key of ['q', 'sourceId', 'assignedTo', 'city', 'callStatus', 'projectType', 'priority', 'from', 'to']) {
@@ -77,15 +54,25 @@ export const customersService = {
       if (typeof value !== 'string') throw new Error('قيم فلاتر العملاء يجب أن تكون نصية')
       if (value.trim()) query[key] = key === 'q' ? normalizeCustomerSearch(value) : value.trim()
     }
-    const data = await api.get(ENDPOINTS.customers.list, { params: query })
+    if (params.isDraft !== undefined && params.isDraft !== null && params.isDraft !== '') {
+      if (typeof params.isDraft !== 'boolean') throw new Error('قيمة فلتر المسودة غير صحيحة')
+      query.isDraft = params.isDraft
+    }
+    const data = await api.get(ENDPOINTS.customers.list, { params: query, signal })
+    if (data?.success === false) throw new Error(data.message || 'تعذّر جلب العملاء')
     const body = data?.data ?? data
     const rows = [body, body?.items, body?.leads, body?.data, data?.items].find(Array.isArray)
-    const rawTotal = body?.total ?? body?.pagination?.total ?? data?.meta?.total ?? data?.pagination?.total ?? data?.total
+    const rawTotal = data?.meta?.total ?? body?.meta?.total ?? body?.total ?? body?.pagination?.total ?? data?.pagination?.total ?? data?.total
     const numericTotal = typeof rawTotal === 'string' && /^\d+$/.test(rawTotal) ? Number(rawTotal) : rawTotal
     const total = Number.isSafeInteger(numericTotal) && numericTotal >= 0 ? numericTotal : null
     if (!rows || rows.some(lead => !lead || typeof lead !== 'object' || Array.isArray(lead))) {
       throw new Error('تعذّر تحديد قائمة العملاء داخل الاستجابة؛ يلزم مراجعة بيانات الرد')
     }
+    if (query.isDraft !== undefined && rows.some(lead => {
+      const value = lead.isDraft === true || lead.isDraft === 'true' || lead.isDraft === 1 ? true
+        : lead.isDraft === false || lead.isDraft === 'false' || lead.isDraft === 0 ? false : null
+      return value !== query.isDraft
+    })) throw new Error('السيرفر لم يطبق فلتر المسودة؛ يلزم دعم isDraft في طلب العملاء مع إجمالي النتائج المفلترة')
     return {
       items: rows.map(lead => ({
         ...lead,

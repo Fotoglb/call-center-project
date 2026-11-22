@@ -66,16 +66,6 @@
           <ArrowLeft :size="16" />
         </Button>
 
-        <p class="text-center text-sm text-blue mt-4">
-          إدارة الحسابات
-          <button
-            type="button"
-            class="text-blue font-semibold hover:underline ms-1 cursor-pointer"
-            @click="goToEmployees"
-          >
-            قائمة الموظفين
-          </button>
-        </p>
       </form>
 
       <!-- ────────── Step 2: اختيار الدور ────────── -->
@@ -229,10 +219,6 @@ function prevStep() {
   if (isSubmitting.value) return
   formError.value = ''
   if (currentStep.value > 1) currentStep.value--
-}
-
-function goToEmployees() {
-  router.push({ name: 'Reports' })
 }
 
 async function handleSubmit() {

@@ -28,7 +28,12 @@ function mapCall(item, queue = false) {
     priority: ({ high: 'عالي الأهمية', medium: 'متوسط الأهمية', low: 'منخفض الأهمية' })[lead.priority ?? item.priority] ?? lead.priority ?? item.priority ?? '—',
     callAttempts: lead.callAttempts ?? item.callAttempts ?? null,
     tags: Array.isArray(item.tags) ? item.tags : [],
-    lastContact: item.lastContact ?? '—',
+    lastContactAt: lead.lastContactAt ?? item.lastContactAt ?? null,
+    nextCallAt: lead.nextCallAt ?? item.nextCallAt ?? null,
+    lastDurationSec: item.lastDurationSec ?? lead.lastDurationSec ?? null,
+    lastContact: Number.isFinite(Date.parse(lead.lastContactAt ?? item.lastContactAt))
+      ? new Date(lead.lastContactAt ?? item.lastContactAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' })
+      : item.lastContact ?? '—',
     agent: item.agent ?? item.userId?.name ?? lead.assignedTo?.name ?? '—',
     type: ({ inbound: 'وارد', outbound: 'صادر' })[item.direction] ?? item.type ?? '—',
     status: queue && item.state === 'pending' ? 'في الانتظار'
@@ -47,7 +52,15 @@ function mapCall(item, queue = false) {
  */
 export const callsService = {
   mapNextLead(lead, queueItem = {}) {
-    return mapCall({ ...queueItem, id: queueItem.id ?? lead.id ?? lead._id, leadId: lead }, true)
+    // Queue metadata may be reused, but customer fields must come from nextLead.
+    return mapCall({
+      ...lead,
+      id: queueItem.id ?? lead.id ?? lead._id,
+      leadId: lead,
+      position: queueItem.position,
+      queueDate: queueItem.queueDate,
+      state: queueItem.state,
+    }, true)
   },
   async getMeta() {
     const data = await api.get(ENDPOINTS.calls.meta)
@@ -64,8 +77,8 @@ export const callsService = {
     return readItems(data).map(item => mapCall(item, true))
   },
 
-  async getRescheduled() {
-    const data = await api.get(ENDPOINTS.calls.reschedule)
+  async getRescheduled({ signal } = {}) {
+    const data = await api.get(ENDPOINTS.calls.reschedule, { signal })
     return readItems(data).map(item => mapCall(item, true))
   },
 
@@ -118,11 +131,4 @@ export const callsService = {
     return includeMeta ? { items, total: response?.meta?.total ?? items.length } : items
   },
 
-  async exportExcel(params = {}) {
-    return api.get(ENDPOINTS.calls.exportExcel, { params, responseType: 'blob' })
-  },
-
-  async exportPdf(params = {}) {
-    return api.get(ENDPOINTS.calls.exportPdf, { params, responseType: 'blob' })
-  }
 }

@@ -72,7 +72,7 @@
               v-model="typeFilter"
               class="appearance-none w-36 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
             >
-              <option value="">النوع : الكل</option>
+              <option value="">نوع المشروع : الكل</option>
               <option v-for="t in callTypes" :key="t" :value="t">{{ t }}</option>
             </select>
             <ChevronDown
@@ -110,17 +110,17 @@
 
         <div class="flex items-center gap-2 shrink-0">
           <button
+            :disabled="isExporting || isLoading || !!loadError || !allCalls.length"
+            @click="exportTable('excel')"
             class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="isExportingExcel || !filteredCalls.length"
-            @click="handleExportExcel"
           >
             <FileSpreadsheet :size="14" />
             Excel
           </button>
           <button
+            :disabled="isExporting || isLoading || !!loadError || !allCalls.length"
+            @click="exportTable('pdf')"
             class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="isExportingPdf || !filteredCalls.length"
-            @click="handleExportPdf"
           >
             <FileText :size="14" />
             PDF
@@ -129,7 +129,7 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table ref="tableElement" class="w-full text-xs">
+        <table class="w-full text-xs">
           <thead class="bg-gray-100 border-b border-gray-200">
             <tr>
               <th class="px-3"><input type="checkbox" aria-label="تحديد جميع مكالمات الصفحة" :checked="allSelected" @change="toggleAll($event.target.checked)" /></th>
@@ -143,13 +143,13 @@
                 الموظف المسؤول
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
-                النوع
+                نوع المشروع
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
-                التاريخ
+                موعد الاتصال القادم
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
-                وقت الحديث
+                آخر تواصل
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 مدة المكالمة
@@ -205,7 +205,7 @@
               <td class="px-4 py-3 text-gray-400 tabular-nums whitespace-nowrap">
                 {{ call.date }}
               </td>
-              <td class="px-4 py-3 tabular-nums text-gray-500" dir="ltr">{{ formatDuration(call.talkDurationSec) }}</td>
+              <td class="px-4 py-3 tabular-nums text-gray-500 whitespace-nowrap">{{ call.lastContact }}</td>
               <td class="px-4 py-3 tabular-nums text-gray-500" dir="ltr">{{ formatDuration(call.durationSec) }}</td>
               <td class="px-4 py-3">
                 <span
@@ -301,8 +301,24 @@
   import { downloadBlob } from '@/utils/downloadFile'
   import { useNotification } from '@/composables/useNotification'
 
-  const router = useRouter()
   const notification = useNotification()
+  const isExporting = ref(false)
+  async function exportTable(format) {
+    if (isExporting.value || isLoading.value || loadError.value || !allCalls.value.length) return
+    isExporting.value = true
+    const rows = allCalls.value.map(call => [call.name, call.phone, call.agent, call.type, call.date, call.lastContact, formatDuration(call.durationSec), call.status, call.note])
+    try {
+      const { exportCallsExcel, exportCallsPdf } = await import('@/utils/exportCalls')
+      const blob = await (format === 'excel' ? exportCallsExcel(rows) : exportCallsPdf(rows))
+      downloadBlob(blob, `سجل_المكالمات.${format === 'excel' ? 'xlsx' : 'pdf'}`)
+    } catch (error) {
+      notification.error(error.message || 'تعذّر تصدير سجل المكالمات')
+    } finally {
+      isExporting.value = false
+    }
+  }
+
+  const router = useRouter()
 
   const searchQuery = ref('')
   const typeFilter = ref('')
@@ -311,7 +327,7 @@
   const currentPage = ref(1)
   const pageSize = ref(10)
 
-  const callTypes = ['وارد', 'صادر']
+  const callTypes = computed(() => [...new Set(allCalls.value.map(call => call.projectType).filter(Boolean))])
 
   function resetToDefaultView() {
     searchQuery.value = ''
@@ -323,12 +339,11 @@
 
   const isLoading = ref(true)
   const loadError = ref(null)
-  const paginatedCalls = ref([])
-  const totalCalls = ref(0)
+  const allCalls = ref([])
+  const totalCalls = computed(() => matchingCalls.value.length)
   const agentsList = ref([])
   const rawStats = ref([])
   const selectedIds = ref([])
-  const tableElement = ref(null)
   const allSelected = computed(() => filteredCalls.value.length > 0 && filteredCalls.value.every(call => selectedIds.value.includes(call.id)))
   function toggleAll(checked) { selectedIds.value = checked ? filteredCalls.value.map(call => call.id) : [] }
   function formatDuration(seconds) {
@@ -369,102 +384,63 @@
     currentPage.value = 1
   }
 
-  const filteredCalls = computed(() => paginatedCalls.value.filter(call => {
+  const matchingCalls = computed(() => allCalls.value.filter(call => {
     const query = searchQuery.value.trim().toLocaleLowerCase()
     return (!query || [call.name, call.phone, call.agent].some(value => String(value ?? '').toLocaleLowerCase().includes(query)))
       && (!typeFilter.value || call.type === typeFilter.value)
       && (!agentFilter.value || call.agent === agentFilter.value)
       && (!statusFilter.value || call.status === statusFilter.value)
   }))
+  const filteredCalls = computed(() => matchingCalls.value.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value))
 
   const totalPages = computed(() => Math.max(1, Math.ceil(totalCalls.value / pageSize.value)))
   const startIndex = computed(() => (currentPage.value - 1) * pageSize.value)
   const endIndex = computed(() => Math.min(startIndex.value + pageSize.value, totalCalls.value))
 
-  function queryParams() {
-    return {
-      search: searchQuery.value.trim() || undefined,
-      type: typeFilter.value || undefined,
-      agent: agentFilter.value || undefined,
-      status: statusFilter.value || undefined,
-      page: currentPage.value,
-      pageSize: pageSize.value
-    }
-  }
-
   let loadVersion = 0
+  let loadController = null
   async function loadCalls() {
+    if (loadController) return
+    const controller = new AbortController()
+    loadController = controller
     const version = ++loadVersion
     isLoading.value = true
     loadError.value = null
     try {
-      const { items, total, stats: statsData } = await callsService.getList({ page: currentPage.value, limit: pageSize.value })
+      const items = await callsService.getRescheduled({ signal: controller.signal })
       if (version !== loadVersion) return
-      paginatedCalls.value = items
-      totalCalls.value = total
-      rawStats.value = Array.isArray(statsData) ? statsData : []
-      agentsList.value = [...new Set(items.map(call => call.agent).filter(Boolean))]
+      allCalls.value = items.map(call => ({ ...call,
+        type: call.projectType || '—',
+        status: call.lastResult || call.status,
+        date: call.nextCallAt && Number.isFinite(Date.parse(call.nextCallAt))
+          ? new Date(call.nextCallAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' }) : '—',
+        note: call.notes ?? call.note,
+      }))
+      rawStats.value = []
+      currentPage.value = 1
+      agentsList.value = [...new Set(items.map(call => call.agent).filter(value => value && value !== '—'))]
       selectedIds.value = []
     } catch (err) {
-      if (version !== loadVersion) return
+      if (version !== loadVersion || controller.signal.aborted || err.code === 'ERR_CANCELED') return
       loadError.value = err
     } finally {
-      if (version === loadVersion) isLoading.value = false
+      if (version === loadVersion) {
+        isLoading.value = false
+        loadController = null
+      }
     }
   }
 
-  watch([currentPage, pageSize], loadCalls)
-  onUnmounted(() => { ++loadVersion })
+  watch([searchQuery, typeFilter, agentFilter, statusFilter], () => { currentPage.value = 1 })
+  onUnmounted(() => {
+    ++loadVersion
+    loadController?.abort()
+  })
   watch(pageSize, () => {
     currentPage.value = 1
   })
 
   onMounted(loadCalls)
-
-  const isExportingExcel = ref(false)
-  const isExportingPdf = ref(false)
-
-  async function handleExportExcel() {
-    if (isExportingExcel.value) return
-    isExportingExcel.value = true
-    try {
-      const { default: ExcelJS } = await import('exceljs')
-      const workbook = new ExcelJS.Workbook()
-      const sheet = workbook.addWorksheet('المكالمات', { views: [{ rightToLeft: true }] })
-      sheet.addRow(['اسم العميل', 'رقم الهاتف', 'الموظف المسؤول', 'النوع', 'التاريخ', 'وقت الحديث', 'مدة المكالمة', 'الحالة', 'ملاحظات'])
-      const rows = selectedIds.value.length ? filteredCalls.value.filter(call => selectedIds.value.includes(call.id)) : filteredCalls.value
-      rows.forEach(call => sheet.addRow([call.name, call.phone, call.agent, call.type, call.date, formatDuration(call.talkDurationSec), formatDuration(call.durationSec), call.status, call.note]))
-      sheet.columns.forEach(column => { column.width = 22 })
-      downloadBlob(new Blob([await workbook.xlsx.writeBuffer()]), 'سجل_المكالمات.xlsx')
-    } catch (err) {
-      notification.error(err?.message || 'تعذر تصدير الملف')
-    } finally {
-      isExportingExcel.value = false
-    }
-  }
-
-  async function handleExportPdf() {
-    if (isExportingPdf.value) return
-    isExportingPdf.value = true
-    try {
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas-pro'), import('jspdf')])
-      const canvas = await html2canvas(tableElement.value, { scale: 2, backgroundColor: '#ffffff' })
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-      const width = 277
-      const height = canvas.height * width / canvas.width
-      let offset = 0
-      while (offset < height) {
-        if (offset) pdf.addPage()
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10 - offset, width, height)
-        offset += 190
-      }
-      pdf.save('سجل_المكالمات.pdf')
-    } catch (err) {
-      notification.error(err?.message || 'تعذر تصدير الملف')
-    } finally {
-      isExportingPdf.value = false
-    }
-  }
 
   function typeClass(type) {
     return type === 'وارد' ? 'text-emerald-600' : 'text-indigo-600'

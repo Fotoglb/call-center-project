@@ -232,6 +232,13 @@
               </div>
               <div
                 class="flex-1 min-w-0 rounded-lg p-4 bg-gray-50"
+                :class="{ 'ring-2 ring-blue': selectedActivityId === entry.id, 'cursor-pointer': canSelectActivity(entry) }"
+                :role="canSelectActivity(entry) ? 'button' : undefined"
+                :tabindex="canSelectActivity(entry) ? 0 : undefined"
+                :aria-pressed="canSelectActivity(entry) ? selectedActivityId === entry.id : undefined"
+                @click="selectActivity(entry)"
+                @keydown.enter.prevent="selectActivity(entry)"
+                @keydown.space.prevent="selectActivity(entry)"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
                   <div class="flex items-center gap-2 flex-wrap">
@@ -255,19 +262,21 @@
             </div>
 
             <div v-if="activeActivityTab === 'timeline'" class="pt-2 space-y-2">
+              <p v-if="permissions.can('callCenter.logCall')" class="text-xs text-gray-500">{{ selectedActivity ? 'اكتب ملاحظتك للمكالمة المحددة' : 'اختر مكالمة من الجدول الزمني لإضافة ملاحظة' }}</p>
               <textarea
                 v-model="newActivityNote"
                 placeholder="أضف ملاحظة..."
                 class="w-full h-24 p-4 resize-none bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors"
-                disabled
+                :disabled="savingActivity || !selectedActivity || !permissions.can('callCenter.logCall')"
               />
               <div class="flex">
                 <button
                   type="button"
                   class="ms-auto text-xs font-semibold text-white bg-blue rounded-lg px-4 py-2 hover:bg-blue-dark cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled
+                  :disabled="savingActivity || !selectedActivity || !newActivityNote.trim() || !permissions.can('callCenter.logCall')"
+                  @click="addActivityNote"
                 >
-                  إضافة
+                  {{ savingActivity ? 'جارٍ الإضافة...' : 'إضافة' }}
                 </button>
               </div>
             </div>
@@ -303,7 +312,9 @@
     UserPlus
   } from '@lucide/vue'
   import { customersService } from '@/services/customers.service'
-  import { mapCustomerProfile } from '@/utils/customerProfile'
+  import { mapCustomerProfile, buildTimelineCallPayload } from '@/utils/customerProfile'
+  import { callsService } from '@/services/calls.service'
+  import { useNotification } from '@/composables/useNotification'
 
   const route = useRoute()
   const router = useRouter()
@@ -334,6 +345,39 @@
   const activeActivityTab = ref('timeline')
   const newActivityNote = ref('')
   const activityLog = ref({ timeline: [], calls: [], visits: [], documents: [] })
+  const selectedActivityId = ref(null)
+  const savingActivity = ref(false)
+  const notification = useNotification()
+  const selectedActivity = computed(() => activityLog.value.timeline.find(entry => entry.id === selectedActivityId.value && entry.callData))
+  function canSelectActivity(entry) {
+    return activeActivityTab.value === 'timeline' && !!entry.callData && permissions.can('callCenter.logCall')
+  }
+  function selectActivity(entry) {
+    if (!savingActivity.value && canSelectActivity(entry)) selectedActivityId.value = entry.id
+  }
+  watch(() => route.params.id, () => {
+    selectedActivityId.value = null
+    newActivityNote.value = ''
+  })
+  async function addActivityNote() {
+    if (savingActivity.value || !permissions.can('callCenter.logCall')) return
+    const leadId = String(route.params.id)
+    try {
+      const payload = buildTimelineCallPayload(selectedActivity.value, leadId, newActivityNote.value)
+      savingActivity.value = true
+      const response = await callsService.saveOutcome(payload)
+      notification.success(response?.message || 'تمت إضافة الملاحظة')
+      if (String(route.params.id) === leadId) {
+        newActivityNote.value = ''
+        selectedActivityId.value = null
+        await loadCustomer()
+      }
+    } catch (error) {
+      notification.error(error?.message || 'تعذر إضافة الملاحظة')
+    } finally {
+      savingActivity.value = false
+    }
+  }
 
   let loadVersion = 0
   async function loadCustomer() {

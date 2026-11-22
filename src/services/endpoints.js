@@ -38,8 +38,6 @@ export const ENDPOINTS = {
     reschedule: '/calls/reschedule',
     create: '/calls',
     list: '/calls',
-    exportExcel: '/calls/export/excel',
-    exportPdf: '/calls/export/pdf'
   },
 
   customers: {

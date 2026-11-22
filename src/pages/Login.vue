@@ -86,17 +86,6 @@
         </Button>
       </form>
 
-      <!-- Register Link -->
-      <p class="text-center text-sm text-gray-500 mt-6">
-        إنشاء الحسابات متاح للمستخدم المخوّل بعد تسجيل الدخول.
-        <button
-          type="button"
-          class="text-gray-900 font-semibold hover:underline ms-1 cursor-pointer"
-          @click="goToRegister"
-        >
-          إدارة إنشاء الحسابات
-        </button>
-      </p>
 
     </div>
   </div>
@@ -151,7 +140,4 @@ async function handleLogin() {
   }
 }
 
-function goToRegister() {
-  router.push({ name: 'Register' })
-}
 </script>
