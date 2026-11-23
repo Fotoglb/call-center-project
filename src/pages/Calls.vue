@@ -202,6 +202,16 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-2 shrink-0">
                   <button
+                    v-if="permissions.can('callCenter.logCall') && resultLeadId"
+                    type="button"
+                    class="flex items-center justify-center gap-2 text-sm text-white bg-blue rounded-xl px-4 h-12 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="isDialing || isSaving"
+                    @click="startCall"
+                  >
+                    <Phone :size="16" />
+                    {{ isDialing ? 'جارٍ بدء الاتصال...' : 'الاتصال الآن' }}
+                  </button>
+                  <button
                     v-if="permissions.can('customerProfile.view') && resultLeadId"
                     class="flex items-center justify-center text-sm text-gray-900 bg-slate-50 border border-slate-200 rounded-xl w-28 h-12 hover:bg-white cursor-pointer transition-colors"
                     @click="
@@ -506,6 +516,7 @@
   import { customersService } from '@/services/customers.service'
   import { usersService } from '@/services/users.service'
   import { useNotification } from '@/composables/useNotification'
+  import { useCallDial } from '@/composables/useCallDial'
 
   const router = useRouter()
   const notification = useNotification()
@@ -531,6 +542,7 @@
     notification.error(message)
   }
   const resultLeadId = ref('')
+  const { isDialing, startCall } = useCallDial(() => resultLeadId.value)
   const durationSec = ref('')
   const callDirection = ref('outbound')
   const nextCallAt = ref('')
@@ -869,7 +881,23 @@
       const response = await callsService.saveOutcome(payload)
       notification.success(response?.message || 'تم حفظ نتيجة المكالمة')
       await loadCalls()
-      const nextLead = response?.data?.nextLead
+      const savedLead = response?.data?.lead
+      const savedLeadId = savedLead?.id ?? savedLead?._id
+      const savedCall = response?.data?.call
+      const savedDetails = savedLeadId ? {
+        ...savedLead,
+        ...(savedCall?.leadId === savedLeadId ? { lastDurationSec: savedCall.durationSec } : {}),
+      } : null
+      if (savedDetails) {
+        const savedIndex = callsList.value.findIndex(call => call.leadId === savedLeadId)
+        if (savedIndex >= 0) {
+          callsList.value.splice(savedIndex, 1, callsService.mapNextLead(savedDetails, callsList.value[savedIndex]))
+        }
+      }
+      const returnedNextLead = response?.data?.nextLead
+      // The updated lead is authoritative if nextLead repeats the same customer.
+      const nextLead = savedDetails && (returnedNextLead?.id ?? returnedNextLead?._id) === savedLeadId
+        ? { ...returnedNextLead, ...savedDetails } : returnedNextLead
       if (nextLead && (nextLead.id || nextLead._id)) {
         const nextLeadId = nextLead.id ?? nextLead._id
         const index = callsList.value.findIndex(call => call.leadId === nextLeadId)

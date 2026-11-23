@@ -20,7 +20,7 @@ export function canVisit(session, path) {
   if (screen && session?.screens?.[screen] !== true) return false
   if (path === '/calls') return canAccess(session, 'callCenter.queue|callCenter.rescheduleList')
   if (screen === 'reports') return ['currentRepPerformance', 'periodicRepPerformance', 'cdr', 'daily', 'sources', 'conversionRate'].some(action => canAccess(session, `reports.${action}`))
-  if (path === '/calls/history' || path === '/agents') return canAccess(session, 'callCenter.rescheduleList')
+  if (path === '/calls/history' || path === '/agents') return canAccess(session, 'callCenter.queue')
   if (path === '/customers') return canAccess(session, 'customers.list')
   if (path === '/customers/add') return canAccess(session, 'customers.create') || canAccess(session, 'customers.viewEdit')
   if (screen === 'customerProfile') return canAccess(session, 'customerProfile.view')
@@ -30,7 +30,7 @@ export function canVisit(session, path) {
 
 export function requestPermission(url, method = 'get') {
   const path = url?.split('?')[0]
-  if (path?.startsWith('/dashboard/')) return 'screens.dashboard'
+  if (path === '/dashboard' || path?.startsWith('/dashboard/')) return 'screens.dashboard'
   if (path === '/users') return method === 'post' ? 'employees.register' : 'employees.manage'
   if (/^\/users\//.test(path)) return 'employees.manage'
   if (path === '/leads') return method === 'post' ? 'customers.create' : 'customers.list'
@@ -38,6 +38,8 @@ export function requestPermission(url, method = 'get') {
   if (path === '/leads/sources') return 'customers.list|customers.create|customers.viewEdit'
   if (path === '/leads/bulk') return 'customers.create'
   if (path === '/leads/check-duplicate') return 'customers.create|customers.viewEdit'
+  if (path === '/notifications' || path === '/notifications/unread-count') return 'screens.dashboard'
+  if (/^\/notifications\//.test(path)) return 'screens.dashboard'
   if (/^\/leads\//.test(path)) return method === 'delete' ? 'customers.delete' : 'customers.viewEdit'
   if (path === '/calls/queue') return 'callCenter.queue'
   if (path === '/calls/reschedule') return 'callCenter.rescheduleList'
@@ -50,6 +52,7 @@ export function requestPermission(url, method = 'get') {
     '/reports/conversion': 'reports.conversionRate',
     '/reports/cdr': 'reports.cdr',
     '/reports/rep-performance/current': 'reports.currentRepPerformance',
+    '/reports/rep-performance/periodic': 'reports.periodicRepPerformance',
     '/reports/visit-success': 'reports.periodicRepPerformance',
     '/reports/employee-trend': 'reports.periodicRepPerformance',
   })[path] ?? null

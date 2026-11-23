@@ -407,7 +407,7 @@
     isLoading.value = true
     loadError.value = null
     try {
-      const items = await callsService.getRescheduled({ signal: controller.signal })
+      const items = await callsService.getQueue({ signal: controller.signal })
       if (version !== loadVersion) return
       allCalls.value = items.map(call => ({ ...call,
         type: call.projectType || '—',

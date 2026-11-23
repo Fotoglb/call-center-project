@@ -2,7 +2,7 @@ import api from './api'
 import { ENDPOINTS } from './endpoints'
 
 export const reportsService = {
-  getCdr({ page = 1, limit = 20, direction = '', outcome = '', userId = '', leadId = '', from = '', to = '' } = {}) {
+  async getCdr({ page = 1, limit = 10, direction = '', outcome = '', userId = '', leadId = '', from = '', to = '' } = {}) {
     if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       throw new Error('رقم الصفحة أو عدد النتائج غير صحيح؛ الحد الأقصى 100')
     }
@@ -11,26 +11,43 @@ export const reportsService = {
       if (typeof value !== 'string') throw new Error('قيم فلاتر سجل المكالمات يجب أن تكون نصية')
       if (value.trim()) params[key] = value.trim()
     }
-    return api.get(ENDPOINTS.reports.cdr, { params })
+    const response = await api.get(ENDPOINTS.reports.cdr, { params })
+    if (response?.success === false) throw new Error(response.message || 'تعذّر تحميل سجل المكالمات')
+    if (!Array.isArray(response?.data)) throw new Error('تعذّر قراءة سجل المكالمات')
+    return { items: response.data, total: response.meta?.total ?? response.data.length }
   },
-  getDaily(date = '') {
-    return api.get(ENDPOINTS.reports.daily, { params: date ? { date } : {} })
+  async getDaily(date = '') {
+    const response = await api.get(ENDPOINTS.reports.daily, { params: date ? { date } : {} })
+    if (response?.success === false) throw new Error(response.message || 'تعذّر تحميل التقرير اليومي')
+    return response?.data ?? response
   },
   async getSummary(params = {}) {
-    const data = await api.get(ENDPOINTS.reports.summary, { params: params.dateTo ? { date: params.dateTo } : {} })
-    return data.stats ?? data
+    const data = await this.getDaily(params.dateTo)
+    return [
+      { label: 'إجمالي العملاء', value: data.totalLeads ?? null },
+      { label: 'تم التحويل المشروع', value: data.converted ?? null },
+      { label: 'معدل التحويل', value: data.conversionRate ?? null, unit: '%' },
+      { label: 'إجمالي المكالمات', value: data.totalCalls ?? null },
+      { label: 'الزيارة الميدانية', value: data.visits ?? null },
+      { label: 'متوسط وقت التحويل', value: null },
+    ]
   },
 
   async getConversionTrend(params = {}) {
     const query = {}
     if (params.dateFrom) query.from = params.dateFrom
     if (params.dateTo) query.to = params.dateTo
-    const data = await api.get(ENDPOINTS.reports.conversionTrend, { params: query })
+    const response = await api.get(ENDPOINTS.reports.conversionTrend, { params: query })
+    if (response?.success === false) throw new Error(response.message || 'تعذّر تحميل تقرير التحويل')
+    const data = response?.data ?? response
+    if (!Array.isArray(data?.trend)) throw new Error('تعذّر قراءة تقرير التحويل')
     return {
-      labels: data.labels ?? [],
-      visits: data.visits ?? [],
-      calls: data.calls ?? [],
-      newCustomers: data.newCustomers ?? []
+      totalLeads: data.totalLeads,
+      converted: data.converted,
+      conversionRate: data.conversionRate,
+      labels: data.trend.map(item => item.date),
+      leads: data.trend.map(item => item.leads),
+      conversions: data.trend.map(item => item.converted),
     }
   },
 
@@ -38,17 +55,44 @@ export const reportsService = {
     const query = {}
     if (params.dateFrom) query.from = params.dateFrom
     if (params.dateTo) query.to = params.dateTo
-    const data = await api.get(ENDPOINTS.reports.customerSources, { params: query })
-    return data.sources ?? data
+    const response = await api.get(ENDPOINTS.reports.customerSources, { params: query })
+    if (response?.success === false) throw new Error(response.message || 'تعذّر تحميل مصادر العملاء')
+    const data = response?.data ?? response
+    if (!Array.isArray(data?.rows)) throw new Error('تعذّر قراءة مصادر العملاء')
+    return {
+      from: data.from,
+      to: data.to,
+      total: data.total ?? 0,
+      items: data.rows.map(row => ({
+        ...row,
+        label: row.name,
+        color: /^#[0-9a-f]{6}$/i.test(row.color ?? '') ? row.color : '#94a3b8',
+      })),
+    }
   },
 
-  async getEmployeePerformance() {
-    const data = await api.get(ENDPOINTS.reports.employeePerformance)
-    return data.items ?? data
+  async getEmployeePerformance({ dateFrom = '', dateTo = '' } = {}) {
+    const params = {}
+    if (dateFrom) params.from = dateFrom
+    if (dateTo) params.to = dateTo
+    const endpoint = dateFrom || dateTo
+      ? ENDPOINTS.reports.periodicEmployeePerformance
+      : ENDPOINTS.reports.employeePerformance
+    const response = await api.get(endpoint, { params })
+    if (response?.success === false) throw new Error(response.message || 'تعذّر تحميل أداء الموظفين')
+    const data = response?.data ?? response
+    if (!Array.isArray(data?.rows)) throw new Error('تعذّر قراءة بيانات أداء الموظفين')
+    return data.rows.map(row => ({
+      ...row,
+      id: row.userId,
+      calls: row.totalCalls,
+      newCustomers: row.newLeads,
+      conversions: row.converted,
+    }))
   },
 
   async getVisitSuccess(params = {}) {
-    const data = await api.get(ENDPOINTS.reports.visitSuccess, { params })
+    const data = await api.get(ENDPOINTS.reports.visitSuccess, { params: { from: params.dateFrom, to: params.dateTo } })
     return {
       labels: data.labels ?? [],
       visits: data.visits ?? [],
@@ -57,7 +101,7 @@ export const reportsService = {
   },
 
   async getEmployeeTrend(params = {}) {
-    const data = await api.get(ENDPOINTS.reports.employeeTrend, { params })
+    const data = await api.get(ENDPOINTS.reports.employeeTrend, { params: { from: params.dateFrom, to: params.dateTo } })
     return {
       labels: data.labels ?? [],
       calls: data.calls ?? [],

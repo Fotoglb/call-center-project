@@ -24,6 +24,7 @@ function entryView(record, category, index, at) {
     title: category === 'calls' ? ({ outbound: 'مكالمة صادرة', inbound: 'مكالمة واردة' })[record.direction] ?? 'مكالمة'
       : category === 'documents' ? record.fileName ?? 'وثيقة'
       : category === 'messages' ? 'رسالة'
+      : category === 'notes' ? 'ملاحظة'
       : record.action === 'lead_added' ? 'إضافة العميل' : ({ system: 'نشاط', visits: 'زيارة' })[category] ?? 'نشاط',
     note: record.description ?? record.resultNotes ?? record.text ?? record.body ?? record.content ?? '',
     meta: record.userId?.name ?? record.uploadedBy?.name ?? '',
@@ -36,6 +37,10 @@ function entryView(record, category, index, at) {
     time: validDate ? date.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) : '',
     answered: record.outcome === 'no_answer' ? false : null
   }
+}
+
+export function mapCustomerNote(note) {
+  return entryView(note, 'notes', 0)
 }
 
 export function buildTimelineCallPayload(entry, leadId, note) {
@@ -89,7 +94,7 @@ export function mapCustomerProfile(response) {
     interestScore: stats.interestScore ?? lead.interestScore ?? null
   }
   const activities = {
-    timeline: (Array.isArray(profile.timeline) ? profile.timeline : []).map((entry, index) => entryView(entry.data ?? {}, ({ activity: 'system', call: 'calls', message: 'messages', visit: 'visits', document: 'documents' })[entry.type] ?? entry.type, index, entry.at))
+    timeline: (Array.isArray(profile.timeline) ? profile.timeline : []).map((entry, index) => entryView(entry.data ?? {}, ({ activity: 'system', call: 'calls', message: 'messages', note: 'notes', visit: 'visits', document: 'documents' })[entry.type] ?? entry.type, index, entry.at))
   }
   for (const category of ['calls', 'visits', 'documents']) {
     activities[category] = (Array.isArray(profile[category]) ? profile[category] : []).map((record, index) => entryView(record, category, index))

@@ -51,6 +51,16 @@ function mapCall(item, queue = false) {
  * - log: سجل/جدول كل المكالمات مع فلاتر وترقيم صفحات (صفحة Agents).
  */
 export const callsService = {
+  async dial(leadId) {
+    if (typeof leadId !== 'string' || !leadId.trim()) throw new Error('معرّف العميل مطلوب لبدء الاتصال')
+    const response = await api.post(ENDPOINTS.calls.dial, { leadId: leadId.trim() })
+    if (response?.success === false) throw new Error(response.message || 'تعذّر بدء الاتصال')
+    const data = response?.data
+    if (data?.leadId !== leadId.trim() || typeof data?.dialUri !== 'string' || !/^tel:\+?[0-9]{3,15}$/.test(data.dialUri)) {
+      throw new Error('رابط الاتصال الذي أعاده السيرفر غير صالح')
+    }
+    return data
+  },
   mapNextLead(lead, queueItem = {}) {
     // Queue metadata may be reused, but customer fields must come from nextLead.
     return mapCall({
@@ -71,9 +81,9 @@ export const callsService = {
     }
   },
 
-  async getQueue() {
+  async getQueue({ signal } = {}) {
     // Confirmed Apidog request: GET /api/calls/queue, without query parameters.
-    const data = await api.get(ENDPOINTS.calls.queue)
+    const data = await api.get(ENDPOINTS.calls.queue, { signal })
     return readItems(data).map(item => mapCall(item, true))
   },
 

@@ -119,7 +119,7 @@
             مباشر
           </span>
         </div>
-        <ul v-if="activities.length" class="space-y-4">
+        <ul v-if="activities.length" class="activity-list space-y-4" tabindex="0" aria-label="سجل النشاطات الأخيرة">
           <li v-for="activity in activities" :key="activity.id" class="flex items-center gap-3">
             <div
               class="w-11 h-11 rounded-md bg-indigo-50 flex items-center justify-center text-xs font-bold text-indigo-600 shrink-0"
@@ -242,6 +242,15 @@
   const teamPerformance = ref({ labels: [], calls: [], transfers: [] })
   const activities = ref([])
   const upcomingVisits = ref([])
+  function mapActivity(item) {
+    return {
+      id: item.id,
+      user: item.userId?.name ?? '—',
+      action: item.description ?? item.action ?? '',
+      target: '',
+      time: Number.isFinite(Date.parse(item.createdAt)) ? new Date(item.createdAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }) : '—'
+    }
+  }
 
   const lineChartData = computed(() => ({
     labels: weeklyPerformance.value.labels,
@@ -373,20 +382,13 @@
     isLoading.value = true
     loadError.value = null
     try {
-      const [statsData, weekly, sources, team, activityLog, visits] = await Promise.all([
-        dashboardService.getStats(),
-        dashboardService.getWeeklyPerformance(),
-        dashboardService.getCustomerSources(),
-        dashboardService.getTeamPerformance(),
-        dashboardService.getActivities(),
-        dashboardService.getUpcomingVisits()
-      ])
-      stats.value = statsData
-      weeklyPerformance.value = weekly
-      donutLegend.value = sources
-      teamPerformance.value = team
-      activities.value = activityLog
-      upcomingVisits.value = visits
+      const overview = await dashboardService.getOverview()
+      stats.value = overview.stats
+      weeklyPerformance.value = { labels: [], calls: [], newCustomers: [] }
+      donutLegend.value = []
+      teamPerformance.value = { labels: [], calls: [], transfers: [] }
+      activities.value = overview.recentActivity.map(mapActivity)
+      upcomingVisits.value = []
     } catch (err) {
       loadError.value = err
     } finally {
@@ -396,3 +398,13 @@
 
   onMounted(loadDashboard)
 </script>
+
+<style scoped>
+.activity-list {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-inline-end: 6px;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+</style>

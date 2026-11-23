@@ -92,8 +92,9 @@
               <label class="mb-1 block text-xs text-gray-500"> من تاريخ </label>
 
               <input
-                v-model="dateFrom"
+                v-model="draftDateFrom"
                 type="date"
+                :max="draftDateTo || undefined"
                 class="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-700 focus:border-indigo-400 focus:outline-none"
               />
             </div>
@@ -102,16 +103,18 @@
               <label class="mb-1 block text-xs text-gray-500"> إلى تاريخ </label>
 
               <input
-                v-model="dateTo"
+                v-model="draftDateTo"
                 type="date"
+                :min="draftDateFrom || undefined"
                 class="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-700 focus:border-indigo-400 focus:outline-none"
               />
             </div>
 
+            <p v-if="dateRangeError" role="alert" class="text-xs text-red-600">{{ dateRangeError }}</p>
             <button
               type="button"
               class="w-full cursor-pointer rounded-lg bg-gray-900 py-1.5 text-xs text-white transition-colors hover:bg-gray-700"
-              @click="showDatePicker = false"
+              @click="applyDateRange"
             >
               تطبيق
             </button>
@@ -122,15 +125,16 @@
         <div class="relative">
           <select
             v-model="agentFilter"
-            :aria-busy="employeesLoading"
+            :aria-busy="employeeReportLoading || currentEmployeeLoading"
+            aria-label="تصفية مخطط وجدول أداء الموظفين"
             class="w-60 max-w-full cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white py-2 pe-7 ps-3 text-xs text-gray-600 hover:border-gray-300 focus:border-indigo-400 focus:outline-none"
           >
-            <option value="">جميع الموظفين</option>
-            <option v-if="employeesLoading" disabled>جارٍ تحميل الموظفين...</option>
-            <option v-else-if="!employees.length" disabled>{{ employeesError ? 'تعذّر تحميل الموظفين' : 'لا يوجد موظفون' }}</option>
+            <option value="">أداء الموظفين: الكل</option>
+            <option v-if="employeeReportLoading || currentEmployeeLoading" disabled>جارٍ تحميل الموظفين...</option>
+            <option v-else-if="!reportEmployeeOptions.length" disabled>{{ employeeReportError || currentEmployeeError || 'لا يوجد موظفون في التقارير' }}</option>
 
             <option
-              v-for="employee in employees"
+              v-for="employee in reportEmployeeOptions"
               :key="employee.id"
               :value="employee.id"
             >
@@ -150,9 +154,9 @@
             v-model="sourceFilter"
             class="cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white py-2 pe-7 ps-3 text-xs text-gray-600 hover:border-gray-300 focus:border-indigo-400 focus:outline-none"
           >
-            <option value="">جميع المصادر</option>
+            <option value="">توزيع المصادر: الكل</option>
 
-            <option v-for="source in sourceLegend" :key="source.label" :value="source.label">
+            <option v-for="source in sourceLegend" :key="source.sourceId ?? source.label" :value="source.sourceId ?? source.label">
               {{ source.label }}
             </option>
           </select>
@@ -174,7 +178,7 @@
               ? 'bg-white text-blue-dark shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
           "
-          @click="period = 'daily'"
+          @click="selectPeriod('daily')"
         >
           يومي
         </button>
@@ -187,7 +191,7 @@
               ? 'bg-white text-blue-dark shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
           "
-          @click="period = 'weekly'"
+          @click="selectPeriod('weekly')"
         >
           أسبوعي
         </button>
@@ -200,7 +204,7 @@
               ? 'bg-white text-blue-dark shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
           "
-          @click="period = 'monthly'"
+          @click="selectPeriod('monthly')"
         >
           شهري
         </button>
@@ -208,77 +212,70 @@
     </div>
 
     <!-- Statistics -->
-    <div class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+    <p class="text-[10px] text-gray-400">التقرير اليومي لتاريخ {{ dateTo }}</p>
+    <p v-if="dailyError" role="alert" class="text-sm text-red-500">{{ dailyError }}</p>
+    <div class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       <div
         v-for="stat in displayedStats"
         :key="stat.label"
-        class="min-w-0 space-y-1 rounded-xl bg-gray-50 p-4"
+        class="min-w-0 space-y-2 rounded-2xl bg-white p-6"
       >
-        <p class="text-2xl font-bold text-gray-900">
-          {{ stat.value }}
+        <p class="min-h-9" :class="typeof stat.value === 'number' ? 'text-[28px] font-bold text-gray-900' : 'text-xs font-normal leading-5 text-gray-400'">
+          {{ stat.value }}{{ typeof stat.value === 'number' ? stat.unit || '' : '' }}
         </p>
 
-        <p class="text-xs text-gray-500">
+        <p class="text-xs leading-5 text-gray-500">
           {{ stat.label }}
         </p>
       </div>
     </div>
 
     <!-- Main Charts -->
-    <div class="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-4">
+    <div class="report-main-charts grid min-w-0 grid-cols-1">
       <!-- Conversion Trend -->
-      <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 sm:p-5 p-2 xl:col-span-3">
+      <div class="conversion-panel min-w-0 overflow-hidden bg-white">
         <!-- Header like Figma -->
-        <div class="mb-5 flex flex-wrap items-start justify-between gap-x-8 gap-y-4" dir="rtl">
+        <div class="conversion-heading flex flex-wrap items-center justify-between gap-x-8 gap-y-3" dir="rtl">
           <!-- Title on the right -->
           <div class="shrink-0">
-            <h3 class="text-base font-semibold text-gray-900">معدل التحويل – الاتجاه الزمني</h3>
+            <h3 class="text-sm font-bold text-gray-900">معدل التحويل — الاتجاه الزمني</h3>
 
-            <p class="mt-1 text-sm text-gray-400">نسبة العملاء الجدد والتحويلات حسب اليوم</p>
+            <p class="mt-1 text-[10px] leading-4 text-slate-400">العملاء الجدد والتحويلات حسب اليوم</p>
           </div>
 
-          <!-- Legend on the left -->
-          <div class="flex flex-wrap items-center gap-6 text-sm text-gray-600" dir="ltr">
-            <span class="flex items-center gap-2 whitespace-nowrap" dir="rtl">
-              <span class="h-1 w-7 rounded-full bg-indigo-500"></span>
-              الزيارات
-            </span>
-
-            <span class="flex items-center gap-2 whitespace-nowrap" dir="rtl">
-              <span class="h-1 w-7 rounded-full bg-purple-400"></span>
-              المكالمات
-            </span>
-
-            <span class="flex items-center gap-2 whitespace-nowrap" dir="rtl">
-              <span class="h-1 w-7 rounded-full bg-pink-400"></span>
-              عملاء جدد
-            </span>
+          <div class="flex flex-wrap items-center gap-5 text-[10px] text-gray-600">
+            <span class="flex items-center gap-2"><span class="h-1 w-5 rounded-full bg-gray-300"></span>عملاء جدد</span>
+            <span class="flex items-center gap-2"><span class="h-1 w-5 rounded-full bg-gray-300"></span>التحويلات</span>
           </div>
         </div>
+        <p v-if="conversionError" role="alert" class="mb-3 text-xs text-red-600">{{ conversionError }}</p>
 
         <!-- Chart -->
-        <div class="chart-container relative h-[250px] w-full min-w-0" dir="ltr">
+        <div class="chart-scroll" dir="ltr" tabindex="0" aria-label="تمرير مخطط التحويل">
+        <div class="conversion-canvas chart-container relative" :style="{ width: `${Math.max(720, conversionTrendData.labels.length * 110)}px` }">
           <Line v-if="hasChartData(conversionTrendData)" ref="conversionChartRef" :data="conversionTrendData" :options="lineOptions" />
-          <p v-else class="flex h-full items-center justify-center text-xs text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
+          <p v-else class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
+        </div>
         </div>
       </div>
 
       <!-- Sources Doughnut -->
-      <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5 xl:col-span-1">
+      <div class="sources-panel min-w-0 overflow-hidden bg-white">
         <h3 class="text-sm font-semibold text-gray-900">توزيع مصادر العملاء</h3>
 
-        <p class="mb-4 mt-1 text-xs text-gray-400">هذا الشهر</p>
+        <p class="mb-4 mt-1 text-xs text-gray-400">من {{ dateFrom }} إلى {{ dateTo }}</p>
+        <p v-if="sourcesError" role="alert" class="mb-3 text-xs text-red-600">{{ sourcesError }}</p>
 
-        <div class="flex min-w-0 flex-col items-center gap-4">
-          <div class="relative h-32 w-32 shrink-0">
+        <div class="sources-content flex min-w-0 flex-col items-center gap-4">
+          <div class="source-ring relative h-40 w-40 shrink-0">
             <Doughnut v-if="hasChartData(sourceChartData)" ref="sourceChartRef" :data="sourceChartData" :options="donutOptions" />
-          <p v-else class="flex h-full items-center justify-center text-xs text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
+          <p v-else class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
           </div>
 
-          <ul class="w-full min-w-0 space-y-3 text-xs">
+          <ul class="sources-list w-full min-w-0 space-y-3 text-xs" tabindex="0" aria-label="مصادر العملاء">
             <li
-              v-for="item in sourceLegend"
-              :key="item.label"
+              v-for="item in filteredSources"
+              :key="item.sourceId ?? item.label"
               class="flex min-w-0 items-center justify-between gap-2"
             >
               <span class="flex items-center gap-1.5">
@@ -292,7 +289,7 @@
                 </span>
               </span>
 
-              <span class="shrink-0 font-medium text-gray-500"> {{ item.percent }}% </span>
+              <span class="shrink-0 font-medium text-gray-500">{{ item.percent }}%</span>
             </li>
           </ul>
         </div>
@@ -300,37 +297,46 @@
     </div>
 
     <!-- Secondary Charts -->
-    <div class="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
+    <div class="report-secondary-charts grid min-w-0 grid-cols-1 gap-7 xl:grid-cols-2">
       <!-- Employee Performance Chart -->
-      <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5">
+      <div class="employee-donut-panel min-w-0 overflow-hidden rounded-2xl bg-white p-6">
         <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 class="text-sm font-semibold text-gray-900">أداء الموظفين</h3>
 
-            <p class="mt-1 text-xs text-gray-400">مقارنة المكالمات والعملاء الجدد</p>
+            <p class="mt-1 text-xs text-slate-400">المكالمات والعملاء الجدد والتحويلات</p>
           </div>
 
           <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500" dir="ltr">
-            <span class="flex items-center gap-1.5" dir="rtl">
-              <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
+            <button type="button" class="flex items-center gap-2 cursor-pointer" dir="rtl" :aria-pressed="employeeMetric === 'calls'" @click="employeeMetric = 'calls'">
+              <span class="h-1 w-6 rounded-full bg-gray-300"></span>
               المكالمات
-            </span>
+            </button>
 
-            <span class="flex items-center gap-1.5" dir="rtl">
-              <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+            <button type="button" class="flex items-center gap-2 cursor-pointer" dir="rtl" :aria-pressed="employeeMetric === 'newCustomers'" @click="employeeMetric = 'newCustomers'">
+              <span class="h-1 w-6 rounded-full bg-gray-300"></span>
               عملاء جدد
-            </span>
+            </button>
           </div>
         </div>
 
-        <div class="chart-container relative h-52 w-full min-w-0" dir="ltr">
-          <Bar v-if="hasChartData(employeeTrendData)" ref="employeeChartRef" :data="employeeTrendData" :options="barOptions" />
-          <p v-else class="flex h-full items-center justify-center text-xs text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
+        <div class="employee-ring chart-container relative mx-auto shrink-0" dir="ltr">
+          <Doughnut v-if="employeeMetricTotal > 0" ref="employeeChartRef" :data="employeeDonutData" :options="donutOptions" />
+          <div v-else class="flex h-full flex-col items-center justify-center gap-2 text-xs text-gray-500" dir="rtl" role="status">
+            <p>{{ currentEmployeeLoading ? 'جارٍ تحميل أداء الموظفين...' : currentEmployeeError || 'لا توجد قيم لهذا المؤشر في التقرير الحالي' }}</p>
+            <button v-if="currentEmployeeError && !isExportingPdf" class="text-blue underline" @click="loadReportData">إعادة المحاولة</button>
+          </div>
         </div>
+        <ul class="employee-donut-list space-y-4 text-xs text-gray-500" tabindex="0" aria-label="نسب أداء الموظفين">
+          <li v-for="employee in employeeDistribution" :key="employee.id" class="flex items-center justify-between gap-3">
+            <span class="flex items-center gap-1.5"><span class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: employee.color }"></span>{{ employee.name }}</span>
+            <span class="tabular-nums" dir="ltr" :title="String(employee.value)">{{ employee.percent }}%</span>
+          </li>
+        </ul>
       </div>
 
       <!-- Visit Success -->
-      <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50 p-5">
+      <div class="min-w-0 overflow-hidden rounded-2xl bg-white p-6">
         <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 class="text-sm font-semibold text-gray-900">معدل نجاح الزيارات</h3>
@@ -353,7 +359,7 @@
 
         <div class="chart-container relative h-52 w-full min-w-0" dir="ltr">
           <Bar v-if="hasChartData(visitSuccessData)" ref="visitChartRef" :data="visitSuccessData" :options="barOptions" />
-          <p v-else class="flex h-full items-center justify-center text-xs text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
+          <p v-else class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
         </div>
       </div>
     </div>
@@ -363,7 +369,9 @@
       <div class="border-b border-gray-200 px-5 py-4">
         <h3 class="text-sm font-semibold text-gray-900">تقرير الأداء الوظيفي</h3>
 
-        <p class="mt-0.5 text-xs text-gray-400">مقارنة شاملة لجميع الموظفين خلال هذا الأسبوع</p>
+        <p class="mt-0.5 text-xs text-gray-400">أداء الموظفين من {{ dateFrom }} إلى {{ dateTo }}</p>
+        <p v-if="employeeActionError" role="alert" class="mt-2 text-xs text-red-600">{{ employeeActionError }}</p>
+        <p v-if="employeeActionSuccess" role="status" class="mt-2 text-xs text-emerald-600">{{ employeeActionSuccess }}</p>
       </div>
 
       <div class="overflow-x-auto">
@@ -375,6 +383,9 @@
                   type="checkbox"
                   class="cursor-pointer"
                   :checked="allSelected"
+                  :indeterminate="selectedEmployees.length > 0 && !allSelected"
+                  :disabled="!employeeRows.length"
+                  aria-label="تحديد جميع الموظفين المعروضين"
                   @change="toggleSelectAll"
                 />
               </th>
@@ -400,27 +411,25 @@
               </th>
 
               <th class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">
-                الزيارات
+                مهتم
               </th>
 
               <th class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">
-                نجاح الزيارات
+                لا يرد
               </th>
 
               <th class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">
-                نقاط الأداء
+                متوسط مدة المكالمة (ثانية)
               </th>
 
-              <th class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">
-                الأداء
-              </th>
 
-              <th v-if="!isExportingPdf" class="w-16 px-4 py-3"></th>
+              <th v-for="label in ['الزيارات', 'نجاح الزيارات', 'نقاط الأداء', 'الأداء']" :key="label" class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">{{ label }}</th>
+              <th v-if="!isExportingPdf" class="w-16 px-4 py-3">الإجراءات</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-gray-200">
-            <tr v-if="!employeeRows.length"><td :colspan="isExportingPdf ? 10 : 12" class="px-4 py-8 text-center text-xs text-gray-400" role="status">لا يوجد بيانات</td></tr>
+            <tr v-if="!employeeRows.length"><td :colspan="isExportingPdf ? 12 : 14" class="px-4 py-8 text-center text-xs text-gray-400" role="status">{{ isLoading ? 'جارٍ التحميل...' : employeeReportError || 'لا يوجد بيانات' }}</td></tr>
             <tr
               v-for="employee in employeeRows"
               :key="employee.id"
@@ -431,6 +440,7 @@
                   type="checkbox"
                   class="cursor-pointer"
                   :checked="selectedEmployees.includes(employee.id)"
+                  :aria-label="`تحديد ${employee.name}`"
                   @change="toggleEmployee(employee.id)"
                 />
               </td>
@@ -458,48 +468,42 @@
               <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.conversionRate == null ? '—' : `${employee.conversionRate}%` }}</td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.visits ?? '—' }}
+                {{ employee.interested ?? '—' }}
               </td>
 
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visitSuccessRate == null ? '—' : `${employee.visitSuccessRate}%` }}</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.noAnswer ?? '—' }}</td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.score ?? '—' }}
+                {{ employee.avgDurationSec ?? '—' }}
               </td>
 
-              <td class="px-4 py-3">
-                <span
-                  class="inline-flex items-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium"
-                  :class="performanceClass(employee.performance)"
-                >
-                  {{ employee.performance ?? '—' }}
-                </span>
-              </td>
 
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visits ?? '—' }}</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visitSuccessRate == null ? '—' : `${employee.visitSuccessRate}%` }}</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.score ?? '—' }}</td>
+              <td class="px-4 py-3"><span class="inline-flex whitespace-nowrap rounded-md px-3 py-1.5" :class="performanceClass(employee.performance)">{{ employee.performance ?? '—' }}</span></td>
               <td v-if="!isExportingPdf" class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
                     title="إعادة تعيين كلمة المرور"
                     :aria-label="`إعادة تعيين كلمة مرور ${employee.name}`"
-                    :disabled="employeeBusy || !employee.id"
-                    v-if="permissions.can('employees.manage')"
+                    :disabled="!permissions.can('employees.manage') || employeeBusy || !employee.id"
                     @click="resetEmployeePassword(employee)"
-                    class="cursor-pointer text-gray-400 transition-colors hover:text-indigo-500"
+                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <Pencil :size="14" />
+                    <Pencil :size="16" aria-hidden="true" />
                   </button>
 
                   <button
                     type="button"
                     title="تعطيل الموظف"
                     :aria-label="`تعطيل الموظف ${employee.name}`"
-                    :disabled="employeeBusy || !employee.id || employee.status === 'inactive'"
-                    v-if="permissions.can('employees.manage')"
+                    :disabled="!permissions.can('employees.manage') || employeeBusy || !employee.id || employee.status === 'inactive'"
                     @click="deactivateEmployee(employee)"
-                    class="cursor-pointer text-gray-400 transition-colors hover:text-red-500"
+                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <Trash2 :size="14" />
+                    <Trash2 :size="16" aria-hidden="true" />
                   </button>
                 </div>
               </td>
@@ -549,11 +553,11 @@
   import { reportsService } from '@/services/reports.service'
 
   ChartJS.register(
+    BarElement,
     CategoryScale,
     LinearScale,
     PointElement,
     LineElement,
-    BarElement,
     ArcElement,
     Tooltip,
     Legend
@@ -572,7 +576,8 @@
   const periodLabels = {
     daily: 'يومي',
     weekly: 'أسبوعي',
-    monthly: 'شهري'
+    monthly: 'شهري',
+    custom: 'فترة مخصصة'
   }
 
   const periodLabel = computed(() => periodLabels[period.value] ?? period.value)
@@ -586,11 +591,42 @@
   const shareMenuRef = ref(null)
 
   const reportToday = new Date()
-  const reportStart = new Date(reportToday)
-  reportStart.setDate(reportStart.getDate() - 6)
   const localDate = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  const dateFrom = ref(localDate(reportStart))
+  const dateFrom = ref(localDate(reportToday))
   const dateTo = ref(localDate(reportToday))
+  const draftDateFrom = ref(dateFrom.value)
+  const draftDateTo = ref(dateTo.value)
+  const dateRangeError = ref('')
+  function selectPeriod(value) {
+    const today = new Date()
+    const start = new Date(today)
+    if (value === 'weekly') start.setDate(start.getDate() - 6)
+    if (value === 'monthly') start.setDate(1)
+    period.value = value
+    dateFrom.value = localDate(start)
+    dateTo.value = localDate(today)
+    draftDateFrom.value = dateFrom.value
+    draftDateTo.value = dateTo.value
+    dateRangeError.value = ''
+    showDatePicker.value = false
+  }
+  function applyDateRange() {
+    if (!draftDateFrom.value || !draftDateTo.value || draftDateFrom.value > draftDateTo.value) {
+      dateRangeError.value = 'اختر تاريخ البداية والنهاية، على أن تكون البداية قبل النهاية أو مساوية لها.'
+      return
+    }
+    dateRangeError.value = ''
+    period.value = 'custom'
+    dateFrom.value = draftDateFrom.value
+    dateTo.value = draftDateTo.value
+    showDatePicker.value = false
+  }
+  watch(showDatePicker, open => {
+    if (!open) return
+    draftDateFrom.value = dateFrom.value
+    draftDateTo.value = dateTo.value
+    dateRangeError.value = ''
+  })
 
   const dateRangeLabel = computed(() => {
     const formatDate = date => {
@@ -629,24 +665,28 @@
    * -------------------------------------- */
 
   const stats = ref([])
-  const displayedStats = computed(() => stats.value.length ? stats.value : [
-    'متوسط وقت الرد', 'معدل التحويل', 'إجمالي الزيارات',
-    'معدل النجاح', 'مشاريع تم إنجازها', 'إجمالي العملاء',
-  ].map(label => ({ label, value: isLoading.value ? 'جارٍ التحميل...' : 'لا يوجد بيانات' })))
+  const dailyError = ref('')
+  const displayedStats = computed(() => {
+    const cards = stats.value.length ? stats.value : ['إجمالي العملاء', 'تم التحويل المشروع', 'معدل التحويل', 'إجمالي المكالمات', 'الزيارة الميدانية', 'متوسط وقت التحويل'].map(label => ({ label }))
+    return cards.map(stat => ({ ...stat, value: stat.value ?? '' }))
+  })
 
   /* ----------------------------------------
    * Customer sources
    * -------------------------------------- */
 
   const sourceLegend = ref([])
+  const filteredSources = computed(() => sourceLegend.value.filter(source => !sourceFilter.value || (source.sourceId ?? source.label) === sourceFilter.value))
+  const sourcesTotal = ref(null)
+  const sourcesError = ref('')
 
   const sourceChartData = computed(() => ({
-    labels: sourceLegend.value.map(item => item.label),
+    labels: filteredSources.value.map(item => item.label),
 
     datasets: [
       {
-        data: sourceLegend.value.map(item => item.percent),
-        backgroundColor: sourceLegend.value.map(item => item.color),
+        data: filteredSources.value.map(item => item.percent),
+        backgroundColor: filteredSources.value.map(item => item.color),
         borderWidth: 0,
         hoverOffset: 4
       }
@@ -674,76 +714,15 @@
    * Conversion line chart
    * -------------------------------------- */
 
-  const conversionTrendRaw = ref({ labels: [], visits: [], calls: [], newCustomers: [] })
-
+  const conversionSummary = ref(null)
+  const conversionError = ref('')
+  const conversionTrendRaw = ref({ labels: [], leads: [], conversions: [] })
   const conversionTrendData = computed(() => ({
     labels: conversionTrendRaw.value.labels,
-
     datasets: [
-      {
-        label: 'الزيارات',
-        data: conversionTrendRaw.value.visits,
-
-        borderColor: '#6C7CFF',
-        backgroundColor: '#6C7CFF',
-
-        borderWidth: 1.5,
-        tension: 0.4,
-        fill: false,
-
-        pointRadius: 6,
-        pointHoverRadius: 7,
-        pointHitRadius: 12,
-
-        pointBackgroundColor: '#6C7CFF',
-        pointBorderColor: '#6C7CFF',
-        pointBorderWidth: 0,
-
-        clip: false
-      },
-
-      {
-        label: 'المكالمات',
-        data: conversionTrendRaw.value.calls,
-
-        borderColor: '#DF78F5',
-        backgroundColor: '#DF78F5',
-
-        borderWidth: 1.5,
-        tension: 0.4,
-        fill: false,
-
-        pointRadius: 6,
-        pointHoverRadius: 7,
-        pointHitRadius: 12,
-
-        pointBackgroundColor: '#DF78F5',
-        pointBorderColor: '#DF78F5',
-        pointBorderWidth: 0,
-
-        clip: false
-      },
-
-      {
-        label: 'عملاء جدد',
-        data: conversionTrendRaw.value.newCustomers,
-
-        borderColor: 'transparent',
-        backgroundColor: '#F472B6',
-
-        showLine: false,
-
-        pointRadius: 6,
-        pointHoverRadius: 7,
-        pointHitRadius: 12,
-
-        pointBackgroundColor: '#F472B6',
-        pointBorderColor: '#F472B6',
-        pointBorderWidth: 0,
-
-        clip: false
-      }
-    ]
+      { label: 'عملاء جدد', data: conversionTrendRaw.value.leads, borderColor: '#8180FF', backgroundColor: '#8180FF', borderWidth: 1, tension: 0.4, fill: false, pointRadius: 4, pointHoverRadius: 6 },
+      { label: 'التحويلات', data: conversionTrendRaw.value.conversions, borderColor: '#E898FF', backgroundColor: '#E898FF', borderWidth: 1, tension: 0.4, fill: false, pointRadius: 4, pointHoverRadius: 6 },
+    ],
   }))
 
   const lineOptions = {
@@ -814,7 +793,7 @@
 
       y: {
         min: 0,
-        max: 120,
+        suggestedMax: 120,
         beginAtZero: true,
 
         grid: {
@@ -876,15 +855,14 @@
    * Employee trend chart
    * -------------------------------------- */
 
-  const employeeTrendRaw = ref({ labels: [], calls: [], newCustomers: [] })
 
   const employeeTrendData = computed(() => ({
-    labels: employeeTrendRaw.value.labels,
+    labels: currentEmployeeRows.value.map(employee => employee.name),
 
     datasets: [
       {
         label: 'المكالمات',
-        data: employeeTrendRaw.value.calls,
+        data: currentEmployeeRows.value.map(employee => employee.calls),
         backgroundColor: '#6366F1',
         borderRadius: 4,
         borderSkipped: false,
@@ -893,7 +871,7 @@
 
       {
         label: 'عملاء جدد',
-        data: employeeTrendRaw.value.newCustomers,
+        data: currentEmployeeRows.value.map(employee => employee.newCustomers),
         backgroundColor: '#34D399',
         borderRadius: 4,
         borderSkipped: false,
@@ -992,6 +970,12 @@
    * -------------------------------------- */
 
   const employeePerformance = ref([])
+  const currentEmployeePerformance = ref([])
+  const currentEmployeeLoading = ref(false)
+  const currentEmployeeError = ref('')
+  const reportEmployeeOptions = computed(() => [...new Map([...employeePerformance.value, ...currentEmployeePerformance.value].map(employee => [employee.id, employee])).values()])
+  const currentEmployeeRows = computed(() => currentEmployeePerformance.value.filter(employee => !agentFilter.value || employee.id === agentFilter.value))
+  const employeeReportLoading = ref(false)
   const {
     employees,
     loading: employeesLoading, error: employeesError, updatingId, resettingId,
@@ -1000,8 +984,32 @@
     deactivateEmployee, resetEmployeePassword,
   } = useEmployees()
   const employeeBusy = computed(() => !!updatingId.value || !!resettingId.value)
-  // Reserved for the upcoming report endpoint; users only populate the employee filter.
-  const employeeRows = ref([])
+  const employeeReportError = ref('')
+  const employeeRows = computed(() => employeePerformance.value.filter(employee => !agentFilter.value || employee.id === agentFilter.value))
+  const employeeMetric = ref('calls')
+  const employeeMetricTotal = computed(() => currentEmployeeRows.value.reduce((sum, employee) => sum + Math.max(0, Number(employee[employeeMetric.value]) || 0), 0))
+  const employeeDistribution = computed(() => currentEmployeeRows.value.map((employee, index) => {
+    const value = Math.max(0, Number(employee[employeeMetric.value]) || 0)
+    return {
+      id: employee.id,
+      name: employee.name,
+      value,
+      percent: employeeMetricTotal.value ? Math.round(value / employeeMetricTotal.value * 1000) / 10 : 0,
+      color: ['#2563eb', '#9333ea', '#10b981', '#f59e0b', '#ef4444'][index % 5],
+    }
+  }))
+  const employeeDonutData = computed(() => ({
+    labels: employeeDistribution.value.map(employee => employee.name),
+    datasets: [{
+      label: employeeMetric.value === 'calls' ? 'المكالمات' : 'عملاء جدد',
+      data: employeeDistribution.value.map(employee => employee.value),
+      backgroundColor: '#929292',
+      hoverBackgroundColor: '#777777',
+      borderColor: '#ffffff',
+      borderWidth: 3,
+      borderRadius: 5,
+    }],
+  }))
 
   /* ----------------------------------------
    * Load report data from API
@@ -1010,8 +1018,6 @@
   function reportParams() {
     return {
       period: period.value,
-      agent: agentFilter.value || undefined,
-      source: sourceFilter.value || undefined,
       dateFrom: dateFrom.value,
       dateTo: dateTo.value
     }
@@ -1025,14 +1031,47 @@
   async function loadReportData() {
     const request = ++reportRequest
     isLoading.value = true
+    employeeReportLoading.value = true
+    currentEmployeeLoading.value = true
+    currentEmployeeError.value = ''
+    dailyError.value = ''
+    employeeReportError.value = ''
+    sourcesError.value = ''
+    conversionError.value = ''
+    conversionSummary.value = null
+    sourcesTotal.value = null
     const params = reportParams()
     const sections = [
       [stats, () => reportsService.getSummary(params), []],
-      [sourceLegend, () => reportsService.getCustomerSources(params), []],
-      [conversionTrendRaw, () => reportsService.getConversionTrend(params), { labels: [], visits: [], calls: [], newCustomers: [] }],
-      [employeePerformance, () => reportsService.getEmployeePerformance(params), []],
+      [currentEmployeePerformance, async () => {
+        try {
+          return await reportsService.getEmployeePerformance()
+        } finally {
+          if (request === reportRequest) currentEmployeeLoading.value = false
+        }
+      }, []],
+      [sourceLegend, async () => {
+        const result = await reportsService.getCustomerSources(params)
+        if (request === reportRequest) {
+          sourcesTotal.value = result.total
+          if (!result.items.some(source => (source.sourceId ?? source.label) === sourceFilter.value)) sourceFilter.value = ''
+        }
+        return result.items
+      }, []],
+      [conversionTrendRaw, async () => {
+        const result = await reportsService.getConversionTrend(params)
+        if (request === reportRequest) conversionSummary.value = result
+        return result
+      }, { labels: [], leads: [], conversions: [] }],
+      [employeePerformance, async () => {
+        try {
+          const rows = await reportsService.getEmployeePerformance(params)
+          return rows
+        } finally {
+          if (request === reportRequest) employeeReportLoading.value = false
+        }
+      }, []],
       [visitSuccessRaw, () => reportsService.getVisitSuccess(params), { labels: [], visits: [], newCustomers: [] }],
-      [employeeTrendRaw, () => reportsService.getEmployeeTrend(params), { labels: [], calls: [], newCustomers: [] }],
     ]
     await Promise.all(sections.map(async ([target, fetch, empty]) => {
       target.value = empty
@@ -1042,11 +1081,19 @@
         target.value = Array.isArray(empty)
           ? (Array.isArray(result) ? result : [])
           : Object.fromEntries(Object.keys(empty).map(key => [key, Array.isArray(result?.[key]) ? result[key] : []]))
-      } catch {
+      } catch (error) {
         if (request === reportRequest) target.value = empty
+        if (request === reportRequest && target === conversionTrendRaw) conversionError.value = error.message || 'تعذّر تحميل تقرير التحويل'
+        if (request === reportRequest && target === sourceLegend) sourcesError.value = error.message || 'تعذّر تحميل مصادر العملاء'
+        if (request === reportRequest && target === employeePerformance) employeeReportError.value = error.message || 'تعذّر تحميل أداء الموظفين'
+        if (request === reportRequest && target === currentEmployeePerformance) currentEmployeeError.value = error.message || 'تعذّر تحميل أداء الموظفين الحالي'
+        if (request === reportRequest && target === stats) dailyError.value = error.message || 'تعذّر تحميل التقرير اليومي'
       }
     }))
-    if (request === reportRequest) isLoading.value = false
+    if (request === reportRequest) {
+      isLoading.value = false
+      if (!reportEmployeeOptions.value.some(employee => employee.id === agentFilter.value)) agentFilter.value = ''
+    }
   }
 
   onMounted(loadReportData)
@@ -1069,6 +1116,10 @@
    * -------------------------------------- */
 
   const selectedEmployees = ref([])
+  watch(employeeRows, rows => {
+    const visibleIds = new Set(rows.map(employee => employee.id))
+    selectedEmployees.value = selectedEmployees.value.filter(id => visibleIds.has(id))
+  })
 
   const allSelected = computed(
     () =>
@@ -1100,9 +1151,9 @@
   const isExportingPdf = ref(false)
 
   const conversionChartRef = ref(null)
-  const sourceChartRef = ref(null)
   const employeeChartRef = ref(null)
   const visitChartRef = ref(null)
+  const sourceChartRef = ref(null)
 
   const isExportingExcel = ref(false)
   const notification = useNotification()
@@ -1305,8 +1356,8 @@
         { header: 'القيمة', key: 'value' }
       ]
 
-      stats.value.forEach(stat => {
-        summarySheet.addRow({ label: safeCell(stat.label), value: safeCell(stat.value) })
+      displayedStats.value.forEach(stat => {
+        summarySheet.addRow({ label: safeCell(stat.label), value: safeCell(stat.unit && typeof stat.value === 'number' ? `${stat.value}${stat.unit}` : stat.value) })
       })
 
       summarySheet.addRow({
@@ -1316,15 +1367,15 @@
 
       summarySheet.addRow({
         label: 'الموظف المحدد',
-        value: safeCell(employees.value.find(employee => employee.id === agentFilter.value)?.name || 'جميع الموظفين')
+        value: safeCell(reportEmployeeOptions.value.find(employee => employee.id === agentFilter.value)?.name || 'جميع الموظفين')
       })
 
       summarySheet.addRow({
         label: 'المصدر المحدد',
-        value: safeCell(sourceFilter.value || 'جميع المصادر')
+        value: safeCell(sourceLegend.value.find(source => (source.sourceId ?? source.label) === sourceFilter.value)?.label || 'جميع المصادر')
       })
 
-      summarySheet.addRow({ label: 'نوع التجميع الحالي', value: periodLabel.value })
+      summarySheet.addRow({ label: 'الفترة المحددة', value: periodLabel.value })
 
       styleHeaderRow(summarySheet.getRow(1))
       styleDataRows(summarySheet)
@@ -1341,23 +1392,20 @@
 
       trendSheet.columns = [
         { header: 'اليوم', key: 'day' },
-        { header: 'الزيارات', key: 'visits' },
-        { header: 'المكالمات', key: 'calls' },
-        { header: 'عملاء جدد', key: 'newCustomers' }
+        { header: 'عملاء جدد', key: 'leads' },
+        { header: 'التحويلات', key: 'converted' },
       ]
-
       conversionTrendData.value.labels.forEach((label, index) => {
         trendSheet.addRow({
           day: safeCell(label),
-          visits: safeCell(trendDatasetByLabel['الزيارات']?.[index]),
-          calls: safeCell(trendDatasetByLabel['المكالمات']?.[index]),
-          newCustomers: safeCell(trendDatasetByLabel['عملاء جدد']?.[index])
+          leads: safeCell(trendDatasetByLabel['عملاء جدد']?.[index]),
+          converted: safeCell(trendDatasetByLabel['التحويلات']?.[index]),
         })
       })
 
       styleHeaderRow(trendSheet.getRow(1))
       styleDataRows(trendSheet)
-      trendSheet.autoFilter = 'A1:D1'
+      trendSheet.autoFilter = 'A1:C1'
       autoSizeColumns(trendSheet)
 
       /* ---------- Sheet 3: مصادر العملاء ---------- */
@@ -1367,14 +1415,16 @@
       sourcesSheet.columns = [
         { header: 'المصدر', key: 'label' },
         { header: 'النسبة المئوية', key: 'percent' },
-        { header: 'اللون', key: 'color' }
+        { header: 'اللون', key: 'color' },
+        { header: 'عدد العملاء', key: 'count' }
       ]
 
-      sourceLegend.value.forEach(item => {
+      filteredSources.value.forEach(item => {
         sourcesSheet.addRow({
           label: safeCell(item.label),
           percent: item.percent / 100,
-          color: safeCell(item.color)
+          color: safeCell(item.color),
+          count: safeCell(item.count)
         })
       })
 
@@ -1383,7 +1433,7 @@
       styleHeaderRow(sourcesSheet.getRow(1))
       styleDataRows(sourcesSheet)
 
-      sourceLegend.value.forEach((item, index) => {
+      filteredSources.value.forEach((item, index) => {
         sourcesSheet.getCell(`C${index + 2}`).fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -1393,7 +1443,7 @@
         sourcesSheet.getCell(`C${index + 2}`).font = { color: { argb: 'FFFFFFFF' } }
       })
 
-      sourcesSheet.autoFilter = 'A1:C1'
+      sourcesSheet.autoFilter = 'A1:D1'
       autoSizeColumns(sourcesSheet)
 
       /* ---------- Sheet 4: البيانات التفصيلية ---------- */
@@ -1406,21 +1456,27 @@
         { header: 'عملاء جدد', key: 'newCustomers' },
         { header: 'التحويلات', key: 'conversions' },
         { header: 'معدل التحويل', key: 'conversionRate' },
+        { header: 'مهتم', key: 'interested' },
+        { header: 'لا يرد', key: 'noAnswer' },
+        { header: 'متوسط مدة المكالمة (ثانية)', key: 'avgDurationSec' },
         { header: 'الزيارات', key: 'visits' },
         { header: 'نجاح الزيارات', key: 'visitSuccessRate' },
         { header: 'نقاط الأداء', key: 'score' },
         { header: 'الأداء', key: 'performance' }
       ]
 
-      employeePerformance.value.forEach(employee => {
+      employeeRows.value.forEach(employee => {
         detailSheet.addRow({
           name: safeCell(employee.name),
           calls: safeCell(employee.calls),
           newCustomers: safeCell(employee.newCustomers),
           conversions: safeCell(employee.conversions),
-          conversionRate: employee.conversionRate / 100,
+          conversionRate: employee.conversionRate == null ? '' : employee.conversionRate / 100,
+          interested: safeCell(employee.interested),
+          noAnswer: safeCell(employee.noAnswer),
+          avgDurationSec: safeCell(employee.avgDurationSec),
           visits: safeCell(employee.visits),
-          visitSuccessRate: employee.visitSuccessRate / 100,
+          visitSuccessRate: employee.visitSuccessRate == null ? '' : employee.visitSuccessRate / 100,
           score: safeCell(employee.score),
           performance: safeCell(employee.performance)
         })
@@ -1431,12 +1487,12 @@
 
       styleHeaderRow(detailSheet.getRow(1))
       styleDataRows(detailSheet)
-      detailSheet.autoFilter = 'A1:I1'
+      detailSheet.autoFilter = 'A1:L1'
       autoSizeColumns(detailSheet)
 
       /* ---------- Sheet 5: أداء الموظفين (رسم المقارنة اليومي) ---------- */
 
-      addSeriesTableSheet(workbook, 'أداء الموظفين', employeeTrendData.value, 'اليوم')
+      addSeriesTableSheet(workbook, 'أداء الموظفين', employeeTrendData.value, 'الموظف')
 
       /* ---------- Sheet 6: نجاح الزيارات (رسم المقارنة اليومي) ---------- */
 
@@ -1454,7 +1510,7 @@
       row = addChartImage(
         workbook,
         chartsSheet,
-        'معدل التحويل – الاتجاه الزمني',
+        'معدل التحويل — الاتجاه الزمني',
         getChartInstance(conversionChartRef),
         row
       )
@@ -1479,7 +1535,7 @@
       row = addLegendRows(
         chartsSheet,
         row,
-        sourceLegend.value.map(item => ({ label: `${item.label} (${item.percent}%)`, color: item.color }))
+        filteredSources.value.map(item => ({ label: `${item.label} (${item.percent}%)`, color: item.color }))
       )
 
       row = addChartImage(
@@ -1493,9 +1549,9 @@
       row = addLegendRows(
         chartsSheet,
         row,
-        employeeTrendData.value.datasets.map(dataset => ({
-          label: dataset.label,
-          color: dataset.backgroundColor
+        employeeDistribution.value.map(employee => ({
+          label: `${employee.name} (${employee.percent}%)`,
+          color: employee.color
         }))
       )
 
@@ -1581,7 +1637,9 @@
     shareText: 'الرجاء الاطلاع على التقرير المرفق.'
   })
 
-  watch([period, agentFilter, sourceFilter, dateFrom, dateTo], () => {
+  watch([agentFilter, sourceFilter], invalidatePreparedReport)
+  watch(employeeMetric, invalidatePreparedReport)
+  watch([period, dateFrom, dateTo], () => {
     invalidatePreparedReport()
     loadReportData()
   })
@@ -1610,6 +1668,124 @@
 </script>
 
 <style scoped>
+  .employee-donut-panel {
+    height: 450px;
+    display: flex;
+    flex-direction: column;
+  }
+  .employee-ring {
+    width: 180px;
+    height: 180px;
+    margin-block: 4px 20px;
+    filter: drop-shadow(0 3px 8px rgb(0 0 0 / 12%));
+  }
+  .employee-donut-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+  }
+  .report-main-charts {
+    gap: 28px;
+  }
+  .conversion-panel,
+  .sources-panel {
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .conversion-panel {
+    display: flex;
+    flex-direction: column;
+    height: 450px;
+  }
+  .conversion-heading {
+    min-height: 44px;
+    margin-bottom: 28px;
+  }
+  .conversion-heading h3 {
+    font-size: 18px;
+    line-height: 26px;
+  }
+  .conversion-heading p {
+    font-size: 12px;
+    line-height: 18px;
+    color: #9caab8;
+  }
+  .conversion-heading > div:last-child {
+    font-size: 12px;
+  }
+  .conversion-canvas {
+    height: 320px;
+    min-width: 100%;
+  }
+  .employee-canvas {
+    height: 280px;
+    min-width: 100%;
+  }
+  .chart-scroll {
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+    flex: 1;
+  }
+  .sources-panel > h3 {
+    font-size: 18px;
+    line-height: 26px;
+    font-weight: 700;
+  }
+  .sources-panel {
+    height: 450px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sources-panel > h3,
+  .sources-panel > p {
+    flex-shrink: 0;
+  }
+  .sources-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .sources-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    padding-inline-end: 6px;
+  }
+  .source-ring {
+    margin-block: 8px 12px;
+  }
+  .report-secondary-charts > div {
+    min-height: 400px;
+  }
+  @media (min-width: 1024px) {
+    .report-main-charts {
+      grid-template-columns: minmax(0, 3.17fr) minmax(240px, 1fr);
+    }
+  }
+  @media (max-width: 639px) {
+    .conversion-panel,
+    .sources-panel {
+      padding: 16px;
+    }
+    .conversion-heading h3 {
+      font-size: 14px;
+    }
+    .conversion-panel {
+      height: 450px;
+    }
+    .conversion-canvas {
+      height: 300px;
+    }
+  }
   /*
  * يمنع عنصر الرسم من فرض عرض أكبر
  * من المساحة المتاحة له داخل CSS Grid.

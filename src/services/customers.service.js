@@ -118,6 +118,14 @@ export const customersService = {
     return api.post(ENDPOINTS.customers.documents(id.trim()), payload)
   },
 
+  async addNote(id, content) {
+    if (typeof id !== 'string' || !id.trim()) throw new Error('معرّف العميل مطلوب')
+    if (typeof content !== 'string' || !content.trim()) throw new Error('اكتب الملاحظة أولًا')
+    const response = await api.post(ENDPOINTS.customers.notes(id.trim()), { content: content.trim() })
+    if (response?.success === false) throw new Error(response.message || 'تعذّر إضافة الملاحظة')
+    return response
+  },
+
   async remove(id) {
     if (typeof id !== 'string' || !id.trim()) throw new Error('معرّف العميل مطلوب')
     return api.delete(ENDPOINTS.customers.remove(id.trim()))

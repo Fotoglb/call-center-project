@@ -62,12 +62,23 @@
 
     <!-- User info + Bell -->
     <div class="order-2 flex items-center gap-2 shrink-0 lg:order-2">
+      <div ref="notificationsRef" class="relative">
       <button
         class="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+        aria-label="الإشعارات"
+        @click="toggleNotifications"
       >
         <Bell :size="18" />
-        <span class="absolute top-1.5 inset-e-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+        <span v-if="unreadCount > 0" class="absolute top-1.5 inset-e-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
       </button>
+      <div v-if="notificationsOpen" class="absolute inset-e-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white p-2 shadow-lg" dir="rtl">
+        <div class="flex items-center justify-between px-2 py-2 border-b border-gray-100"><span class="text-sm font-semibold">الإشعارات ({{ unreadCount }})</span><button type="button" class="text-xs text-blue" :disabled="markingAll || !unreadCount" @click="markAllRead">تحديد الكل كمقروء</button></div>
+        <div class="max-h-80 overflow-y-auto">
+          <button v-for="item in notifications" :key="item.id" type="button" class="w-full rounded-lg p-3 text-start hover:bg-gray-50" :class="{ 'bg-blue-50/50': !item.isRead }" @click="markRead(item)"><p class="text-xs font-semibold text-gray-800">{{ item.title }}</p><p class="mt-1 text-xs text-gray-500">{{ item.body }}</p><p class="mt-1 text-[10px] text-gray-400">{{ formatNotificationDate(item.createdAt) }}</p></button>
+          <p v-if="!notifications.length" class="p-6 text-center text-xs text-gray-400">لا توجد إشعارات</p>
+        </div>
+      </div>
+      </div>
       <div ref="userMenuRef" class="relative">
         <button
           class="flex items-center gap-2.5 hover:bg-gray-50 rounded-xl px-2 py-1.5 transition-colors cursor-pointer group"
@@ -112,6 +123,7 @@
   import { Bell, ChevronDown, LogOut, Search } from '@lucide/vue'
   import { useAuthStore } from '@/stores/auth.store'
   import { customersService } from '@/services/customers.service'
+  import { notificationsService } from '@/services/notifications.service'
 
   const authStore = useAuthStore()
   const router = useRouter()
@@ -123,6 +135,16 @@
 
   const userMenuRef = ref(null)
   const isUserMenuOpen = ref(false)
+  const notificationsRef = ref(null)
+  const notificationsOpen = ref(false)
+  const notifications = ref([])
+  const unreadCount = ref(0)
+  const markingAll = ref(false)
+  async function loadNotifications() { try { const [list, count] = await Promise.all([notificationsService.list(), notificationsService.unreadCount()]); notifications.value = list.items; unreadCount.value = count } catch { /* optional UI */ } }
+  async function toggleNotifications() { notificationsOpen.value = !notificationsOpen.value; if (notificationsOpen.value) await loadNotifications() }
+  async function markRead(item) { if (item.isRead) return; try { await notificationsService.markRead(item.id); item.isRead = true; unreadCount.value = Math.max(0, unreadCount.value - 1) } catch { /* keep unread */ } }
+  async function markAllRead() { if (markingAll.value || !unreadCount.value) return; markingAll.value = true; try { await notificationsService.markAllRead(); notifications.value.forEach(item => { item.isRead = true }); unreadCount.value = 0 } finally { markingAll.value = false } }
+  function formatNotificationDate(value) { return Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' }) : '—' }
 
   async function handleLogout() {
     await authStore.logout()
@@ -174,6 +196,7 @@
     if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
       isUserMenuOpen.value = false
     }
+    if (notificationsRef.value && !notificationsRef.value.contains(event.target)) notificationsOpen.value = false
   }
 
   onMounted(() => {

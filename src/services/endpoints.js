@@ -22,8 +22,15 @@ export const ENDPOINTS = {
     resendOtp: '/auth/resend-otp',
     resetPassword: '/auth/reset-password'
   },
+  notifications: {
+    list: '/notifications',
+    unreadCount: '/notifications/unread-count',
+    read: id => `/notifications/${encodeURIComponent(id)}/read`,
+    readAll: '/notifications/read-all'
+  },
 
   dashboard: {
+    overview: '/dashboard',
     stats: '/dashboard/stats',
     weeklyPerformance: '/dashboard/weekly-performance',
     customerSources: '/dashboard/customer-sources',
@@ -33,6 +40,7 @@ export const ENDPOINTS = {
   },
 
   calls: {
+    dial: '/calls/dial',
     meta: '/calls/meta',
     queue: '/calls/queue',
     reschedule: '/calls/reschedule',
@@ -49,6 +57,7 @@ export const ENDPOINTS = {
     create: '/leads',
     update: id => `/leads/${encodeURIComponent(id)}`,
     documents: id => `/leads/${encodeURIComponent(id)}/documents`,
+    notes: id => `/leads/${encodeURIComponent(id)}/notes`,
     remove: id => `/leads/${encodeURIComponent(id)}`,
     duplicates: '/leads/check-duplicate',
     search: '/leads',
@@ -63,6 +72,7 @@ export const ENDPOINTS = {
     cdr: '/reports/cdr',
     customerSources: '/reports/sources',
     employeePerformance: '/reports/rep-performance/current',
+    periodicEmployeePerformance: '/reports/rep-performance/periodic',
     visitSuccess: '/reports/visit-success',
     employeeTrend: '/reports/employee-trend'
   },
