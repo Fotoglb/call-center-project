@@ -17,7 +17,11 @@ export const authService = {
     return { token: loginToken, user, screens: response.data.screens ?? {}, access: response.data.access ?? {} }
   },
   logout: () => api.post(ENDPOINTS.auth.logout),
-  me: () => api.get(ENDPOINTS.auth.me),
+  async me() {
+    const response = await api.get(ENDPOINTS.auth.me)
+    if (response?.success === false) throw new Error(response.message || 'تعذّر جلب صلاحيات المستخدم')
+    return response?.data ?? response
+  },
   refreshToken: () => api.post(ENDPOINTS.auth.refresh),
   async forgotPassword({ email }) {
     const response = await api.post(ENDPOINTS.auth.forgotPassword, { email })

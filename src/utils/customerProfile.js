@@ -84,7 +84,7 @@ export function mapCustomerProfile(response) {
     workType: lead.businessType ?? '—',
     projectType: lead.projectType ?? '—',
     budget: lead.budget ?? '—',
-    createdAt: lead.projectCreatedAt ? String(lead.projectCreatedAt).slice(0, 10) : '—',
+    createdAt: lead.createdAt && Number.isFinite(Date.parse(lead.createdAt)) ? new Date(lead.createdAt).toLocaleDateString('en-GB') : '—',
     addedAt: lead.createdAt && Number.isFinite(Date.parse(lead.createdAt)) ? new Date(lead.createdAt).toLocaleDateString('en-GB') : '—',
     lastContact: lead.lastContactAt && Number.isFinite(Date.parse(lead.lastContactAt))
       ? new Date(lead.lastContactAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' }) : '—',

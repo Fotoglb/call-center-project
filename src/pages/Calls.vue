@@ -32,7 +32,7 @@
       <div class="call-queue bg-white rounded-2xl flex flex-col min-h-0 min-w-0">
         <!-- Scheduled Label -->
         <p class="text-base font-medium text-gray-900 px-4 pt-4">
-          قائمة المكالمات المجدولة – {{ todayLabel }}
+          قائمة المكالمات المجدولة – {{ queueDateLabel || todayLabel }}
         </p>
 
         <!-- Search -->
@@ -567,17 +567,17 @@
 
   const filterTabs = [
     { key: 'all', label: 'الكل' },
-    { key: 'مهتم', label: 'مهتم' },
-    { key: 'غير مهتم', label: 'غير مهتم' },
-    { key: 'لا يرد', label: 'لا يرد' },
-    { key: 'إعادة جدولة', label: 'إعادة جدولة' }
+    { key: 'interested', label: 'مهتم' },
+    { key: 'not_interested', label: 'غير مهتم' },
+    { key: 'no_answer', label: 'لا يرد' },
+    { key: 'reschedule', label: 'إعادة جدولة' }
   ]
 
   const tabs = [
     { key: 'history', label: 'تاريخ التواصل' },
     { key: 'data', label: 'بيانات العميل' }
   ]
-  const permittedFilterTabs = computed(() => filterTabs.filter(tab => permissions.can(tab.key === 'إعادة جدولة' ? 'callCenter.rescheduleList' : 'callCenter.queue')))
+  const permittedFilterTabs = computed(() => filterTabs.filter(tab => permissions.can('callCenter.queue')))
 
   const projectTypes = ['B2B', 'B2C', 'SME', 'Enterprise', 'Startup', 'E-commerce', 'Retail', 'Manufacturing', 'Service', 'Non-profit', 'Education']
   const sourceOptions = ref([])
@@ -656,13 +656,19 @@
   ]
 
   const callsList = ref([])
+  const queueDate = ref('')
+  const queueDateLabel = computed(() => {
+    if (!queueDate.value) return ''
+    const parsed = new Date(queueDate.value)
+    return Number.isNaN(parsed.getTime()) ? queueDate.value : new Intl.DateTimeFormat('ar', { calendar: 'gregory', dateStyle: 'full' }).format(parsed)
+  })
   function formatCallDuration(seconds) {
     if (seconds == null || !Number.isInteger(Number(seconds)) || Number(seconds) < 0) return '—'
     const minutes = Math.floor(Number(seconds) / 60)
     const remaining = Number(seconds) % 60
     return minutes ? `${minutes} د${remaining ? ` ${remaining} ث` : ''}` : `${remaining} ث`
   }
-  const isRescheduleList = computed(() => activeFilter.value === 'إعادة جدولة')
+  const isRescheduleList = computed(() => activeFilter.value === 'reschedule')
   let loadVersion = 0
 
   async function loadCalls() {
@@ -674,14 +680,13 @@
     selectedOutcome.value = ''
     resultNote.value = ''
     try {
-      const queue = isRescheduleList.value
-        ? await callsService.getRescheduled()
-        : await callsService.getQueue()
+      const queue = await callsService.getQueue({ q: searchQuery.value, status: activeFilter.value })
       if (requestVersion !== loadVersion) return
-      if (!Array.isArray(queue)) {
+      if (!Array.isArray(queue?.items)) {
         throw new Error('تعذّر قراءة استجابة قائمة المكالمات. يلزم تأكيد تنسيق البيانات من توثيق الخدمة.')
       }
-      callsList.value = queue
+      callsList.value = queue.items
+      queueDate.value = queue.date ?? ''
       if (!selectedCallId.value && callsList.value.length) {
         selectedCallId.value = callsList.value[0].id
       }
@@ -696,7 +701,11 @@
   }
 
   onMounted(loadCalls)
-  watch(isRescheduleList, loadCalls, { flush: 'sync' })
+  let queueSearchTimer = null
+  watch([searchQuery, activeFilter], () => {
+    clearTimeout(queueSearchTimer)
+    queueSearchTimer = setTimeout(loadCalls, 250)
+  })
   onUnmounted(() => { loadVersion++; historyVersion++ })
 
   const filteredCalls = computed(() => {
@@ -704,7 +713,7 @@
     return callsList.value.filter(call => {
       const matchesSearch = !query || [call.name, call.phone, call.agent]
         .some(value => String(value ?? '').toLocaleLowerCase().includes(query))
-      const matchesOutcome = activeFilter.value === 'all' || isRescheduleList.value || call.lastResult === activeFilter.value
+      const matchesOutcome = activeFilter.value === 'all' || call.callStatus === activeFilter.value || call.lastResult === activeFilter.value
       return matchesSearch && matchesOutcome
     })
   })

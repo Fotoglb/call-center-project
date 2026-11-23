@@ -19,6 +19,10 @@ export const dashboardService = {
         { label: 'قائمة المكالمات', value: queue.total ?? '', sub: `${queue.pending ?? 0} معلقة` },
       ],
       recentActivity: Array.isArray(data?.recentActivity) ? data.recentActivity : [],
+      today,
+      queue,
+      rescheduleDueToday: data?.rescheduleDueToday ?? 0,
+      upcomingVisits: Array.isArray(data?.upcomingVisits) ? data.upcomingVisits : [],
     }
   },
   async getStats() {

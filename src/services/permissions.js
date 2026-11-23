@@ -44,7 +44,7 @@ export function requestPermission(url, method = 'get') {
   if (path === '/calls/queue') return 'callCenter.queue'
   if (path === '/calls/reschedule') return 'callCenter.rescheduleList'
   if (path === '/calls' && method === 'post') return 'callCenter.logCall'
-  if (path === '/calls') return 'callCenter.queue|customerProfile.view'
+  if (path === '/calls' || path === '/calls/list') return 'callCenter.queue|customerProfile.view'
   if (/^\/calls\//.test(path) && method !== 'get') return 'callCenter.logCall'
   return ({
     '/reports/daily': 'reports.daily',

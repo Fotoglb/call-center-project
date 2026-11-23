@@ -81,10 +81,17 @@ export const callsService = {
     }
   },
 
-  async getQueue({ signal } = {}) {
-    // Confirmed Apidog request: GET /api/calls/queue, without query parameters.
-    const data = await api.get(ENDPOINTS.calls.queue, { signal })
-    return readItems(data).map(item => mapCall(item, true))
+  async getQueue({ signal, q = '', status = 'all' } = {}) {
+    const params = {}
+    if (q?.trim()) params.q = q.trim()
+    if (status && status !== 'all') params.status = status
+    const data = await api.get(ENDPOINTS.calls.queue, { signal, params })
+    return {
+      items: readItems(data).map(item => mapCall(item, true)),
+      date: data?.meta?.date ?? data?.data?.meta?.date ?? null,
+      counts: data?.meta?.counts ?? data?.data?.meta?.counts ?? {},
+      meta: data?.meta ?? data?.data?.meta ?? {},
+    }
   },
 
   async getRescheduled({ signal } = {}) {
@@ -100,14 +107,17 @@ export const callsService = {
     return response
   },
 
-  async getList({ page = 1, limit = 20, leadId = '' } = {}) {
+  async getList({ page = 1, limit = 20, leadId = '', q = '', status = '', type = '', userId = '', signal } = {}) {
     if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       throw new Error('رقم الصفحة أو عدد النتائج غير صحيح؛ الحد الأقصى 100')
     }
     if (typeof leadId !== 'string') throw new Error('معرّف العميل يجب أن يكون نصيًا')
     const params = { page, limit }
-    if (leadId.trim()) params.leadId = leadId.trim()
-    const data = await api.get(ENDPOINTS.calls.list, { params })
+    for (const [key, value] of Object.entries({ leadId, q, status, type, userId })) {
+      if (typeof value !== 'string') throw new Error('قيم فلاتر المكالمات يجب أن تكون نصية')
+      if (value.trim()) params[key] = value.trim()
+    }
+    const data = await api.get(ENDPOINTS.calls.list, { params, signal })
     const body = data?.data ?? data
     const items = readItems(data).map(item => mapCall(item))
     const rawTotal = data?.meta?.total ?? body?.meta?.total ?? body?.pagination?.total ?? body?.total
@@ -126,7 +136,7 @@ export const callsService = {
     if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       throw new Error('رقم الصفحة أو عدد النتائج غير صحيح')
     }
-    const response = await api.get(ENDPOINTS.calls.list, { params: { leadId: leadId.trim(), page, limit } })
+    const response = await api.get(ENDPOINTS.calls.history, { params: { leadId: leadId.trim(), page, limit } })
     const items = readItems(response).map(item => {
       const call = mapCall(item)
       const seconds = Number(item.durationSec)

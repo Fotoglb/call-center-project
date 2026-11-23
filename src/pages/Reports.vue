@@ -365,31 +365,19 @@
     </div>
 
     <!-- Employee Performance Table -->
-    <div class="min-w-0 overflow-hidden rounded-2xl bg-gray-50">
-      <div class="border-b border-gray-200 px-5 py-4">
-        <h3 class="text-sm font-semibold text-gray-900">تقرير الأداء الوظيفي</h3>
+    <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-100 bg-white">
+      <div class="border-b border-gray-100 px-7 py-5 text-right">
+        <h3 class="text-base font-bold text-gray-900">تقرير الأداء الوظيفي</h3>
 
-        <p class="mt-0.5 text-xs text-gray-400">أداء الموظفين من {{ dateFrom }} إلى {{ dateTo }}</p>
+        <p class="mt-1 text-[11px] text-gray-400">مقارنة شاملة لجميع الموظفين - هذا الأسبوع</p>
         <p v-if="employeeActionError" role="alert" class="mt-2 text-xs text-red-600">{{ employeeActionError }}</p>
         <p v-if="employeeActionSuccess" role="status" class="mt-2 text-xs text-emerald-600">{{ employeeActionSuccess }}</p>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full min-w-262.5 text-xs">
-          <thead class="border-b border-gray-200 bg-gray-100">
+          <thead class="border-b border-gray-100 bg-white">
             <tr>
-              <th v-if="!isExportingPdf" class="w-10 px-4 py-3">
-                <input
-                  type="checkbox"
-                  class="cursor-pointer"
-                  :checked="allSelected"
-                  :indeterminate="selectedEmployees.length > 0 && !allSelected"
-                  :disabled="!employeeRows.length"
-                  aria-label="تحديد جميع الموظفين المعروضين"
-                  @change="toggleSelectAll"
-                />
-              </th>
-
               <th class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">
                 الموظف
               </th>
@@ -410,41 +398,18 @@
                 معدل التحويل
               </th>
 
-              <th class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">
-                مهتم
-              </th>
-
-              <th class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">
-                لا يرد
-              </th>
-
-              <th class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">
-                متوسط مدة المكالمة (ثانية)
-              </th>
-
-
               <th v-for="label in ['الزيارات', 'نجاح الزيارات', 'نقاط الأداء', 'الأداء']" :key="label" class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">{{ label }}</th>
               <th v-if="!isExportingPdf" class="w-16 px-4 py-3">الإجراءات</th>
             </tr>
           </thead>
 
-          <tbody class="divide-y divide-gray-200">
-            <tr v-if="!employeeRows.length"><td :colspan="isExportingPdf ? 12 : 14" class="px-4 py-8 text-center text-xs text-gray-400" role="status">{{ isLoading ? 'جارٍ التحميل...' : employeeReportError || 'لا يوجد بيانات' }}</td></tr>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-if="!employeeRows.length"><td :colspan="isExportingPdf ? 9 : 10" class="px-4 py-8 text-center text-xs text-gray-400" role="status">{{ isLoading ? 'جارٍ التحميل...' : employeeReportError || 'لا يوجد بيانات' }}</td></tr>
             <tr
               v-for="employee in employeeRows"
               :key="employee.id"
-              class="transition-colors hover:bg-gray-100"
+              class="transition-colors hover:bg-gray-50"
             >
-              <td v-if="!isExportingPdf" class="px-4 py-3">
-                <input
-                  type="checkbox"
-                  class="cursor-pointer"
-                  :checked="selectedEmployees.includes(employee.id)"
-                  :aria-label="`تحديد ${employee.name}`"
-                  @change="toggleEmployee(employee.id)"
-                />
-              </td>
-
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <span class="whitespace-nowrap font-medium text-gray-800">
@@ -454,34 +419,23 @@
               </td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.calls ?? '—' }}
+                {{ employee.calls ?? '' }}
               </td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.newCustomers ?? '—' }}
+                {{ employee.newCustomers ?? '' }}
               </td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.conversions ?? '—' }}
+                {{ employee.conversions ?? '' }}
               </td>
 
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.conversionRate == null ? '—' : `${employee.conversionRate}%` }}</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.conversionRate == null ? '' : `${employee.conversionRate}%` }}</td>
 
-              <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.interested ?? '—' }}
-              </td>
-
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.noAnswer ?? '—' }}</td>
-
-              <td class="px-4 py-3 text-gray-600 tabular-nums">
-                {{ employee.avgDurationSec ?? '—' }}
-              </td>
-
-
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visits ?? '—' }}</td>
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visitSuccessRate == null ? '—' : `${employee.visitSuccessRate}%` }}</td>
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.score ?? '—' }}</td>
-              <td class="px-4 py-3"><span class="inline-flex whitespace-nowrap rounded-md px-3 py-1.5" :class="performanceClass(employee.performance)">{{ employee.performance ?? '—' }}</span></td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visits ?? '' }}</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visitSuccessRate == null ? '' : `${employee.visitSuccessRate}%` }}</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.score ?? '' }}</td>
+              <td class="px-4 py-3"><span v-if="employee.performance" class="inline-flex whitespace-nowrap rounded-md px-3 py-1.5" :class="performanceClass(employee.performance)">{{ employee.performance }}</span></td>
               <td v-if="!isExportingPdf" class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <button
@@ -1109,38 +1063,6 @@
     }
 
     return classes[performance] ?? 'bg-gray-100 text-gray-500'
-  }
-
-  /* ----------------------------------------
-   * Row selection
-   * -------------------------------------- */
-
-  const selectedEmployees = ref([])
-  watch(employeeRows, rows => {
-    const visibleIds = new Set(rows.map(employee => employee.id))
-    selectedEmployees.value = selectedEmployees.value.filter(id => visibleIds.has(id))
-  })
-
-  const allSelected = computed(
-    () =>
-      employeeRows.value.length > 0 &&
-      employeeRows.value.every(employee => selectedEmployees.value.includes(employee.id))
-  )
-
-  function toggleEmployee(name) {
-    const index = selectedEmployees.value.indexOf(name)
-
-    if (index === -1) {
-      selectedEmployees.value.push(name)
-    } else {
-      selectedEmployees.value.splice(index, 1)
-    }
-  }
-
-  function toggleSelectAll() {
-    selectedEmployees.value = allSelected.value
-      ? []
-      : employeeRows.value.map(employee => employee.id)
   }
 
   /* ----------------------------------------

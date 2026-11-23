@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { canAccess, requestPermission } from './permissions'
 import { readSession, clearSession, SESSION_EXPIRED_EVENT } from './auth-session'
 
 const api = axios.create({
@@ -17,10 +16,6 @@ const AUTH_ENDPOINTS = ['/auth/login', '/auth/register', '/auth/forgot-password'
 api.interceptors.request.use(config => {
   const session = readSession()
   const { token } = session
-  const permission = requestPermission(config.url, config.method)
-  if (permission && !canAccess(session, permission)) {
-    throw Object.assign(new Error('ليس لديك صلاحية لتنفيذ هذه العملية'), { status: 403, permissionDenied: true })
-  }
   if (token && !AUTH_ENDPOINTS.includes(config.url)) {
     config.headers.Authorization = `Bearer ${token}`
   }

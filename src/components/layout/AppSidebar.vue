@@ -66,19 +66,19 @@
   const authStore = useAuthStore()
 
   const allNavItems = [
-    { label: 'لوحة التحكم', path: '/', icon: Home, exact: true },
-    { label: 'إدارة العملاء', path: '/customers', icon: Users },
-    { label: 'إضافة عميل', path: '/customers/add', icon: Users, createOnly: true },
-    { label: 'مركز الاتصال', path: '/calls/history', icon: PhoneIncoming },
-    { label: 'سجل المكالمات', path: '/calls', icon: PhoneCall },
-    { label: 'التقارير', path: '/reports', icon: BarChart2 },
-    { label: 'المستخدمون', path: '/users', icon: Users },
-    { label: 'إضافة موظف', path: '/auth/register', icon: MessageCircleQuestionMark },
+    { label: 'لوحة التحكم', path: '/', icon: Home, exact: true, permission: 'dashboard.view' },
+    { label: 'إدارة العملاء', path: '/customers', icon: Users, permission: 'customers.list' },
+    { label: 'إضافة عميل', path: '/customers/add', icon: Users, createOnly: true, permission: 'customers.create' },
+    { label: 'مركز الاتصال', path: '/calls/history', icon: PhoneIncoming, permission: 'callCenter.queue' },
+    { label: 'سجل المكالمات', path: '/calls', icon: PhoneCall, permission: 'callCenter.queue' },
+    { label: 'التقارير', path: '/reports', icon: BarChart2, permission: 'reports.daily' },
+    { label: 'المستخدمون', path: '/users', icon: Users, permission: 'employees.manage' },
+    { label: 'إضافة موظف', path: '/auth/register', icon: MessageCircleQuestionMark, permission: 'employees.register' },
     { label: 'الإعدادات', path: '/settings', icon: Settings },
     { label: 'المساعدة', path: '/help', icon: HelpCircle }
   ]
 
-  const navItems = computed(() => allNavItems.filter(item => authStore.canOpen(item.path) && (!item.createOnly || (authStore.can('customers.create') && !authStore.can('customers.list')))))
+  const navItems = computed(() => allNavItems.filter(item => (!item.permission || authStore.can(item.permission)) && authStore.canOpen(item.path) && (!item.createOnly || (authStore.can('customers.create') && !authStore.can('customers.list')))))
 
   async function handleLogout() {
     await authStore.logout()

@@ -145,12 +145,12 @@
    * موجود بس جوه "المزيد" مهما كان عرض الشاشة.
    */
   const navigationItems = [
-    { label: 'لوحة التحكم', path: '/', icon: Home, exact: true },
-    { label: 'إدارة العملاء', path: '/customers', icon: Users },
-    { label: 'إضافة عميل', path: '/customers/add', icon: Users, createOnly: true },
-    { label: 'مركز الاتصال', path: '/calls/history', icon: PhoneIncoming },
-    { label: 'التقارير', path: '/reports', icon: BarChart2 },
-    { label: 'المستخدمون', path: '/users', icon: Users },
+    { label: 'لوحة التحكم', path: '/', icon: Home, exact: true, permission: 'dashboard.view' },
+    { label: 'إدارة العملاء', path: '/customers', icon: Users, permission: 'customers.list' },
+    { label: 'إضافة عميل', path: '/customers/add', icon: Users, createOnly: true, permission: 'customers.create' },
+    { label: 'مركز الاتصال', path: '/calls/history', icon: PhoneIncoming, permission: 'callCenter.queue' },
+    { label: 'التقارير', path: '/reports', icon: BarChart2, permission: 'reports.daily' },
+    { label: 'المستخدمون', path: '/users', icon: Users, permission: 'employees.manage' },
     { label: 'سجل المكالمات', path: '/calls', icon: PhoneCall },
     { label: 'الإعدادات', path: '/settings', icon: Settings },
     { label: 'المساعدة', path: '/help', icon: HelpCircle }
@@ -162,7 +162,7 @@
    * مقاس — عشان في المقاسات الصغيرة محدش يضيع من غير ما يظهر في
    * الشريط ولا في المزيد.
    */
-  const allItems = computed(() => navigationItems.filter(item => authStore.canOpen(item.path) && (!item.createOnly || (authStore.can('customers.create') && !authStore.can('customers.list')))))
+  const allItems = computed(() => navigationItems.filter(item => (!item.permission || authStore.can(item.permission)) && authStore.canOpen(item.path) && (!item.createOnly || (authStore.can('customers.create') && !authStore.can('customers.list')))))
   const overflowItems = computed(() => allItems.value.slice(2))
 
   function isActive(item) {

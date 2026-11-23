@@ -55,9 +55,20 @@ export const useAuthStore = defineStore('auth', () => {
   async function fetchMe() {
     profileError.value = ''
     try {
-      await authService.me()
-      // The /me success body is not documented yet. Retain the verified login
-      // user instead of treating an unknown response envelope as a user object.
+      const profile = await authService.me()
+      const payload = profile?.data ?? profile ?? {}
+      const nextUser = payload.user ?? (payload.id || payload.email ? payload : user.value)
+      const hasScreens = payload && payload.screens && typeof payload.screens === 'object'
+      const hasAccess = payload && payload.access && typeof payload.access === 'object'
+      if (nextUser !== user.value || hasScreens || hasAccess) {
+        const nextScreens = hasScreens ? payload.screens : screens.value
+        const nextAccess = hasAccess ? payload.access : access.value
+        const remember = !sessionStorage.getItem('auth_token') && !!localStorage.getItem('auth_token')
+        saveSession({ token: token.value, user: nextUser, screens: nextScreens, access: nextAccess }, remember)
+        user.value = nextUser
+        screens.value = nextScreens
+        access.value = nextAccess
+      }
       return user.value
     } catch (error) {
       profileError.value = error.message || 'تعذّر جلب بيانات المستخدم الحالي'
@@ -85,6 +96,13 @@ export const useAuthStore = defineStore('auth', () => {
   // Restore the login response locally until the current-user contract is documented.
   // Protected API requests remain responsible for server-side session validation.
   async function init() {
+    if (token.value) {
+      try {
+        await fetchMe()
+      } catch (error) {
+        if (error.status === 401) clearSession()
+      }
+    }
     isReady.value = true
   }
 

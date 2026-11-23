@@ -86,7 +86,7 @@
               class="appearance-none w-36 text-xs text-gray-600 bg-white border border-gray-200 rounded-lg ps-3 pe-7 py-2 hover:border-gray-300 focus:outline-none focus:border-indigo-400 cursor-pointer"
             >
               <option value="">الموظف : الكل</option>
-              <option v-for="a in agentsList" :key="a" :value="a">{{ a }}</option>
+              <option v-for="a in agentsList" :key="a.id" :value="a.id">{{ a.name }}</option>
             </select>
             <ChevronDown
               :size="12"
@@ -132,7 +132,6 @@
         <table class="w-full text-xs">
           <thead class="bg-gray-100 border-b border-gray-200">
             <tr>
-              <th class="px-3"><input type="checkbox" aria-label="تحديد جميع مكالمات الصفحة" :checked="allSelected" @change="toggleAll($event.target.checked)" /></th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 اسم العميل
               </th>
@@ -164,10 +163,10 @@
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr v-if="isLoading">
-              <td colspan="10" class="text-center text-gray-400 py-8">...جارٍ التحميل</td>
+              <td colspan="9" class="text-center text-gray-400 py-8">...جارٍ التحميل</td>
             </tr>
             <tr v-else-if="loadError">
-              <td colspan="10" class="text-center py-8">
+              <td colspan="9" class="text-center py-8">
                 <p class="text-red-500 mb-2">{{ loadError.message || 'تعذر تحميل بيانات المكالمات' }}</p>
                 <button
                   class="text-xs text-white bg-gray-900 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-gray-700 transition-colors"
@@ -183,14 +182,13 @@
               :key="call.id"
               class="hover:bg-gray-100 transition-colors"
             >
-              <td class="px-3"><input type="checkbox" v-model="selectedIds" :value="call.id" :aria-label="`تحديد ${call.name}`" /></td>
               <td class="px-4 py-3">
                 <div
                   class="flex items-center gap-2 cursor-pointer"
                   @click="call.leadId && router.push({ name: 'CustomerProfile', params: { id: call.leadId } })"
                 >
                   <span
-                    class="font-medium text-gray-800 whitespace-nowrap hover:text-indigo-600 hover:underline transition-colors"
+                    class="block max-w-40 truncate font-medium text-gray-800 whitespace-nowrap hover:text-indigo-600 hover:underline transition-colors"
                     >{{ call.name }}</span
                   >
                 </div>
@@ -221,7 +219,7 @@
             </tr>
 
             <tr v-if="filteredCalls.length === 0">
-              <td colspan="10" class="text-center text-gray-400 py-8">لا توجد نتائج</td>
+              <td colspan="9" class="text-center text-gray-400 py-8">لا توجد نتائج</td>
             </tr>
             </template>
           </tbody>
@@ -242,9 +240,9 @@
           >
             <ChevronRight :size="14" />
           </button>
-          <button
-            v-for="p in totalPages"
-            :key="p"
+          <template v-for="p in visiblePages" :key="p">
+          <span v-if="typeof p === 'string'" class="w-6 text-center text-gray-400" aria-hidden="true">…</span>
+          <button v-else
             class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium cursor-pointer transition-colors"
             :class="
               p === currentPage ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-100'
@@ -253,6 +251,7 @@
           >
             {{ p }}
           </button>
+          </template>
           <button
             class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
             :disabled="currentPage === totalPages"
@@ -291,13 +290,19 @@
     FileSpreadsheet,
     FileText,
     Calendar,
+    CalendarClock,
     RefreshCw,
     PhoneOff,
     XCircle,
     CheckCircle2,
+    Star,
+    ThumbsDown,
     PhoneCall
   } from '@lucide/vue'
   import { callsService } from '@/services/calls.service'
+  import { dashboardService } from '@/services/dashboard.service'
+  import { lookupsService } from '@/services/lookups.service'
+  import { usersService } from '@/services/users.service'
   import { downloadBlob } from '@/utils/downloadFile'
   import { useNotification } from '@/composables/useNotification'
 
@@ -327,7 +332,7 @@
   const currentPage = ref(1)
   const pageSize = ref(10)
 
-  const callTypes = computed(() => [...new Set(allCalls.value.map(call => call.projectType).filter(Boolean))])
+  const callTypes = ref([])
 
   function resetToDefaultView() {
     searchQuery.value = ''
@@ -340,12 +345,10 @@
   const isLoading = ref(true)
   const loadError = ref(null)
   const allCalls = ref([])
-  const totalCalls = computed(() => matchingCalls.value.length)
+  const serverTotal = ref(null)
+  const totalCalls = computed(() => serverTotal.value === null ? matchingCalls.value.length : serverTotal.value)
   const agentsList = ref([])
   const rawStats = ref([])
-  const selectedIds = ref([])
-  const allSelected = computed(() => filteredCalls.value.length > 0 && filteredCalls.value.every(call => selectedIds.value.includes(call.id)))
-  function toggleAll(checked) { selectedIds.value = checked ? filteredCalls.value.map(call => call.id) : [] }
   function formatDuration(seconds) {
     if (seconds == null || seconds === '' || !Number.isFinite(Number(seconds))) return '—'
     const value = Math.max(0, Math.floor(Number(seconds)))
@@ -356,23 +359,23 @@
    * أيقونات وألوان كل حالة عبارة عن إعدادات عرض ثابتة في الواجهة،
    * أما القيم (label/value) فتأتي من الـ API عبر rawStats.
    */
-  const statIconConfig = {
-    '': { icon: PhoneCall, iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
-    'زيارة مجدولة': { icon: Calendar, iconBg: 'bg-amber-50', iconColor: 'text-amber-500' },
-    'إعادة جدولة': { icon: RefreshCw, iconBg: 'bg-indigo-50', iconColor: 'text-indigo-500' },
-    'لا يرد': { icon: PhoneOff, iconBg: 'bg-gray-100', iconColor: 'text-gray-500' },
-    'غير مهتم': { icon: XCircle, iconBg: 'bg-red-50', iconColor: 'text-red-500' },
-    مهتم: { icon: CheckCircle2, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' }
+    const statIconConfig = {
+    '': { icon: PhoneCall, iconBg: 'bg-blue-50', iconColor: 'text-blue-500' },
+    interested: { icon: Star, iconBg: 'bg-amber-50', iconColor: 'text-amber-500' },
+    not_interested: { icon: ThumbsDown, iconBg: 'bg-red-50', iconColor: 'text-red-500' },
+    no_answer: { icon: PhoneOff, iconBg: 'bg-gray-100', iconColor: 'text-gray-500' },
+    reschedule: { icon: CalendarClock, iconBg: 'bg-indigo-50', iconColor: 'text-indigo-500' },
+    visit: { icon: Calendar, iconBg: 'bg-amber-50', iconColor: 'text-amber-500' }
   }
 
   const stats = computed(() =>
     (rawStats.value.length ? rawStats.value : [
       { key: '', label: 'إجمالي المكالمات', value: '—' },
-      { key: 'مهتم', label: 'مهتم', value: '—' },
-      { key: 'غير مهتم', label: 'غير مهتم', value: '—' },
-      { key: 'لا يرد', label: 'لا يرد', value: '—' },
-      { key: 'إعادة جدولة', label: 'إعادة الجدولة', value: '—' },
-      { key: 'زيارة مجدولة', label: 'زيارة مجدولة', value: '—' }
+      { key: 'interested', label: 'مهتم', value: '' },
+      { key: 'not_interested', label: 'غير مهتم', value: '' },
+      { key: 'no_answer', label: 'لا يرد', value: '' },
+      { key: 'reschedule', label: 'إعادة الجدولة', value: '' },
+      { key: 'visit', label: 'زيارة مجدولة', value: '' }
     ]).map(s => ({
       ...s,
       ...(statIconConfig[s.key] ?? { icon: PhoneCall, iconBg: 'bg-gray-100', iconColor: 'text-gray-500' })
@@ -380,6 +383,7 @@
   )
 
   function toggleStatusFilter(key) {
+    if (key === 'visit') return
     statusFilter.value = statusFilter.value === key ? '' : key
     currentPage.value = 1
   }
@@ -388,27 +392,53 @@
     const query = searchQuery.value.trim().toLocaleLowerCase()
     return (!query || [call.name, call.phone, call.agent].some(value => String(value ?? '').toLocaleLowerCase().includes(query)))
       && (!typeFilter.value || call.type === typeFilter.value)
-      && (!agentFilter.value || call.agent === agentFilter.value)
-      && (!statusFilter.value || call.status === statusFilter.value)
+      && (!agentFilter.value || call.assignedTo === agentFilter.value || call.agent === agentFilter.value)
+      && (!statusFilter.value || call.callStatus === statusFilter.value)
   }))
-  const filteredCalls = computed(() => matchingCalls.value.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value))
+  const filteredCalls = computed(() => matchingCalls.value)
 
   const totalPages = computed(() => Math.max(1, Math.ceil(totalCalls.value / pageSize.value)))
   const startIndex = computed(() => (currentPage.value - 1) * pageSize.value)
-  const endIndex = computed(() => Math.min(startIndex.value + pageSize.value, totalCalls.value))
+  const endIndex = computed(() => allCalls.value.length ? startIndex.value + allCalls.value.length : 0)
+  const visiblePages = computed(() => {
+    const total = totalPages.value
+    if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1)
+    const start = Math.max(2, Math.min(currentPage.value - 1, total - 4))
+    const end = Math.min(total - 1, Math.max(currentPage.value + 1, 5))
+    const pages = [1]
+    if (start > 2) pages.push('start-gap')
+    for (let page = start; page <= end; page++) pages.push(page)
+    if (end < total - 1) pages.push('end-gap')
+    pages.push(total)
+    return pages
+  })
 
   let loadVersion = 0
   let loadController = null
   async function loadCalls() {
-    if (loadController) return
+    loadController?.abort()
     const controller = new AbortController()
     loadController = controller
     const version = ++loadVersion
     isLoading.value = true
     loadError.value = null
     try {
-      const items = await callsService.getQueue({ signal: controller.signal })
+      const response = await callsService.getList({
+        signal: controller.signal,
+        page: currentPage.value,
+        limit: pageSize.value,
+        q: searchQuery.value,
+        status: statusFilter.value,
+        type: typeFilter.value,
+        userId: agentFilter.value,
+      })
       if (version !== loadVersion) return
+      const items = response.items
+      const lastPage = Math.max(1, Math.ceil(response.total / pageSize.value))
+      if (currentPage.value > lastPage) {
+        currentPage.value = lastPage
+        return
+      }
       allCalls.value = items.map(call => ({ ...call,
         type: call.projectType || '—',
         status: call.lastResult || call.status,
@@ -416,10 +446,7 @@
           ? new Date(call.nextCallAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' }) : '—',
         note: call.notes ?? call.note,
       }))
-      rawStats.value = []
-      currentPage.value = 1
-      agentsList.value = [...new Set(items.map(call => call.agent).filter(value => value && value !== '—'))]
-      selectedIds.value = []
+      serverTotal.value = response.total
     } catch (err) {
       if (version !== loadVersion || controller.signal.aborted || err.code === 'ERR_CANCELED') return
       loadError.value = err
@@ -431,16 +458,51 @@
     }
   }
 
-  watch([searchQuery, typeFilter, agentFilter, statusFilter], () => { currentPage.value = 1 })
+  let reloadTimer = null
+  function scheduleLoad() {
+    clearTimeout(reloadTimer)
+    reloadTimer = setTimeout(loadCalls, searchQuery.value.trim() ? 350 : 0)
+  }
+  watch([searchQuery, typeFilter, agentFilter, statusFilter, pageSize], () => {
+    currentPage.value = 1
+    scheduleLoad()
+  })
+  watch(currentPage, (page, previous) => {
+    if (page !== previous) scheduleLoad()
+  })
   onUnmounted(() => {
     ++loadVersion
     loadController?.abort()
   })
-  watch(pageSize, () => {
-    currentPage.value = 1
+  onMounted(() => {
+    loadCalls()
+    Promise.allSettled([
+      dashboardService.getOverview().then(result => {
+        const byOutcome = result.today?.byOutcome ?? {}
+        rawStats.value = [
+          { key: '', label: 'إجمالي المكالمات', value: result.today?.totalCalls ?? '' },
+          { key: 'interested', label: 'مهتم', value: byOutcome.interested ?? '' },
+          { key: 'not_interested', label: 'غير مهتم', value: byOutcome.not_interested ?? '' },
+          { key: 'no_answer', label: 'لا يرد', value: byOutcome.no_answer ?? '' },
+          { key: 'reschedule', label: 'إعادة الجدولة', value: result.rescheduleDueToday ?? byOutcome.reschedule ?? '' },
+          { key: 'visit', label: 'زيارة مجدولة', value: result.today?.visits ?? '' },
+        ]
+      }).catch(error => { loadError.value ??= error }),
+      callsService.getRescheduled().then(items => {
+        const count = Array.isArray(items) ? items.length : 0
+        const current = rawStats.value.find(item => item.key === 'reschedule')
+        if (current && (current.value === '' || current.value == null)) current.value = count
+      }).catch(() => {}),
+      lookupsService.get().then(result => {
+        const types = result.types.map(item => typeof item === 'string' ? item : item.name ?? item.label ?? item.value).filter(Boolean)
+        if (types.length) callTypes.value = types
+      }).catch(() => {}),
+      usersService.list({ role: 'call_center', page: 1, limit: 100 }).then(response => {
+        const rows = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []
+        agentsList.value = rows.map(row => ({ id: row.id ?? row._id, name: row.name ?? row.fullName ?? row.email })).filter(row => row.id && row.name)
+      }).catch(() => {})
+    ])
   })
-
-  onMounted(loadCalls)
 
   function typeClass(type) {
     return type === 'وارد' ? 'text-emerald-600' : 'text-indigo-600'

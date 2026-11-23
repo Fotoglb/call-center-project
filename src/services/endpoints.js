@@ -9,7 +9,7 @@ export const ENDPOINTS = {
     resetPassword: userId => `/users/${encodeURIComponent(userId)}/reset-password`,
     update: userId => `/users/${encodeURIComponent(userId)}`,
     list: '/users',
-    create: '/users',
+    create: '/users'
   },
   auth: {
     changePassword: '/auth/change-password',
@@ -45,8 +45,10 @@ export const ENDPOINTS = {
     queue: '/calls/queue',
     reschedule: '/calls/reschedule',
     create: '/calls',
-    list: '/calls',
+    list: '/calls/log',
+    history: '/calls'
   },
+  lookups: '/lookups',
 
   customers: {
     bulk: '/leads/bulk',

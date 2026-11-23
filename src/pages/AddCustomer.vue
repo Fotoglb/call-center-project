@@ -168,12 +168,12 @@
                 <label class="text-xs font-medium text-gray-700">تاريخ الإنشاء</label>
                 <div class="relative">
                   <input
-                    v-model="form.projectCreatedAt"
+                    v-model="form.createdAt"
                     type="date"
                     class="w-full h-10 ps-4 pe-9 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-colors"
                   />
                 </div>
-                <p v-if="errors.projectCreatedAt" class="text-xs text-red-500">{{ errors.projectCreatedAt }}</p>
+                <p v-if="errors.createdAt" class="text-xs text-red-500">{{ errors.createdAt }}</p>
               </div>
             </div>
 
@@ -338,7 +338,7 @@
     priority: '',
     budget: '',
     assignedTo: '',
-    projectCreatedAt: new Date().toISOString().split('T')[0],
+    createdAt: new Date().toISOString().split('T')[0],
     isDraft: null,
     requirements: '',
     city: '',
@@ -377,7 +377,7 @@
         priority: lead.priority ?? '',
         budget: lead.budget ?? '',
         assignedTo: typeof lead.assignedTo === 'object' ? lead.assignedTo?.id ?? lead.assignedTo?._id ?? '' : lead.assignedTo ?? '',
-        projectCreatedAt: lead.projectCreatedAt ? String(lead.projectCreatedAt).slice(0, 10) : '',
+        createdAt: lead.createdAt ? String(lead.createdAt).slice(0, 10) : '',
         isDraft: typeof lead.isDraft === 'boolean' ? lead.isDraft : null,
         requirements: lead.requirements ?? '',
         city: lead.city ?? '',
@@ -445,9 +445,9 @@
     else if (!/^\+[1-9]\d{1,14}$/.test(internationalPhone(form.value.phone, form.value.countryCode))) e.phone = 'أدخل رقم هاتف دوليًا صحيحًا'
     if (!form.value.source) e.source = 'المصدر مطلوب'
     if (!projectTypes.includes(form.value.projectType)) e.projectType = 'اختر نوع مشروع العميل'
-    if (form.value.projectCreatedAt) {
-      const date = new Date(`${form.value.projectCreatedAt}T00:00:00.000Z`)
-      if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== form.value.projectCreatedAt) e.projectCreatedAt = 'أدخل تاريخًا صحيحًا'
+    if (form.value.createdAt) {
+      const date = new Date(`${form.value.createdAt}T00:00:00.000Z`)
+      if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== form.value.createdAt) e.createdAt = 'أدخل تاريخًا صحيحًا'
     }
     if (form.value.budget !== '' && (!Number.isFinite(Number(form.value.budget)) || Number(form.value.budget) < 0)) e.budget = 'أدخل ميزانية صحيحة لا تقل عن صفر'
     if (form.value.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
@@ -469,7 +469,7 @@
         email: form.value.email.trim(),
         sourceId: form.value.source,
         projectType: form.value.projectType,
-        ...(form.value.projectCreatedAt ? { projectCreatedAt: new Date(`${form.value.projectCreatedAt}T00:00:00.000Z`).toISOString() } : {}),
+        ...(form.value.createdAt ? { createdAt: new Date(`${form.value.createdAt}T00:00:00.000Z`).toISOString() } : {}),
         city: form.value.city,
         requirements: form.value.requirements,
         notes: form.value.notes,

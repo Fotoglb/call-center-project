@@ -334,8 +334,7 @@
   const activityTabs = [
     { key: 'timeline', label: 'الجدول الزمني' },
     { key: 'calls', label: 'سجل المكالمات' },
-    { key: 'visits', label: 'الزيارات' },
-    { key: 'documents', label: 'الوثائق' }
+    { key: 'visits', label: 'الزيارات' }
   ]
   const activeActivityTab = ref('timeline')
   const newActivityNote = ref('')
