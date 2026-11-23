@@ -28,7 +28,7 @@
 
     <!-- Stats Row -->
     <div class="history-panel bg-white rounded-2xl p-6 space-y-6">
-    <div class="history-stats grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
+    <div class="history-stats grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       <button
         v-for="stat in stats"
         :key="stat.key"
@@ -44,7 +44,7 @@
           <component :is="stat.icon" :size="15" :class="stat.iconColor" />
         </div>
         <p class="text-lg font-bold text-gray-900">{{ stat.value }}</p>
-        <p class="text-xs text-gray-400 mt-0.5">{{ stat.label }}</p>
+        <p class="text-xs text-gray-400 mt-0.5 whitespace-nowrap truncate" :title="stat.label">{{ stat.label }}</p>
       </button>
     </div>
 
@@ -370,12 +370,12 @@
 
   const stats = computed(() =>
     (rawStats.value.length ? rawStats.value : [
-      { key: '', label: 'إجمالي المكالمات', value: '—' },
-      { key: 'interested', label: 'مهتم', value: '' },
-      { key: 'not_interested', label: 'غير مهتم', value: '' },
-      { key: 'no_answer', label: 'لا يرد', value: '' },
-      { key: 'reschedule', label: 'إعادة الجدولة', value: '' },
-      { key: 'visit', label: 'زيارة مجدولة', value: '' }
+      { key: '', label: 'إجمالي المكالمات', value: 0 },
+      { key: 'interested', label: 'مهتم', value: 0 },
+      { key: 'not_interested', label: 'غير مهتم', value: 0 },
+      { key: 'no_answer', label: 'لا يرد', value: 0 },
+      { key: 'reschedule', label: 'إعادة الجدولة', value: 0 },
+      { key: 'visit', label: 'زيارة مجدولة', value: 0 }
     ]).map(s => ({
       ...s,
       ...(statIconConfig[s.key] ?? { icon: PhoneCall, iconBg: 'bg-gray-100', iconColor: 'text-gray-500' })
@@ -480,18 +480,18 @@
       dashboardService.getOverview().then(result => {
         const byOutcome = result.today?.byOutcome ?? {}
         rawStats.value = [
-          { key: '', label: 'إجمالي المكالمات', value: result.today?.totalCalls ?? '' },
-          { key: 'interested', label: 'مهتم', value: byOutcome.interested ?? '' },
-          { key: 'not_interested', label: 'غير مهتم', value: byOutcome.not_interested ?? '' },
-          { key: 'no_answer', label: 'لا يرد', value: byOutcome.no_answer ?? '' },
-          { key: 'reschedule', label: 'إعادة الجدولة', value: result.rescheduleDueToday ?? byOutcome.reschedule ?? '' },
-          { key: 'visit', label: 'زيارة مجدولة', value: result.today?.visits ?? '' },
+          { key: '', label: 'إجمالي المكالمات', value: result.today?.totalCalls ?? 0 },
+          { key: 'interested', label: 'مهتم', value: byOutcome.interested ?? 0 },
+          { key: 'not_interested', label: 'غير مهتم', value: byOutcome.not_interested ?? 0 },
+          { key: 'no_answer', label: 'لا يرد', value: byOutcome.no_answer ?? 0 },
+          { key: 'reschedule', label: 'إعادة الجدولة', value: result.rescheduleDueToday ?? byOutcome.reschedule ?? 0 },
+          { key: 'visit', label: 'زيارة مجدولة', value: result.today?.visits ?? 0 },
         ]
       }).catch(error => { loadError.value ??= error }),
       callsService.getRescheduled().then(items => {
         const count = Array.isArray(items) ? items.length : 0
         const current = rawStats.value.find(item => item.key === 'reschedule')
-        if (current && (current.value === '' || current.value == null)) current.value = count
+        if (current) current.value = count
       }).catch(() => {}),
       lookupsService.get().then(result => {
         const types = result.types.map(item => typeof item === 'string' ? item : item.name ?? item.label ?? item.value).filter(Boolean)
@@ -529,10 +529,10 @@
 .call-history > div:first-child button { min-height: 40px; border: 0; border-radius: 8px; padding-inline: 24px; }
 .call-history > div:first-child button:first-child { background: #4097f4; color: white; }
 .call-history > div:first-child button:last-child { background: #edf6ff; color: #4097f4; }
-.history-stats > button { background: white; border: 1px solid #dbeafe; border-radius: 14px; padding: 22px; min-height: 180px; }
+.history-stats > button { background: white; border: 1px solid #dbeafe; border-radius: 14px; padding: 18px; min-height: 180px; }
 .history-stats > button > div { width: 48px; height: 48px; margin-bottom: 20px; }
 .history-stats > button > p:first-of-type { font-size: 24px; }
-.history-stats > button > p:last-child { font-size: 16px; color: #222; }
+.history-stats > button > p:last-child { font-size: 14px; color: #222; }
 .history-table > div:first-child { padding: 0 0 20px; border: 0; }
 .history-table input[type='text'] { background: white; min-width: 240px; }
 .history-table > div:first-child > div:last-child button { border: 1px solid #00a478; color: #00a478; min-width: 80px; }
