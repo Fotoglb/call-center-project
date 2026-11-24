@@ -488,11 +488,6 @@
           { key: 'visit', label: 'زيارة مجدولة', value: result.today?.visits ?? 0 },
         ]
       }).catch(error => { loadError.value ??= error }),
-      callsService.getRescheduled().then(items => {
-        const count = Array.isArray(items) ? items.length : 0
-        const current = rawStats.value.find(item => item.key === 'reschedule')
-        if (current) current.value = count
-      }).catch(() => {}),
       lookupsService.get().then(result => {
         const types = result.types.map(item => typeof item === 'string' ? item : item.name ?? item.label ?? item.value).filter(Boolean)
         if (types.length) callTypes.value = types

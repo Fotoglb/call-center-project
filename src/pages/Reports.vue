@@ -442,9 +442,8 @@
                     type="button"
                     title="إعادة تعيين كلمة المرور"
                     :aria-label="`إعادة تعيين كلمة مرور ${employee.name}`"
-                    :disabled="!permissions.can('employees.manage') || employeeBusy || !employee.id"
-                    @click="resetEmployeePassword(employee)"
-                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled
+                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 cursor-not-allowed opacity-40"
                   >
                     <Pencil :size="16" aria-hidden="true" />
                   </button>
@@ -453,9 +452,8 @@
                     type="button"
                     title="تعطيل الموظف"
                     :aria-label="`تعطيل الموظف ${employee.name}`"
-                    :disabled="!permissions.can('employees.manage') || employeeBusy || !employee.id || employee.status === 'inactive'"
-                    @click="deactivateEmployee(employee)"
-                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled
+                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 cursor-not-allowed opacity-40"
                   >
                     <Trash2 :size="16" aria-hidden="true" />
                   </button>

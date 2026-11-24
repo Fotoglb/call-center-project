@@ -2,20 +2,6 @@ import api from './api'
 import { ENDPOINTS } from './endpoints'
 
 export const reportsService = {
-  async getCdr({ page = 1, limit = 10, direction = '', outcome = '', userId = '', leadId = '', from = '', to = '' } = {}) {
-    if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
-      throw new Error('رقم الصفحة أو عدد النتائج غير صحيح؛ الحد الأقصى 100')
-    }
-    const params = { page, limit }
-    for (const [key, value] of Object.entries({ direction, outcome, userId, leadId, from, to })) {
-      if (typeof value !== 'string') throw new Error('قيم فلاتر سجل المكالمات يجب أن تكون نصية')
-      if (value.trim()) params[key] = value.trim()
-    }
-    const response = await api.get(ENDPOINTS.reports.cdr, { params })
-    if (response?.success === false) throw new Error(response.message || 'تعذّر تحميل سجل المكالمات')
-    if (!Array.isArray(response?.data)) throw new Error('تعذّر قراءة سجل المكالمات')
-    return { items: response.data, total: response.meta?.total ?? response.data.length }
-  },
   async getDaily(date = '') {
     const response = await api.get(ENDPOINTS.reports.daily, { params: date ? { date } : {} })
     if (response?.success === false) throw new Error(response.message || 'تعذّر تحميل التقرير اليومي')

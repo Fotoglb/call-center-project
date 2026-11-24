@@ -72,15 +72,6 @@ export const callsService = {
       state: queueItem.state,
     }, true)
   },
-  async getMeta() {
-    const data = await api.get(ENDPOINTS.calls.meta)
-    return {
-      agents: data.agents ?? [],
-      types: data.types ?? [],
-      statuses: data.statuses ?? []
-    }
-  },
-
   async getQueue({ signal, q = '', status = 'all' } = {}) {
     const params = {}
     if (q?.trim()) params.q = q.trim()
@@ -94,10 +85,6 @@ export const callsService = {
     }
   },
 
-  async getRescheduled({ signal } = {}) {
-    const data = await api.get(ENDPOINTS.calls.reschedule, { signal })
-    return readItems(data).map(item => mapCall(item, true))
-  },
 
   async saveOutcome(payload) {
     const response = await api.post(ENDPOINTS.calls.create, payload)

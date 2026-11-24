@@ -152,7 +152,17 @@ export const customersService = {
   },
 
   async search(query) {
-    const data = await customersService.getList({ q: query, page: 1, limit: 10 })
-    return data.items
+    if (typeof query !== 'string' || !query.trim()) return []
+    const response = await api.get(ENDPOINTS.search, { params: { q: query.trim(), limit: 5 } })
+    if (response?.success === false) throw new Error(response.message || 'تعذّر تنفيذ البحث')
+    const body = response?.data ?? response
+    const rows = Array.isArray(body) ? body : body?.items ?? body?.results ?? body?.leads ?? body?.customers
+    if (!Array.isArray(rows)) return []
+    return rows.map(item => ({
+      ...item,
+      id: item.id ?? item._id ?? item.leadId,
+      name: item.name ?? item.fullName ?? item.lead?.fullName ?? '',
+      phone: item.phone ?? item.lead?.phone ?? '',
+    })).filter(item => item.id && item.name)
   }
 }

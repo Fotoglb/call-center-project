@@ -41,14 +41,13 @@ export const ENDPOINTS = {
 
   calls: {
     dial: '/calls/dial',
-    meta: '/calls/meta',
     queue: '/calls/queue',
-    reschedule: '/calls/reschedule',
     create: '/calls',
     list: '/calls/log',
-    history: '/calls'
+    history: '/calls/log'
   },
   lookups: '/lookups',
+  search: '/search',
 
   customers: {
     bulk: '/leads/bulk',
@@ -71,7 +70,6 @@ export const ENDPOINTS = {
     daily: '/reports/daily',
     summary: '/reports/daily',
     conversionTrend: '/reports/conversion',
-    cdr: '/reports/cdr',
     customerSources: '/reports/sources',
     employeePerformance: '/reports/rep-performance/current',
     periodicEmployeePerformance: '/reports/rep-performance/periodic',

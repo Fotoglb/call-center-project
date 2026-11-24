@@ -207,7 +207,8 @@
           </div>
 
           <!-- Timeline -->
-          <div class="p-4 space-y-5">
+          <div class="activity-timeline-list p-4 space-y-5">
+            <div class="activity-items space-y-5">
             <p v-if="!filteredActivity.length" class="text-xs text-gray-400 text-center">لا توجد بيانات</p>
             <div v-for="(entry, index) in filteredActivity" :key="entry.id" class="relative flex gap-5">
               <span v-if="index < filteredActivity.length - 1" class="absolute start-4 top-8 -bottom-5 w-px bg-gray-100" aria-hidden="true"></span>
@@ -253,6 +254,7 @@
                 <p v-if="typeof entry.note === 'string' && entry.note" class="text-sm text-gray-400 leading-relaxed">{{ entry.note }}</p>
                 <a v-if="entry.fileUrl" :href="entry.fileUrl" target="_blank" rel="noopener noreferrer" class="inline-flex text-sm text-blue underline mt-2">فتح الوثيقة</a>
               </div>
+            </div>
             </div>
 
             <div v-if="activeActivityTab === 'timeline'" class="pt-2 space-y-2">
@@ -406,3 +408,17 @@
     return map[status] ?? 'bg-gray-100 text-gray-500'
   }
 </script>
+
+<style scoped>
+.activity-timeline-list {
+  max-height: 680px;
+}
+
+.activity-items {
+  max-height: 540px;
+  overflow-y: auto;
+  padding-inline-end: 6px;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+</style>

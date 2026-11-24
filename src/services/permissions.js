@@ -34,6 +34,7 @@ export function requestPermission(url, method = 'get') {
   if (path === '/users') return method === 'post' ? 'employees.register' : 'employees.manage'
   if (/^\/users\//.test(path)) return 'employees.manage'
   if (path === '/leads') return method === 'post' ? 'customers.create' : 'customers.list'
+  if (path === '/search') return 'customers.list|customerProfile.view'
   if (/^\/leads\/[^/]+\/profile$/.test(path)) return 'customerProfile.view'
   if (path === '/leads/sources') return 'customers.list|customers.create|customers.viewEdit'
   if (path === '/leads/bulk') return 'customers.create'
@@ -42,15 +43,13 @@ export function requestPermission(url, method = 'get') {
   if (/^\/notifications\//.test(path)) return 'screens.dashboard'
   if (/^\/leads\//.test(path)) return method === 'delete' ? 'customers.delete' : 'customers.viewEdit'
   if (path === '/calls/queue') return 'callCenter.queue'
-  if (path === '/calls/reschedule') return 'callCenter.rescheduleList'
   if (path === '/calls' && method === 'post') return 'callCenter.logCall'
-  if (path === '/calls' || path === '/calls/list') return 'callCenter.queue|customerProfile.view'
+  if (path === '/calls' || path === '/calls/log' || path === '/calls/list') return 'callCenter.queue|customerProfile.view'
   if (/^\/calls\//.test(path) && method !== 'get') return 'callCenter.logCall'
   return ({
     '/reports/daily': 'reports.daily',
     '/reports/sources': 'reports.sources',
     '/reports/conversion': 'reports.conversionRate',
-    '/reports/cdr': 'reports.cdr',
     '/reports/rep-performance/current': 'reports.currentRepPerformance',
     '/reports/rep-performance/periodic': 'reports.periodicRepPerformance',
     '/reports/visit-success': 'reports.periodicRepPerformance',
