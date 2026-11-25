@@ -1131,12 +1131,12 @@
       const cards = overview.cards ?? {}
       const daily = dailyData.value ?? {}
       stats.value = [
-        { label: 'إجمالي العملاء', value: daily.totalLeads ?? daily.newLeads ?? '' },
-        { label: 'تم التحويل المشروع', value: daily.converted ?? '' },
-        { label: 'معدل التحويل', value: daily.conversionRate ?? '', unit: '%' },
-        { label: 'إجمالي المكالمات', value: daily.totalCalls ?? '' },
-        { label: 'الزيارة الميدانية', value: daily.visits ?? daily.fieldVisitRate ?? '', unit: daily.visits != null ? '' : '%' },
-        { label: 'متوسط وقت التحويل', value: daily.avgConversionDays ?? '', unit: 'يوم' },
+        { label: 'إجمالي العملاء', value: cards.totalLeads ?? daily.totalLeads ?? daily.newLeads ?? '' },
+        { label: 'تم التحويل المشروع', value: cards.converted ?? daily.converted ?? '' },
+        { label: 'معدل التحويل', value: cards.conversionRate ?? daily.conversionRate ?? '', unit: '%' },
+        { label: 'إجمالي المكالمات', value: cards.totalCalls ?? daily.totalCalls ?? '' },
+        { label: 'الزيارة الميدانية', value: cards.fieldVisitRate ?? daily.visits ?? daily.fieldVisitRate ?? '', unit: cards.fieldVisitRate != null && daily.visits == null ? '%' : '' },
+        { label: 'متوسط وقت التحويل', value: cards.avgConversionDays ?? daily.avgConversionDays ?? '', unit: 'يوم' },
       ]
       const sourceRows = Array.isArray(overview.sources?.rows) ? overview.sources.rows : []
       sourceLegend.value = sourceRows.map(row => ({ ...row, label: row.name, color: row.color || '#94a3b8' }))
