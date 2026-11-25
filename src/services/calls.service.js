@@ -30,7 +30,9 @@ function mapCall(item, queue = false) {
     tags: Array.isArray(item.tags) ? item.tags : [],
     lastContactAt: lead.lastContactAt ?? item.lastContactAt ?? null,
     nextCallAt: lead.nextCallAt ?? item.nextCallAt ?? null,
-    lastDurationSec: item.lastDurationSec ?? lead.lastDurationSec ?? null,
+    // Queue responses use lastCallDurationSec; keep the legacy alias for existing views.
+    lastCallDurationSec: item.lastCallDurationSec ?? item.lastDurationSec ?? lead.lastCallDurationSec ?? lead.lastDurationSec ?? null,
+    lastDurationSec: item.lastCallDurationSec ?? item.lastDurationSec ?? lead.lastCallDurationSec ?? lead.lastDurationSec ?? null,
     lastContact: Number.isFinite(Date.parse(lead.lastContactAt ?? item.lastContactAt))
       ? new Date(lead.lastContactAt ?? item.lastContactAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' })
       : item.lastContact ?? '—',
