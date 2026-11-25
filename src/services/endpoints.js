@@ -9,6 +9,7 @@ export const ENDPOINTS = {
     resetPassword: userId => `/users/${encodeURIComponent(userId)}/reset-password`,
     update: userId => `/users/${encodeURIComponent(userId)}`,
     list: '/users',
+    options: '/users/options',
     create: '/users'
   },
   auth: {

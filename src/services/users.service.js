@@ -32,6 +32,10 @@ export const usersService = {
     }
     return api.get(ENDPOINTS.users.list, { params })
   },
+  async options({ role = '' } = {}) {
+    const params = role ? { role } : {}
+    return api.get(ENDPOINTS.users.options, { params })
+  },
   async create({ name, email, role }) {
     const response = await api.post(ENDPOINTS.users.create, { name, email, role })
     if (response?.success === false) {

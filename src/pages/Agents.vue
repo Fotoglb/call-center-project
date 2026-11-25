@@ -603,8 +603,9 @@
         const types = result.types.map(item => typeof item === 'string' ? item : item.name ?? item.label ?? item.value).filter(Boolean)
         if (types.length) callTypes.value = types
       }).catch(() => {}),
-      usersService.list({ role: 'call_center', page: 1, limit: 100 }).then(response => {
-        const rows = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []
+      usersService.options({ role: 'call_center' }).then(response => {
+        const body = response?.data ?? response
+        const rows = Array.isArray(body) ? body : body?.items ?? body?.users ?? body?.rows ?? []
         agentsList.value = rows.map(row => ({ id: row.id ?? row._id, name: row.name ?? row.fullName ?? row.email })).filter(row => row.id && row.name)
       }).catch(() => {})
     ])

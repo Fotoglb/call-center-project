@@ -24,7 +24,9 @@ function mapCall(item, queue = false) {
     projectCreatedAt: lead.projectCreatedAt ? String(lead.projectCreatedAt).slice(0, 10) : '',
     sourceId: typeof lead.sourceId === 'object' ? lead.sourceId?.id ?? lead.sourceId?._id ?? '' : lead.sourceId ?? '',
     source: lead.sourceId?.name ?? item.source ?? '',
-    assignedTo: typeof lead.assignedTo === 'object' ? lead.assignedTo?.id ?? lead.assignedTo?._id ?? '' : lead.assignedTo ?? '',
+    assignedTo: typeof lead.assignedTo === 'object'
+      ? lead.assignedTo?.id ?? lead.assignedTo?._id ?? (typeof item.userId === 'string' ? item.userId : item.userId?.id ?? item.userId?._id) ?? ''
+      : lead.assignedTo ?? (typeof item.userId === 'string' ? item.userId : item.userId?.id ?? item.userId?._id) ?? '',
     priority: ({ high: 'عالي الأهمية', medium: 'متوسط الأهمية', low: 'منخفض الأهمية' })[lead.priority ?? item.priority] ?? lead.priority ?? item.priority ?? '—',
     callAttempts: lead.callAttempts ?? item.callAttempts ?? null,
     tags: Array.isArray(item.tags) ? item.tags : [],

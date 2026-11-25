@@ -257,7 +257,7 @@
             </div>
             </div>
 
-            <div v-if="activeActivityTab === 'timeline'" class="pt-2 space-y-2">
+            <div v-if="activeActivityTab === 'timeline'" class="activity-note-form mt-2 border-t border-gray-100 pt-4 space-y-2">
               <p v-if="permissions.can('customers.viewEdit')" class="text-xs text-gray-500">أضف ملاحظة لملف العميل</p>
               <textarea
                 v-model="newActivityNote"
@@ -412,13 +412,24 @@
 <style scoped>
 .activity-timeline-list {
   max-height: 680px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .activity-items {
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: 540px;
   overflow-y: auto;
   padding-inline-end: 6px;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
+}
+
+.activity-note-form {
+  background: #fff;
+  flex: 0 0 auto;
 }
 </style>
