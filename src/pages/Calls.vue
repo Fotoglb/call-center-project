@@ -558,7 +558,7 @@
   const callDirection = ref('outbound')
   const nextCallAt = ref('')
   const rescheduleReason = ref('')
-  const activeFilter = ref(permissions.can('callCenter.queue') ? 'all' : 'إعادة جدولة')
+  const activeFilter = ref(permissions.can('callCenter.queue') ? 'all' : 'reschedule')
   const isLoading = ref(true)
   const loadError = ref(null)
   const isSaving = ref(false)
