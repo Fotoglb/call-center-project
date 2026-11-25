@@ -392,7 +392,7 @@
           limit: pageSize.value,
           q: searchQuery.value,
           callStatus: statusFilter.value,
-          type: typeFilter.value,
+          projectType: typeFilter.value,
           userId: agentFilter.value,
         })
         const freshItems = response.items.filter(item => {
@@ -540,7 +540,7 @@
         limit: pageSize.value,
         q: searchQuery.value,
         callStatus: statusFilter.value,
-        type: typeFilter.value,
+        projectType: typeFilter.value,
         userId: agentFilter.value,
       })
       if (version !== loadVersion) return
