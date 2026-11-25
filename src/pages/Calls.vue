@@ -212,18 +212,8 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-2 shrink-0">
                   <button
-                    v-if="permissions.can('callCenter.logCall') && resultLeadId"
-                    type="button"
-                    class="flex items-center justify-center gap-2 text-sm text-white bg-blue rounded-xl px-4 h-12 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    :disabled="isDialing || isSaving"
-                    @click="startCall"
-                  >
-                    <Phone :size="16" />
-                    {{ isDialing ? 'جارٍ بدء الاتصال...' : 'الاتصال الآن' }}
-                  </button>
-                  <button
                     v-if="permissions.can('customerProfile.view') && resultLeadId"
-                    class="flex items-center justify-center text-sm text-gray-900 bg-slate-50 border border-slate-200 rounded-xl w-28 h-12 hover:bg-white cursor-pointer transition-colors"
+                    class="flex shrink-0 items-center justify-center whitespace-nowrap text-xs text-gray-900 bg-slate-50 border border-slate-200 rounded-xl w-24 h-12 px-2 hover:bg-white cursor-pointer transition-colors"
                     @click="
                       router.push({ name: 'CustomerProfile', params: { id: resultLeadId } })
                     "
