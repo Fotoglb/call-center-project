@@ -244,8 +244,8 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-5 text-[10px] text-gray-600">
-            <span class="flex items-center gap-2"><span class="h-1 w-5 rounded-full bg-gray-300"></span>عملاء جدد</span>
-            <span class="flex items-center gap-2"><span class="h-1 w-5 rounded-full bg-gray-300"></span>التحويلات</span>
+            <span class="flex items-center gap-2"><span class="h-1 w-5 rounded-full bg-[#8180FF]"></span>عملاء جدد</span>
+            <span class="flex items-center gap-2"><span class="h-1 w-5 rounded-full bg-[#E898FF]"></span>التحويلات</span>
           </div>
         </div>
         <p v-if="conversionError" role="alert" class="mb-3 text-xs text-red-600">{{ conversionError }}</p>
@@ -309,13 +309,16 @@
 
           <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500" dir="ltr">
             <button type="button" class="flex items-center gap-2 cursor-pointer" dir="rtl" :aria-pressed="employeeMetric === 'calls'" @click="employeeMetric = 'calls'">
-              <span class="h-1 w-6 rounded-full bg-gray-300"></span>
+              <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
               المكالمات
             </button>
-
             <button type="button" class="flex items-center gap-2 cursor-pointer" dir="rtl" :aria-pressed="employeeMetric === 'newCustomers'" @click="employeeMetric = 'newCustomers'">
-              <span class="h-1 w-6 rounded-full bg-gray-300"></span>
+              <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
               عملاء جدد
+            </button>
+            <button type="button" class="flex items-center gap-2 cursor-pointer" dir="rtl" :aria-pressed="employeeMetric === 'conversions'" @click="employeeMetric = 'conversions'">
+              <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+              التحويلات
             </button>
           </div>
         </div>
@@ -341,7 +344,7 @@
           <div>
             <h3 class="text-sm font-semibold text-gray-900">معدل نجاح الزيارات</h3>
 
-            <p class="mt-1 text-xs text-gray-400">نسبة الزيارات الناجحة لكل يوم</p>
+            <p class="mt-1 text-xs text-gray-400">الزيارات الناجحة لكل يوم</p>
           </div>
 
           <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500" dir="ltr">
@@ -350,16 +353,14 @@
               الزيارات
             </span>
 
-            <span class="flex items-center gap-1.5" dir="rtl">
-              <span class="h-2 w-2 rounded-full bg-amber-400"></span>
-              عملاء جدد
-            </span>
           </div>
         </div>
 
-        <div class="chart-container relative h-52 w-full min-w-0" dir="ltr">
-          <Bar v-if="hasChartData(visitSuccessData)" ref="visitChartRef" :data="visitSuccessData" :options="barOptions" />
-          <p v-else class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
+        <div class="chart-scroll" dir="ltr" tabindex="0" aria-label="تمرير مخطط نجاح الزيارات">
+          <div class="visit-success-canvas chart-container relative h-72" :style="{ width: `${Math.max(720, visitSuccessData.labels.length * 110)}px` }">
+            <Bar v-if="hasChartData(visitSuccessData)" ref="visitChartRef" :data="visitSuccessData" :options="visitBarOptions" />
+            <p v-else class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -617,6 +618,9 @@
    * -------------------------------------- */
 
   const stats = ref([])
+  const dailyData = ref({})
+  const overviewData = ref({ cards: {}, sources: {}, trend: [] })
+  const overviewError = ref('')
   const dailyError = ref('')
   const displayedStats = computed(() => {
     const cards = stats.value.length ? stats.value : ['إجمالي العملاء', 'تم التحويل المشروع', 'معدل التحويل', 'إجمالي المكالمات', 'الزيارة الميدانية', 'متوسط وقت التحويل'].map(label => ({ label }))
@@ -729,6 +733,13 @@
           display: false
         },
 
+        title: {
+          display: true,
+          text: 'التاريخ',
+          color: '#6B7280',
+          font: { size: 11, family: 'Tajawal' }
+        },
+
         ticks: {
           autoSkip: false,
           maxRotation: 0,
@@ -759,6 +770,13 @@
           display: false
         },
 
+        title: {
+          display: true,
+          text: 'العدد',
+          color: '#6B7280',
+          font: { size: 11, family: 'Tajawal' }
+        },
+
         ticks: {
           stepSize: 40,
           padding: 12,
@@ -784,22 +802,14 @@
 
     datasets: [
       {
-        label: 'الزيارات',
+        label: 'نسبة نجاح الزيارات',
         data: visitSuccessRaw.value.visits,
         backgroundColor: '#14B8A6',
         borderRadius: 4,
         borderSkipped: false,
         maxBarThickness: 18
-      },
-
-      {
-        label: 'عملاء جدد',
-        data: visitSuccessRaw.value.newCustomers,
-        backgroundColor: '#FBBF24',
-        borderRadius: 4,
-        borderSkipped: false,
-        maxBarThickness: 18
       }
+      
     ]
   }))
 
@@ -808,6 +818,35 @@
    * -------------------------------------- */
 
 
+  const employeeTrendDataAll = computed(() => ({
+    labels: currentEmployeePerformance.value.map(employee => employee.name),
+    datasets: [
+      {
+        label: 'المكالمات',
+        data: currentEmployeePerformance.value.map(employee => employee.calls),
+        backgroundColor: '#6366F1',
+        borderRadius: 4,
+        borderSkipped: false,
+        maxBarThickness: 18
+      },
+      {
+        label: 'عملاء جدد',
+        data: currentEmployeePerformance.value.map(employee => employee.newCustomers),
+        backgroundColor: '#34D399',
+        borderRadius: 4,
+        borderSkipped: false,
+        maxBarThickness: 18
+      },
+      {
+        label: 'التحويلات',
+        data: currentEmployeePerformance.value.map(employee => employee.conversions),
+        backgroundColor: '#FBBF24',
+        borderRadius: 4,
+        borderSkipped: false,
+        maxBarThickness: 18
+      }
+    ]
+  }))
   const employeeTrendData = computed(() => ({
     labels: currentEmployeeRows.value.map(employee => employee.name),
 
@@ -825,6 +864,14 @@
         label: 'عملاء جدد',
         data: currentEmployeeRows.value.map(employee => employee.newCustomers),
         backgroundColor: '#34D399',
+        borderRadius: 4,
+        borderSkipped: false,
+        maxBarThickness: 18
+      },
+      {
+        label: 'التحويلات',
+        data: currentEmployeeRows.value.map(employee => employee.conversions),
+        backgroundColor: '#FBBF24',
         borderRadius: 4,
         borderSkipped: false,
         maxBarThickness: 18
@@ -917,6 +964,24 @@
     }
   }
 
+  const visitBarOptions = {
+    ...barOptions,
+    scales: {
+      ...barOptions.scales,
+      x: {
+        ...barOptions.scales.x,
+        title: { display: true, text: 'التاريخ', color: '#6B7280', font: { size: 11, family: 'Tajawal' } }
+      },
+      y: {
+        ...barOptions.scales.y,
+        min: 1,
+        beginAtZero: false,
+        ticks: { ...barOptions.scales.y.ticks, stepSize: 1, precision: 0 },
+        title: { display: true, text: 'العدد', color: '#6B7280', font: { size: 11, family: 'Tajawal' } }
+      }
+    }
+  }
+
   /* ----------------------------------------
    * Employee performance table
    * -------------------------------------- */
@@ -953,10 +1018,10 @@
   const employeeDonutData = computed(() => ({
     labels: employeeDistribution.value.map(employee => employee.name),
     datasets: [{
-      label: employeeMetric.value === 'calls' ? 'المكالمات' : 'عملاء جدد',
+      label: employeeMetric.value === 'calls' ? 'المكالمات' : employeeMetric.value === 'newCustomers' ? 'عملاء جدد' : 'التحويلات',
       data: employeeDistribution.value.map(employee => employee.value),
-      backgroundColor: '#929292',
-      hoverBackgroundColor: '#777777',
+      backgroundColor: employeeDistribution.value.map(employee => employee.color),
+      hoverBackgroundColor: employeeDistribution.value.map(employee => employee.color),
       borderColor: '#ffffff',
       borderWidth: 3,
       borderRadius: 5,
@@ -992,9 +1057,16 @@
     conversionError.value = ''
     conversionSummary.value = null
     sourcesTotal.value = null
+    overviewError.value = ''
+    stats.value = []
+    dailyData.value = {}
+    sourceLegend.value = []
+    conversionTrendRaw.value = { labels: [], leads: [], conversions: [] }
+    visitSuccessRaw.value = { labels: [], visits: [], newCustomers: [] }
     const params = reportParams()
     const sections = [
-      [stats, () => reportsService.getSummary(params), []],
+      [dailyData, () => reportsService.getDaily(dateTo.value), {}],
+      [overviewData, () => reportsService.getOverview(params), { cards: {}, sources: {}, trend: [] }],
       [currentEmployeePerformance, async () => {
         try {
           return await reportsService.getEmployeePerformance()
@@ -1002,19 +1074,6 @@
           if (request === reportRequest) currentEmployeeLoading.value = false
         }
       }, []],
-      [sourceLegend, async () => {
-        const result = await reportsService.getCustomerSources(params)
-        if (request === reportRequest) {
-          sourcesTotal.value = result.total
-          if (!result.items.some(source => (source.sourceId ?? source.label) === sourceFilter.value)) sourceFilter.value = ''
-        }
-        return result.items
-      }, []],
-      [conversionTrendRaw, async () => {
-        const result = await reportsService.getConversionTrend(params)
-        if (request === reportRequest) conversionSummary.value = result
-        return result
-      }, { labels: [], leads: [], conversions: [] }],
       [employeePerformance, async () => {
         try {
           const rows = await reportsService.getEmployeePerformance(params)
@@ -1023,25 +1082,50 @@
           if (request === reportRequest) employeeReportLoading.value = false
         }
       }, []],
-      [visitSuccessRaw, () => reportsService.getVisitSuccess(params), { labels: [], visits: [], newCustomers: [] }],
     ]
     await Promise.all(sections.map(async ([target, fetch, empty]) => {
       target.value = empty
       try {
         const result = await fetch()
         if (request !== reportRequest) return
-        target.value = Array.isArray(empty)
+        target.value = target === overviewData || target === dailyData ? result : Array.isArray(empty)
           ? (Array.isArray(result) ? result : [])
           : Object.fromEntries(Object.keys(empty).map(key => [key, Array.isArray(result?.[key]) ? result[key] : []]))
       } catch (error) {
         if (request === reportRequest) target.value = empty
-        if (request === reportRequest && target === conversionTrendRaw) conversionError.value = error.message || 'تعذّر تحميل تقرير التحويل'
-        if (request === reportRequest && target === sourceLegend) sourcesError.value = error.message || 'تعذّر تحميل مصادر العملاء'
+        if (request === reportRequest && target === overviewData) {
+          overviewError.value = error.message || 'تعذّر تحميل ملخص التقارير'
+          dailyError.value = overviewError.value
+          sourcesError.value = overviewError.value
+          conversionError.value = overviewError.value
+        }
+        if (request === reportRequest && target === dailyData) dailyError.value = error.message || 'تعذّر تحميل التقرير اليومي'
         if (request === reportRequest && target === employeePerformance) employeeReportError.value = error.message || 'تعذّر تحميل أداء الموظفين'
         if (request === reportRequest && target === currentEmployeePerformance) currentEmployeeError.value = error.message || 'تعذّر تحميل أداء الموظفين الحالي'
         if (request === reportRequest && target === stats) dailyError.value = error.message || 'تعذّر تحميل التقرير اليومي'
       }
     }))
+    if (request === reportRequest) {
+      const overview = overviewData.value
+      const cards = overview.cards ?? {}
+      const daily = dailyData.value ?? {}
+      stats.value = [
+        { label: 'إجمالي العملاء', value: daily.totalLeads ?? daily.newLeads ?? '' },
+        { label: 'تم التحويل المشروع', value: daily.converted ?? '' },
+        { label: 'معدل التحويل', value: daily.conversionRate ?? '', unit: '%' },
+        { label: 'إجمالي المكالمات', value: daily.totalCalls ?? '' },
+        { label: 'الزيارة الميدانية', value: daily.visits ?? daily.fieldVisitRate ?? '', unit: daily.visits != null ? '' : '%' },
+        { label: 'متوسط وقت التحويل', value: daily.avgConversionDays ?? '', unit: 'يوم' },
+      ]
+      const sourceRows = Array.isArray(overview.sources?.rows) ? overview.sources.rows : []
+      sourceLegend.value = sourceRows.map(row => ({ ...row, label: row.name, color: row.color || '#94a3b8' }))
+      sourcesTotal.value = overview.sources?.total ?? null
+      if (!sourceRows.some(row => row.sourceId === sourceFilter.value)) sourceFilter.value = ''
+      const trend = overview.trend ?? []
+      conversionTrendRaw.value = { labels: trend.map(row => row.date), leads: trend.map(row => row.leads), conversions: trend.map(row => row.converted) }
+      visitSuccessRaw.value = { labels: trend.map(row => row.date), visits: trend.map(row => row.visits), newCustomers: trend.map(row => row.leads) }
+      conversionSummary.value = { totalLeads: cards.totalLeads, converted: cards.converted, conversionRate: cards.conversionRate }
+    }
     if (request === reportRequest) {
       isLoading.value = false
       if (!reportEmployeeOptions.value.some(employee => employee.id === agentFilter.value)) agentFilter.value = ''
@@ -1194,9 +1278,10 @@
   }
 
   function getChartInstance(componentRef) {
-    const canvas = componentRef?.value?.$el
-
-    return canvas instanceof HTMLCanvasElement ? ChartJS.getChart(canvas) : null
+    const component = componentRef?.value
+    const canvas = component?.canvas ?? component?.$el ?? component?.$refs?.canvas
+    if (canvas instanceof HTMLCanvasElement) return ChartJS.getChart(canvas) ?? component?.chart ?? null
+    return component?.chart ?? null
   }
 
   function addChartImage(workbook, worksheet, title, chartInstance, startRow) {
@@ -1269,7 +1354,7 @@
 
       /* ---------- Sheet 1: ملخص التقرير ---------- */
 
-      const summarySheet = newRtlSheet(workbook, 'ملخص التقرير')
+      const summarySheet = newRtlSheet(workbook, 'تقرير الصفحة')
 
       summarySheet.columns = [
         { header: 'المؤشر', key: 'label' },
@@ -1278,6 +1363,12 @@
 
       displayedStats.value.forEach(stat => {
         summarySheet.addRow({ label: safeCell(stat.label), value: safeCell(stat.unit && typeof stat.value === 'number' ? `${stat.value}${stat.unit}` : stat.value) })
+      })
+
+      const dailyOutcomes = dailyData.value?.byOutcome ?? {}
+      summarySheet.addRow({ label: 'نتائج المكالمات اليومية', value: '' })
+      Object.entries(dailyOutcomes).forEach(([outcome, count]) => {
+        summarySheet.addRow({ label: safeCell(outcome), value: safeCell(count) })
       })
 
       summarySheet.addRow({
@@ -1302,30 +1393,79 @@
       summarySheet.autoFilter = 'A1:B1'
       autoSizeColumns(summarySheet, 18)
 
+      function addInlineTable(title, headers, rows) {
+        summarySheet.addRow([])
+        const titleRow = summarySheet.addRow([title])
+        titleRow.getCell(1).font = { bold: true, size: 13, color: { argb: 'FF111827' } }
+        const headerRow = summarySheet.addRow(headers.map(safeCell))
+        styleHeaderRow(headerRow)
+        rows.forEach(values => summarySheet.addRow(values.map(safeCell)))
+        const firstDataRow = summarySheet.rowCount - rows.length + 1
+        for (let rowNumber = firstDataRow; rowNumber <= summarySheet.rowCount; rowNumber++) {
+          summarySheet.getRow(rowNumber).eachCell({ includeEmpty: true }, cell => {
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+              left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+              bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+              right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
+            }
+            cell.alignment = { vertical: 'middle', horizontal: 'center', readingOrder: 'rtl' }
+          })
+        }
+      }
+
+      const padSummaryRows = targetRow => {
+        while (summarySheet.rowCount < targetRow) summarySheet.addRow([])
+      }
+
+      let summaryChartRow = summarySheet.rowCount + 2
+      summaryChartRow = addChartImage(workbook, summarySheet, 'معدل التحويل — الاتجاه الزمني', getChartInstance(conversionChartRef), summaryChartRow)
+      padSummaryRows(summaryChartRow)
+      addInlineTable('بيانات الاتجاه الزمني', ['التاريخ', 'عملاء جدد', 'التحويلات', 'المكالمات', 'الزيارات'],
+        (overviewData.value?.trend ?? []).map(row => [row.date, row.leads, row.converted, row.calls, row.visits]))
+      summaryChartRow = summarySheet.rowCount + 2
+      summaryChartRow = addChartImage(workbook, summarySheet, 'توزيع مصادر العملاء', getChartInstance(sourceChartRef), summaryChartRow)
+      padSummaryRows(summaryChartRow)
+      addInlineTable('مصادر العملاء', ['المصدر', 'النسبة', 'عدد العملاء', 'اللون'],
+        sourceLegend.value.map(row => [row.label, `${row.percent}%`, row.count, row.color]))
+      summaryChartRow = summarySheet.rowCount + 2
+      summaryChartRow = addChartImage(workbook, summarySheet, 'أداء الموظفين', getChartInstance(employeeChartRef), summaryChartRow)
+      padSummaryRows(summaryChartRow)
+      addInlineTable('أداء الموظفين', ['الموظف', 'المكالمات', 'عملاء جدد', 'التحويلات', 'معدل التحويل'],
+        employeePerformance.value.map(row => [row.name, row.calls, row.newCustomers, row.conversions, row.conversionRate == null ? '' : `${row.conversionRate}%`]))
+      summaryChartRow = summarySheet.rowCount + 2
+      addChartImage(workbook, summarySheet, 'معدل نجاح الزيارات', getChartInstance(visitChartRef), summaryChartRow)
+      padSummaryRows(summaryChartRow)
+      addInlineTable('نجاح الزيارات', ['التاريخ', 'الزيارات'],
+        visitSuccessRaw.value.labels.map((label, index) => [label, visitSuccessRaw.value.visits[index]]))
+      autoSizeColumns(summarySheet, 18)
+
       /* ---------- Sheet 2: الاتجاه الزمني ---------- */
 
       const trendSheet = newRtlSheet(workbook, 'الاتجاه الزمني')
 
-      const trendDatasetByLabel = Object.fromEntries(
-        conversionTrendData.value.datasets.map(dataset => [dataset.label, dataset.data])
-      )
+      const overviewTrend = Array.isArray(overviewData.value?.trend) ? overviewData.value.trend : []
 
       trendSheet.columns = [
         { header: 'اليوم', key: 'day' },
         { header: 'عملاء جدد', key: 'leads' },
         { header: 'التحويلات', key: 'converted' },
+        { header: 'المكالمات', key: 'calls' },
+        { header: 'الزيارات', key: 'visits' },
       ]
-      conversionTrendData.value.labels.forEach((label, index) => {
+      overviewTrend.forEach(row => {
         trendSheet.addRow({
-          day: safeCell(label),
-          leads: safeCell(trendDatasetByLabel['عملاء جدد']?.[index]),
-          converted: safeCell(trendDatasetByLabel['التحويلات']?.[index]),
+          day: safeCell(row.date),
+          leads: safeCell(row.leads),
+          converted: safeCell(row.converted),
+          calls: safeCell(row.calls),
+          visits: safeCell(row.visits),
         })
       })
 
       styleHeaderRow(trendSheet.getRow(1))
       styleDataRows(trendSheet)
-      trendSheet.autoFilter = 'A1:C1'
+      trendSheet.autoFilter = 'A1:E1'
       autoSizeColumns(trendSheet)
 
       /* ---------- Sheet 3: مصادر العملاء ---------- */
@@ -1339,7 +1479,7 @@
         { header: 'عدد العملاء', key: 'count' }
       ]
 
-      filteredSources.value.forEach(item => {
+      sourceLegend.value.forEach(item => {
         sourcesSheet.addRow({
           label: safeCell(item.label),
           percent: item.percent / 100,
@@ -1353,7 +1493,7 @@
       styleHeaderRow(sourcesSheet.getRow(1))
       styleDataRows(sourcesSheet)
 
-      filteredSources.value.forEach((item, index) => {
+      sourceLegend.value.forEach((item, index) => {
         sourcesSheet.getCell(`C${index + 2}`).fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -1385,7 +1525,7 @@
         { header: 'الأداء', key: 'performance' }
       ]
 
-      employeeRows.value.forEach(employee => {
+      employeePerformance.value.forEach(employee => {
         detailSheet.addRow({
           name: safeCell(employee.name),
           calls: safeCell(employee.calls),
@@ -1412,11 +1552,11 @@
 
       /* ---------- Sheet 5: أداء الموظفين (رسم المقارنة اليومي) ---------- */
 
-      addSeriesTableSheet(workbook, 'أداء الموظفين', employeeTrendData.value, 'الموظف')
+      addSeriesTableSheet(workbook, 'أداء الموظفين', employeeTrendDataAll.value, 'الموظف')
 
       /* ---------- Sheet 6: نجاح الزيارات (رسم المقارنة اليومي) ---------- */
 
-      addSeriesTableSheet(workbook, 'نجاح الزيارات', visitSuccessData.value, 'اليوم')
+      addSeriesTableSheet(workbook, 'نجاح الزيارات', { labels: visitSuccessRaw.value.labels, datasets: [{ label: 'الزيارات', data: visitSuccessRaw.value.visits }, { label: 'عملاء جدد', data: visitSuccessRaw.value.newCustomers }] }, 'اليوم')
 
       /* ---------- Sheet 7: الرسوم البيانية ---------- */
 
@@ -1455,7 +1595,7 @@
       row = addLegendRows(
         chartsSheet,
         row,
-        filteredSources.value.map(item => ({ label: `${item.label} (${item.percent}%)`, color: item.color }))
+        sourceLegend.value.map(item => ({ label: `${item.label} (${item.percent}%)`, color: item.color }))
       )
 
       row = addChartImage(

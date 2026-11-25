@@ -72,10 +72,25 @@ export const callsService = {
       state: queueItem.state,
     }, true)
   },
-  async getQueue({ signal, q = '', status = 'all' } = {}) {
+  mapCustomer(customer, position = 0) {
+    const id = customer?.id ?? customer?._id
+    return mapCall({
+      ...customer,
+      id,
+      leadId: id,
+      position,
+      state: 'pending',
+    }, true)
+  },
+  async getQueue({ signal, q = '', status = 'all', page = 1, limit = 10 } = {}) {
+    if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
+      throw new Error('رقم الصفحة أو عدد النتائج غير صحيح')
+    }
     const params = {}
     if (q?.trim()) params.q = q.trim()
     if (status && status !== 'all') params.status = status
+    params.page = page
+    params.limit = limit
     const data = await api.get(ENDPOINTS.calls.queue, { signal, params })
     return {
       items: readItems(data).map(item => mapCall(item, true)),

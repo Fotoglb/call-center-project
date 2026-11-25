@@ -67,6 +67,7 @@ export const ENDPOINTS = {
   },
 
   reports: {
+    overview: '/reports/overview',
     daily: '/reports/daily',
     summary: '/reports/daily',
     conversionTrend: '/reports/conversion',

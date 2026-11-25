@@ -2,6 +2,16 @@ import api from './api'
 import { ENDPOINTS } from './endpoints'
 
 export const reportsService = {
+  async getOverview(params = {}) {
+    const query = {}
+    if (params.dateFrom) query.from = params.dateFrom
+    if (params.dateTo) query.to = params.dateTo
+    const response = await api.get(ENDPOINTS.reports.overview, { params: query })
+    if (response?.success === false) throw new Error(response.message || 'تعذّر تحميل ملخص التقارير')
+    const data = response?.data ?? response
+    if (!data || typeof data !== 'object') throw new Error('تعذّر قراءة ملخص التقارير')
+    return { cards: data.cards ?? {}, sources: data.sources ?? {}, trend: Array.isArray(data.trend) ? data.trend : [] }
+  },
   async getDaily(date = '') {
     const response = await api.get(ENDPOINTS.reports.daily, { params: date ? { date } : {} })
     if (response?.success === false) throw new Error(response.message || 'تعذّر تحميل التقرير اليومي')

@@ -32,7 +32,7 @@
       <div class="call-queue bg-white rounded-2xl flex flex-col min-h-0 min-w-0">
         <!-- Scheduled Label -->
         <p class="text-base font-medium text-gray-900 px-4 pt-4">
-          قائمة المكالمات المجدولة – {{ queueDateLabel || todayLabel }}
+          {{ activeFilter === 'all' ? 'قائمة العملاء' : 'قائمة المكالمات المجدولة' }} – {{ queueDateLabel || todayLabel }}
         </p>
 
         <!-- Search -->
@@ -128,6 +128,16 @@
           <p v-if="filteredCalls.length === 0" class="text-center text-xs text-gray-400 py-8">
             لا توجد نتائج
           </p>
+          <div v-else-if="canLoadMore" class="flex justify-center pt-2">
+            <button
+              type="button"
+              class="rounded-lg border border-gray-200 px-4 py-2 text-xs text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="isLoadingMore"
+              @click="loadMoreCalls"
+            >
+              {{ isLoadingMore ? 'جارٍ تحميل المزيد...' : 'عرض المزيد' }}
+            </button>
+          </div>
           </template>
         </div>
       </div>
@@ -656,11 +666,19 @@
   ]
 
   const callsList = ref([])
+  const queuePage = ref(1)
+  const queueLimit = 10
+  const queueTotal = ref(null)
+  const isLoadingMore = ref(false)
   const queueDate = ref('')
   const queueDateLabel = computed(() => {
     if (!queueDate.value) return ''
     const parsed = new Date(queueDate.value)
-    return Number.isNaN(parsed.getTime()) ? queueDate.value : new Intl.DateTimeFormat('ar', { calendar: 'gregory', dateStyle: 'full' }).format(parsed)
+    if (Number.isNaN(parsed.getTime())) return queueDate.value
+    // The API date is the queue's calendar date. Keep its UTC day instead of
+    // allowing the browser timezone to shift midnight to the previous day.
+    const calendarDate = new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate(), 12)
+    return new Intl.DateTimeFormat('ar', { calendar: 'gregory', dateStyle: 'full' }).format(calendarDate)
   })
   function formatCallDuration(seconds) {
     if (seconds == null || !Number.isInteger(Number(seconds)) || Number(seconds) < 0) return '—'
@@ -671,40 +689,92 @@
   const isRescheduleList = computed(() => activeFilter.value === 'reschedule')
   let loadVersion = 0
 
-  async function loadCalls() {
+  const canLoadMore = computed(() => !searchQuery.value.trim() && queueTotal.value != null && callsList.value.length < queueTotal.value)
+
+  async function loadCalls({ append = false } = {}) {
     const requestVersion = ++loadVersion
-    isLoading.value = true
-    loadError.value = null
-    callsList.value = []
-    selectedCallId.value = null
-    selectedOutcome.value = ''
-    resultNote.value = ''
+    const query = searchQuery.value.trim()
+    const page = append ? queuePage.value + 1 : 1
+    if (!append) {
+      isLoading.value = true
+      loadError.value = null
+      callsList.value = []
+      selectedCallId.value = null
+      selectedOutcome.value = ''
+      resultNote.value = ''
+      queuePage.value = 1
+      queueTotal.value = null
+    } else {
+      isLoadingMore.value = true
+    }
     try {
-      const queue = await callsService.getQueue({ q: searchQuery.value, status: activeFilter.value })
+      let queue
+      if (query) {
+        const customers = await customersService.search(query, { limit: 10 })
+        queue = {
+          items: customers.map((customer, index) => callsService.mapCustomer(customer, index + 1)),
+          date: null,
+          meta: {},
+          counts: {},
+        }
+      } else if (activeFilter.value === 'all') {
+        const customers = await customersService.getList({ page, limit: queueLimit })
+        queue = {
+          items: customers.items.map((customer, index) => callsService.mapCustomer(customer, (page - 1) * queueLimit + index + 1)),
+          date: null,
+          meta: { total: customers.total },
+          counts: {},
+        }
+      } else {
+        queue = await callsService.getQueue({ status: activeFilter.value, page, limit: queueLimit })
+      }
       if (requestVersion !== loadVersion) return
       if (!Array.isArray(queue?.items)) {
         throw new Error('تعذّر قراءة استجابة قائمة المكالمات. يلزم تأكيد تنسيق البيانات من توثيق الخدمة.')
       }
-      callsList.value = queue.items
+      const previousLength = callsList.value.length
+      const nextItems = append ? [...callsList.value, ...queue.items] : queue.items
+      callsList.value = nextItems.filter((item, index, items) => items.findIndex(candidate => candidate.id === item.id) === index)
+      if (!query) {
+        queuePage.value = page
+        const rawTotal = queue.meta?.total ?? queue.meta?.count ?? queue.meta?.pagination?.total
+        queueTotal.value = Number.isFinite(Number(rawTotal))
+          ? Number(rawTotal)
+          : queue.items.length < queueLimit || (append && callsList.value.length === previousLength)
+            ? callsList.value.length
+            : callsList.value.length + 1
+      } else {
+        queueTotal.value = queue.items.length
+      }
       queueDate.value = queue.date ?? ''
       if (!selectedCallId.value && callsList.value.length) {
         selectedCallId.value = callsList.value[0].id
       }
     } catch (err) {
       if (requestVersion !== loadVersion) return
-      callsList.value = []
-      selectedCallId.value = null
+      if (!append) {
+        callsList.value = []
+        selectedCallId.value = null
+      }
       loadError.value = err
     } finally {
-      if (requestVersion === loadVersion) isLoading.value = false
+      if (requestVersion === loadVersion) {
+        isLoading.value = false
+        isLoadingMore.value = false
+      }
     }
+  }
+
+  function loadMoreCalls() {
+    if (isLoadingMore.value || !canLoadMore.value) return
+    loadCalls({ append: true })
   }
 
   onMounted(loadCalls)
   let queueSearchTimer = null
   watch([searchQuery, activeFilter], () => {
     clearTimeout(queueSearchTimer)
-    queueSearchTimer = setTimeout(loadCalls, 250)
+    queueSearchTimer = setTimeout(() => loadCalls(), 250)
   })
   onUnmounted(() => { loadVersion++; historyVersion++ })
 

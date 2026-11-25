@@ -151,9 +151,10 @@ export const customersService = {
     throw new Error('استجابة فحص التكرار غير معروفة؛ أرسل محتوى Response لطلب check-duplicate لتأكيد الربط')
   },
 
-  async search(query) {
+  async search(query, { limit = 10 } = {}) {
     if (typeof query !== 'string' || !query.trim()) return []
-    const response = await api.get(ENDPOINTS.search, { params: { q: query.trim(), limit: 5 } })
+    const safeLimit = Number.isInteger(limit) && limit > 0 && limit <= 100 ? limit : 10
+    const response = await api.get(ENDPOINTS.search, { params: { q: query.trim(), limit: safeLimit } })
     if (response?.success === false) throw new Error(response.message || 'تعذّر تنفيذ البحث')
     const body = response?.data ?? response
     const rows = Array.isArray(body) ? body : body?.items ?? body?.results ?? body?.leads ?? body?.customers
