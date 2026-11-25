@@ -111,13 +111,13 @@ export const callsService = {
     return response
   },
 
-  async getList({ page = 1, limit = 20, leadId = '', q = '', status = '', type = '', userId = '', signal } = {}) {
+  async getList({ page = 1, limit = 20, leadId = '', q = '', status = '', callStatus = '', type = '', userId = '', signal } = {}) {
     if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       throw new Error('رقم الصفحة أو عدد النتائج غير صحيح؛ الحد الأقصى 100')
     }
     if (typeof leadId !== 'string') throw new Error('معرّف العميل يجب أن يكون نصيًا')
     const params = { page, limit }
-    for (const [key, value] of Object.entries({ leadId, q, status, type, userId })) {
+    for (const [key, value] of Object.entries({ leadId, q, callStatus: callStatus || status, type, userId })) {
       if (typeof value !== 'string') throw new Error('قيم فلاتر المكالمات يجب أن تكون نصية')
       if (value.trim()) params[key] = value.trim()
     }

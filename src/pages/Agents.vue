@@ -390,7 +390,7 @@
           page,
           limit: pageSize.value,
           q: searchQuery.value,
-          status: statusFilter.value,
+          callStatus: statusFilter.value,
           type: typeFilter.value,
           userId: agentFilter.value,
         })
@@ -539,7 +539,7 @@
         page: currentPage.value,
         limit: pageSize.value,
         q: searchQuery.value,
-        status: statusFilter.value,
+        callStatus: statusFilter.value,
         type: typeFilter.value,
         userId: agentFilter.value,
       })
