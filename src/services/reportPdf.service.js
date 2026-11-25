@@ -50,7 +50,30 @@ export async function generateReportPdfBlob(element, { backgroundColor = '#FFFFF
     scale,
     backgroundColor,
     useCORS: true,
-    windowWidth: CAPTURE_WINDOW_WIDTH_PX
+    windowWidth: CAPTURE_WINDOW_WIDTH_PX,
+    onclone: clonedDocument => {
+      // PDF should contain the complete report, including content hidden
+      // behind the page's scrollable panels.
+      clonedDocument.querySelectorAll('*').forEach(node => {
+        const style = clonedDocument.defaultView?.getComputedStyle(node)
+        if (!style) return
+
+        const hasVerticalOverflow = node.scrollHeight > node.clientHeight && /(auto|scroll|hidden)/.test(style.overflowY)
+        const hasHorizontalOverflow = node.scrollWidth > node.clientWidth && /(auto|scroll|hidden)/.test(style.overflowX)
+
+        if (hasVerticalOverflow) {
+          node.style.height = 'auto'
+          node.style.maxHeight = 'none'
+          node.style.overflowY = 'visible'
+        }
+
+        if (hasHorizontalOverflow) {
+          node.style.width = `${node.scrollWidth}px`
+          node.style.maxWidth = 'none'
+          node.style.overflowX = 'visible'
+        }
+      })
+    }
   })
 
   const pxToMm = usableWidthMm / canvas.width

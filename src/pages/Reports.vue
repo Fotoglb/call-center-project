@@ -9,7 +9,7 @@
       </div>
 
       <!-- Export Actions -->
-      <div v-if="!isExportingPdf" class="flex flex-wrap items-center justify-end gap-2">
+      <div class="flex flex-wrap items-center justify-end gap-2">
         <div ref="shareMenuRef" class="relative">
           <button
             type="button"
@@ -42,7 +42,7 @@
         <button
           type="button"
           class="cursor-pointer rounded-lg bg-blue px-8 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="isExportingPdf || isShareBusy"
+          :disabled="isExportingPdf || isShareBusy || isLoading || !hasExportData"
           @click="onExportPdfClick"
         >
           {{ isExportingPdf ? '...جاري التجهيز' : 'PDF' }}
@@ -51,7 +51,7 @@
         <button
           type="button"
           class="cursor-pointer rounded-lg bg-blue-dark px-8 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="isExportingExcel"
+          :disabled="isExportingExcel || isLoading || !hasExportData"
           @click="exportExcel"
         >
           <span v-if="isExportingExcel" class="flex items-center gap-1.5">
@@ -356,7 +356,7 @@
           </div>
         </div>
 
-        <div class="chart-scroll" dir="ltr" tabindex="0" aria-label="تمرير مخطط نجاح الزيارات">
+        <div class="chart-scroll visit-success-scroll mt-2" dir="ltr" tabindex="0" aria-label="تمرير مخطط نجاح الزيارات">
           <div class="visit-success-canvas chart-container relative h-72" :style="{ width: `${Math.max(720, visitSuccessData.labels.length * 110)}px` }">
             <Bar v-if="hasChartData(visitSuccessData)" ref="visitChartRef" :data="visitSuccessData" :options="visitBarOptions" />
             <p v-else class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
@@ -407,7 +407,7 @@
           <tbody class="divide-y divide-gray-100">
             <tr v-if="!employeeRows.length"><td :colspan="isExportingPdf ? 9 : 10" class="px-4 py-8 text-center text-xs text-gray-400" role="status">{{ isLoading ? 'جارٍ التحميل...' : employeeReportError || 'لا يوجد بيانات' }}</td></tr>
             <tr
-              v-for="employee in employeeRows"
+              v-for="employee in (isExportingPdf ? employeeRows : employeePageRows)"
               :key="employee.id"
               class="transition-colors hover:bg-gray-50"
             >
@@ -462,7 +462,14 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </table>      <div v-if="!isExportingPdf && employeeRows.length" class="flex items-center justify-between gap-3 border-t border-gray-100 px-5 py-3 text-xs text-gray-500" dir="rtl">
+        <span>عرض {{ employeePageStart }}-{{ employeePageEnd }} من أصل {{ employeeRows.length }} موظف</span>
+        <div class="flex items-center gap-2" dir="ltr">
+          <button type="button" class="rounded-md border border-gray-200 px-3 py-1.5 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" :disabled="employeePage <= 1" @click="employeePage--">السابق</button>
+          <span class="tabular-nums">{{ employeePage }} / {{ employeeTotalPages }}</span>
+          <button type="button" class="rounded-md border border-gray-200 px-3 py-1.5 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" :disabled="employeePage >= employeeTotalPages" @click="employeePage++">التالي</button>
+        </div>
+      </div>
       </div>
     </div>
   </div>
@@ -472,7 +479,7 @@
   import { useAuthStore } from '@/stores/auth.store'
   const permissions = useAuthStore()
   import { useEmployees } from '@/composables/useEmployees'
-  import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
   import { Bar, Doughnut, Line } from 'vue-chartjs'
 
@@ -497,12 +504,12 @@
     Share2,
     Trash2
   } from '@lucide/vue'
-  import ExcelJS from 'exceljs'
 
   import { useNotification } from '@/composables/useNotification'
   import { useReportShare } from '@/composables/useReportShare'
-  import { generateReportPdfBlob } from '@/services/reportPdf.service'
+  import { exportReportsExcel, exportReportsPdf } from '@/utils/exportReports'
   import { buildPdfFileName } from '@/utils/fileName'
+  import { downloadBlob } from '@/utils/downloadFile'
   import { reportsService } from '@/services/reports.service'
 
   ChartJS.register(
@@ -966,6 +973,10 @@
 
   const visitBarOptions = {
     ...barOptions,
+    layout: {
+      ...barOptions.layout,
+      padding: { ...barOptions.layout.padding, top: 18, bottom: 24 }
+    },
     scales: {
       ...barOptions.scales,
       x: {
@@ -976,6 +987,7 @@
         ...barOptions.scales.y,
         min: 1,
         beginAtZero: false,
+        grace: '20%',
         ticks: { ...barOptions.scales.y.ticks, stepSize: 1, precision: 0 },
         title: { display: true, text: 'العدد', color: '#6B7280', font: { size: 11, family: 'Tajawal' } }
       }
@@ -1003,6 +1015,15 @@
   const employeeBusy = computed(() => !!updatingId.value || !!resettingId.value)
   const employeeReportError = ref('')
   const employeeRows = computed(() => employeePerformance.value.filter(employee => !agentFilter.value || employee.id === agentFilter.value))
+  const employeePage = ref(1)
+  const employeePageSize = 10
+  const employeeTotalPages = computed(() => Math.max(1, Math.ceil(employeeRows.value.length / employeePageSize)))
+  const employeePageRows = computed(() => {
+    const start = (employeePage.value - 1) * employeePageSize
+    return employeeRows.value.slice(start, start + employeePageSize)
+  })
+  const employeePageStart = computed(() => employeeRows.value.length ? (employeePage.value - 1) * employeePageSize + 1 : 0)
+  const employeePageEnd = computed(() => Math.min(employeePage.value * employeePageSize, employeeRows.value.length))
   const employeeMetric = ref('calls')
   const employeeMetricTotal = computed(() => currentEmployeeRows.value.reduce((sum, employee) => sum + Math.max(0, Number(employee[employeeMetric.value]) || 0), 0))
   const employeeDistribution = computed(() => currentEmployeeRows.value.map((employee, index) => {
@@ -1161,121 +1182,7 @@
 
   const isExportingExcel = ref(false)
   const notification = useNotification()
-
-  /* ----------------------------------------
-   * Excel export helpers
-   * -------------------------------------- */
-
-  function safeCell(value) {
-    if (value === null || value === undefined || value === '') {
-      return '-'
-    }
-
-    if (typeof value === 'number' && Number.isNaN(value)) {
-      return '-'
-    }
-
-    return value
-  }
-
-  function formatFileDate(date) {
-    if (!date) {
-      return ''
-    }
-
-    const [year, month, day] = date.split('-')
-
-    return `${day}-${month}-${year}`
-  }
-
-  function newRtlSheet(workbook, name) {
-    return workbook.addWorksheet(name, {
-      views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }]
-    })
-  }
-
-  function styleHeaderRow(row) {
-    row.eachCell(cell => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
-
-      cell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FF1F2937' }
-      }
-
-      cell.alignment = { vertical: 'middle', horizontal: 'center', readingOrder: 'rtl' }
-
-      cell.border = {
-        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-        left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-        right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
-      }
-    })
-
-    row.height = 22
-  }
-
-  function styleDataRows(worksheet) {
-    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
-      worksheet.getRow(rowNumber).eachCell({ includeEmpty: true }, cell => {
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
-        }
-
-        cell.alignment = { vertical: 'middle', horizontal: 'center', readingOrder: 'rtl' }
-      })
-    }
-  }
-
-  function autoSizeColumns(worksheet, minWidth = 12) {
-    worksheet.columns.forEach(column => {
-      let maxLength = minWidth
-
-      column.eachCell({ includeEmpty: true }, cell => {
-        const length = String(cell.value ?? '').length
-
-        if (length > maxLength) {
-          maxLength = length
-        }
-      })
-
-      column.width = Math.min(maxLength + 4, 45)
-    })
-  }
-
-  function addSeriesTableSheet(workbook, name, chartData, firstColumnHeader) {
-    const sheet = newRtlSheet(workbook, name)
-
-    sheet.columns = [
-      { header: firstColumnHeader, key: 'label' },
-      ...chartData.datasets.map((dataset, index) => ({
-        header: dataset.label ?? `سلسلة ${index + 1}`,
-        key: `series${index}`
-      }))
-    ]
-
-    chartData.labels.forEach((label, rowIndex) => {
-      const row = { label: safeCell(label) }
-
-      chartData.datasets.forEach((dataset, index) => {
-        row[`series${index}`] = safeCell(dataset.data[rowIndex])
-      })
-
-      sheet.addRow(row)
-    })
-
-    styleHeaderRow(sheet.getRow(1))
-    styleDataRows(sheet)
-    sheet.autoFilter = { from: 'A1', to: `${sheet.getColumn(sheet.columnCount).letter}1` }
-    autoSizeColumns(sheet)
-
-    return sheet
-  }
+  const hasExportData = computed(() => Boolean(overviewData.value?.trend?.length || overviewData.value?.sources?.rows?.length || employeeRows.value.length || displayedStats.value.some(stat => stat.value !== '')))
 
   function getChartInstance(componentRef) {
     const component = componentRef?.value
@@ -1284,396 +1191,105 @@
     return component?.chart ?? null
   }
 
-  function addChartImage(workbook, worksheet, title, chartInstance, startRow) {
-    worksheet.getCell(`A${startRow}`).value = title
-    worksheet.getCell(`A${startRow}`).font = { bold: true, size: 13, color: { argb: 'FF111827' } }
-    worksheet.getCell(`A${startRow}`).alignment = { horizontal: 'right', readingOrder: 'rtl' }
+  function chartImage(componentRef) {
+    const chart = getChartInstance(componentRef)
+    return chart?.canvas ? chart.toBase64Image('image/png', 1) : ''
+  }
 
-    if (!chartInstance || !chartInstance.canvas) {
-      worksheet.getCell(`A${startRow + 1}`).value = 'الرسم غير متاح للتصدير'
+  async function highResolutionChartImage(type, data, options, itemCount) {
+    await document.fonts?.ready
+    const baseWidth = type === 'doughnut' ? 900 : Math.max(1500, Math.min(3000, 900 + itemCount * 110))
+    const baseHeight = type === 'doughnut' ? 760 : 720
+    const host = document.createElement('div')
+    host.style.cssText = `position:absolute;left:-20000px;top:0;width:${baseWidth}px;height:${baseHeight}px;background:#fff;`
+    const canvas = document.createElement('canvas')
+    canvas.width = baseWidth
+    canvas.height = baseHeight
+    canvas.style.width = `${baseWidth}px`
+    canvas.style.height = `${baseHeight}px`
+    host.appendChild(canvas)
+    document.body.appendChild(host)
+    const exportOptions = JSON.parse(JSON.stringify(options || {}))
+    exportOptions.responsive = false
+    exportOptions.maintainAspectRatio = false
+    exportOptions.animation = false
+    exportOptions.devicePixelRatio = 3
+    const chart = new ChartJS(canvas, { type, data: JSON.parse(JSON.stringify(data)), options: exportOptions })
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    const image = chart.toBase64Image('image/png', 1)
+    chart.destroy()
+    host.remove()
+    return image
+  }
 
-      return startRow + 3
+  async function exportPayload(highResolution = false) {
+    const meta = {
+      from: dateFrom.value,
+      to: dateTo.value,
+      filters: 'الفترة: ' + periodLabel.value + ' | الموظف: ' + (reportEmployeeOptions.value.find(employee => employee.id === agentFilter.value)?.name || 'الكل') + ' | المصدر: ' + (sourceLegend.value.find(source => (source.sourceId ?? source.label) === sourceFilter.value)?.label || 'الكل'),
+      exportedAt: new Date().toLocaleString('ar', { calendar: 'gregory', dateStyle: 'medium', timeStyle: 'short' })
     }
-
-    const canvas = chartInstance.canvas
-    const dpr = window.devicePixelRatio || 1
-    const widthPx = canvas.width / dpr
-    const heightPx = canvas.height / dpr
-
-    const base64 = chartInstance.toBase64Image('image/png', 1)
-    const imageId = workbook.addImage({ base64, extension: 'png' })
-
-    worksheet.addImage(imageId, {
-      tl: { col: 0.3, row: startRow + 0.3 },
-      ext: { width: widthPx, height: heightPx }
-    })
-
-    const rowsUsed = Math.ceil(heightPx / 20) + 2
-
-    return startRow + rowsUsed
+    const cards = displayedStats.value.map(stat => ({ label: stat.label, value: stat.value, unit: stat.unit }))
+    const trend = (overviewData.value?.trend ?? []).map(row => ({ date: row.date, leads: row.leads, converted: row.converted, calls: row.calls, visits: row.visits }))
+    const sources = (overviewData.value?.sources?.rows ?? []).filter(row => !sourceFilter.value || row.sourceId === sourceFilter.value)
+    const employees = currentEmployeeRows.value.map(row => ({ name: row.name, calls: row.calls, newCustomers: row.newCustomers, conversions: row.conversions }))
+    const employeeTable = employeeRows.value.map(row => ({ name: row.name, calls: row.calls, newCustomers: row.newCustomers, conversions: row.conversions, conversionRate: row.conversionRate, interested: row.interested, noAnswer: row.noAnswer, avgDurationSec: row.avgDurationSec, visits: row.visits, visitSuccessRate: row.visitSuccessRate, score: row.score, performance: row.performance }))
+    const charts = highResolution
+      ? {
+          conversion: await highResolutionChartImage('line', conversionTrendData.value, lineOptions, trend.length),
+          sources: await highResolutionChartImage('doughnut', sourceChartData.value, donutOptions, sources.length),
+          employees: await highResolutionChartImage('doughnut', employeeDonutData.value, donutOptions, employees.length),
+          visits: await highResolutionChartImage('bar', visitSuccessData.value, visitBarOptions, trend.length),
+        }
+      : { conversion: chartImage(conversionChartRef), sources: chartImage(sourceChartRef), employees: chartImage(employeeChartRef), visits: chartImage(visitChartRef) }
+    return { meta, cards, trend, sources, employees, visitTrend: trend.map(row => ({ date: row.date, visits: row.visits })), employeeTable, charts }
   }
-
-  function addLegendRows(worksheet, startRow, items) {
-    let row = startRow
-
-    items.forEach(item => {
-      worksheet.getCell(`A${row}`).value = item.label
-      worksheet.getCell(`A${row}`).alignment = { horizontal: 'right', readingOrder: 'rtl' }
-
-      worksheet.getCell(`B${row}`).value = ' '
-
-      worksheet.getCell(`B${row}`).fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: `FF${item.color.replace('#', '')}` }
-      }
-
-      row++
-    })
-
-    return row + 1
-  }
-
-  /* ----------------------------------------
-   * Excel export
-   * -------------------------------------- */
 
   async function exportExcel() {
-    if (isExportingExcel.value) {
+    if (isExportingExcel.value || isLoading.value) return
+    const failedSection = [overviewError.value, dailyError.value, sourcesError.value, conversionError.value, employeeReportError.value, currentEmployeeError.value].find(Boolean)
+    if (failedSection) {
+      notification.error('تعذر تصدير التقرير لأن جزءاً من البيانات لم يكتمل تحميله')
       return
     }
-
+    const payload = await exportPayload(true)
+    if (!payload.trend.length && !payload.sources.length && !payload.employeeTable.length && !payload.cards.some(card => card.value !== '')) {
+      notification.error('لا توجد بيانات قابلة للتصدير')
+      return
+    }
     isExportingExcel.value = true
-
     try {
-      await nextTick()
-
-      const workbook = new ExcelJS.Workbook()
-      workbook.creator = 'نظام مركز الاتصال'
-      workbook.created = new Date()
-
-      /* ---------- Sheet 1: ملخص التقرير ---------- */
-
-      const summarySheet = newRtlSheet(workbook, 'تقرير الصفحة')
-
-      summarySheet.columns = [
-        { header: 'المؤشر', key: 'label' },
-        { header: 'القيمة', key: 'value' }
-      ]
-
-      displayedStats.value.forEach(stat => {
-        summarySheet.addRow({ label: safeCell(stat.label), value: safeCell(stat.unit && typeof stat.value === 'number' ? `${stat.value}${stat.unit}` : stat.value) })
-      })
-
-      const dailyOutcomes = dailyData.value?.byOutcome ?? {}
-      summarySheet.addRow({ label: 'نتائج المكالمات اليومية', value: '' })
-      Object.entries(dailyOutcomes).forEach(([outcome, count]) => {
-        summarySheet.addRow({ label: safeCell(outcome), value: safeCell(count) })
-      })
-
-      summarySheet.addRow({
-        label: 'الفترة الزمنية',
-        value: `${dateFrom.value} إلى ${dateTo.value}`
-      })
-
-      summarySheet.addRow({
-        label: 'الموظف المحدد',
-        value: safeCell(reportEmployeeOptions.value.find(employee => employee.id === agentFilter.value)?.name || 'جميع الموظفين')
-      })
-
-      summarySheet.addRow({
-        label: 'المصدر المحدد',
-        value: safeCell(sourceLegend.value.find(source => (source.sourceId ?? source.label) === sourceFilter.value)?.label || 'جميع المصادر')
-      })
-
-      summarySheet.addRow({ label: 'الفترة المحددة', value: periodLabel.value })
-
-      styleHeaderRow(summarySheet.getRow(1))
-      styleDataRows(summarySheet)
-      summarySheet.autoFilter = 'A1:B1'
-      autoSizeColumns(summarySheet, 18)
-
-      function addInlineTable(title, headers, rows) {
-        summarySheet.addRow([])
-        const titleRow = summarySheet.addRow([title])
-        titleRow.getCell(1).font = { bold: true, size: 13, color: { argb: 'FF111827' } }
-        const headerRow = summarySheet.addRow(headers.map(safeCell))
-        styleHeaderRow(headerRow)
-        rows.forEach(values => summarySheet.addRow(values.map(safeCell)))
-        const firstDataRow = summarySheet.rowCount - rows.length + 1
-        for (let rowNumber = firstDataRow; rowNumber <= summarySheet.rowCount; rowNumber++) {
-          summarySheet.getRow(rowNumber).eachCell({ includeEmpty: true }, cell => {
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-              left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-              bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-              right: { style: 'thin', color: { argb: 'FFE5E7EB' } }
-            }
-            cell.alignment = { vertical: 'middle', horizontal: 'center', readingOrder: 'rtl' }
-          })
-        }
-      }
-
-      const padSummaryRows = targetRow => {
-        while (summarySheet.rowCount < targetRow) summarySheet.addRow([])
-      }
-
-      let summaryChartRow = summarySheet.rowCount + 2
-      summaryChartRow = addChartImage(workbook, summarySheet, 'معدل التحويل — الاتجاه الزمني', getChartInstance(conversionChartRef), summaryChartRow)
-      padSummaryRows(summaryChartRow)
-      addInlineTable('بيانات الاتجاه الزمني', ['التاريخ', 'عملاء جدد', 'التحويلات', 'المكالمات', 'الزيارات'],
-        (overviewData.value?.trend ?? []).map(row => [row.date, row.leads, row.converted, row.calls, row.visits]))
-      summaryChartRow = summarySheet.rowCount + 2
-      summaryChartRow = addChartImage(workbook, summarySheet, 'توزيع مصادر العملاء', getChartInstance(sourceChartRef), summaryChartRow)
-      padSummaryRows(summaryChartRow)
-      addInlineTable('مصادر العملاء', ['المصدر', 'النسبة', 'عدد العملاء', 'اللون'],
-        sourceLegend.value.map(row => [row.label, `${row.percent}%`, row.count, row.color]))
-      summaryChartRow = summarySheet.rowCount + 2
-      summaryChartRow = addChartImage(workbook, summarySheet, 'أداء الموظفين', getChartInstance(employeeChartRef), summaryChartRow)
-      padSummaryRows(summaryChartRow)
-      addInlineTable('أداء الموظفين', ['الموظف', 'المكالمات', 'عملاء جدد', 'التحويلات', 'معدل التحويل'],
-        employeePerformance.value.map(row => [row.name, row.calls, row.newCustomers, row.conversions, row.conversionRate == null ? '' : `${row.conversionRate}%`]))
-      summaryChartRow = summarySheet.rowCount + 2
-      addChartImage(workbook, summarySheet, 'معدل نجاح الزيارات', getChartInstance(visitChartRef), summaryChartRow)
-      padSummaryRows(summaryChartRow)
-      addInlineTable('نجاح الزيارات', ['التاريخ', 'الزيارات'],
-        visitSuccessRaw.value.labels.map((label, index) => [label, visitSuccessRaw.value.visits[index]]))
-      autoSizeColumns(summarySheet, 18)
-
-      /* ---------- Sheet 2: الاتجاه الزمني ---------- */
-
-      const trendSheet = newRtlSheet(workbook, 'الاتجاه الزمني')
-
-      const overviewTrend = Array.isArray(overviewData.value?.trend) ? overviewData.value.trend : []
-
-      trendSheet.columns = [
-        { header: 'اليوم', key: 'day' },
-        { header: 'عملاء جدد', key: 'leads' },
-        { header: 'التحويلات', key: 'converted' },
-        { header: 'المكالمات', key: 'calls' },
-        { header: 'الزيارات', key: 'visits' },
-      ]
-      overviewTrend.forEach(row => {
-        trendSheet.addRow({
-          day: safeCell(row.date),
-          leads: safeCell(row.leads),
-          converted: safeCell(row.converted),
-          calls: safeCell(row.calls),
-          visits: safeCell(row.visits),
-        })
-      })
-
-      styleHeaderRow(trendSheet.getRow(1))
-      styleDataRows(trendSheet)
-      trendSheet.autoFilter = 'A1:E1'
-      autoSizeColumns(trendSheet)
-
-      /* ---------- Sheet 3: مصادر العملاء ---------- */
-
-      const sourcesSheet = newRtlSheet(workbook, 'مصادر العملاء')
-
-      sourcesSheet.columns = [
-        { header: 'المصدر', key: 'label' },
-        { header: 'النسبة المئوية', key: 'percent' },
-        { header: 'اللون', key: 'color' },
-        { header: 'عدد العملاء', key: 'count' }
-      ]
-
-      sourceLegend.value.forEach(item => {
-        sourcesSheet.addRow({
-          label: safeCell(item.label),
-          percent: item.percent / 100,
-          color: safeCell(item.color),
-          count: safeCell(item.count)
-        })
-      })
-
-      sourcesSheet.getColumn('percent').numFmt = '0%'
-
-      styleHeaderRow(sourcesSheet.getRow(1))
-      styleDataRows(sourcesSheet)
-
-      sourceLegend.value.forEach((item, index) => {
-        sourcesSheet.getCell(`C${index + 2}`).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: `FF${item.color.replace('#', '')}` }
-        }
-
-        sourcesSheet.getCell(`C${index + 2}`).font = { color: { argb: 'FFFFFFFF' } }
-      })
-
-      sourcesSheet.autoFilter = 'A1:D1'
-      autoSizeColumns(sourcesSheet)
-
-      /* ---------- Sheet 4: البيانات التفصيلية ---------- */
-
-      const detailSheet = newRtlSheet(workbook, 'البيانات التفصيلية')
-
-      detailSheet.columns = [
-        { header: 'الموظف', key: 'name' },
-        { header: 'عدد المكالمات', key: 'calls' },
-        { header: 'عملاء جدد', key: 'newCustomers' },
-        { header: 'التحويلات', key: 'conversions' },
-        { header: 'معدل التحويل', key: 'conversionRate' },
-        { header: 'مهتم', key: 'interested' },
-        { header: 'لا يرد', key: 'noAnswer' },
-        { header: 'متوسط مدة المكالمة (ثانية)', key: 'avgDurationSec' },
-        { header: 'الزيارات', key: 'visits' },
-        { header: 'نجاح الزيارات', key: 'visitSuccessRate' },
-        { header: 'نقاط الأداء', key: 'score' },
-        { header: 'الأداء', key: 'performance' }
-      ]
-
-      employeePerformance.value.forEach(employee => {
-        detailSheet.addRow({
-          name: safeCell(employee.name),
-          calls: safeCell(employee.calls),
-          newCustomers: safeCell(employee.newCustomers),
-          conversions: safeCell(employee.conversions),
-          conversionRate: employee.conversionRate == null ? '' : employee.conversionRate / 100,
-          interested: safeCell(employee.interested),
-          noAnswer: safeCell(employee.noAnswer),
-          avgDurationSec: safeCell(employee.avgDurationSec),
-          visits: safeCell(employee.visits),
-          visitSuccessRate: employee.visitSuccessRate == null ? '' : employee.visitSuccessRate / 100,
-          score: safeCell(employee.score),
-          performance: safeCell(employee.performance)
-        })
-      })
-
-      detailSheet.getColumn('conversionRate').numFmt = '0%'
-      detailSheet.getColumn('visitSuccessRate').numFmt = '0%'
-
-      styleHeaderRow(detailSheet.getRow(1))
-      styleDataRows(detailSheet)
-      detailSheet.autoFilter = 'A1:L1'
-      autoSizeColumns(detailSheet)
-
-      /* ---------- Sheet 5: أداء الموظفين (رسم المقارنة اليومي) ---------- */
-
-      addSeriesTableSheet(workbook, 'أداء الموظفين', employeeTrendDataAll.value, 'الموظف')
-
-      /* ---------- Sheet 6: نجاح الزيارات (رسم المقارنة اليومي) ---------- */
-
-      addSeriesTableSheet(workbook, 'نجاح الزيارات', { labels: visitSuccessRaw.value.labels, datasets: [{ label: 'الزيارات', data: visitSuccessRaw.value.visits }, { label: 'عملاء جدد', data: visitSuccessRaw.value.newCustomers }] }, 'اليوم')
-
-      /* ---------- Sheet 7: الرسوم البيانية ---------- */
-
-      const chartsSheet = newRtlSheet(workbook, 'الرسوم البيانية')
-      chartsSheet.views = [{ rightToLeft: true }]
-      chartsSheet.getColumn(1).width = 90
-      chartsSheet.getColumn(2).width = 14
-
-      let row = 1
-
-      row = addChartImage(
-        workbook,
-        chartsSheet,
-        'معدل التحويل — الاتجاه الزمني',
-        getChartInstance(conversionChartRef),
-        row
-      )
-
-      row = addLegendRows(
-        chartsSheet,
-        row,
-        conversionTrendData.value.datasets.map(dataset => ({
-          label: dataset.label,
-          color: dataset.backgroundColor
-        }))
-      )
-
-      row = addChartImage(
-        workbook,
-        chartsSheet,
-        'توزيع مصادر العملاء',
-        getChartInstance(sourceChartRef),
-        row
-      )
-
-      row = addLegendRows(
-        chartsSheet,
-        row,
-        sourceLegend.value.map(item => ({ label: `${item.label} (${item.percent}%)`, color: item.color }))
-      )
-
-      row = addChartImage(
-        workbook,
-        chartsSheet,
-        'أداء الموظفين',
-        getChartInstance(employeeChartRef),
-        row
-      )
-
-      row = addLegendRows(
-        chartsSheet,
-        row,
-        employeeDistribution.value.map(employee => ({
-          label: `${employee.name} (${employee.percent}%)`,
-          color: employee.color
-        }))
-      )
-
-      row = addChartImage(
-        workbook,
-        chartsSheet,
-        'معدل نجاح الزيارات',
-        getChartInstance(visitChartRef),
-        row
-      )
-
-      addLegendRows(
-        chartsSheet,
-        row,
-        visitSuccessData.value.datasets.map(dataset => ({
-          label: dataset.label,
-          color: dataset.backgroundColor
-        }))
-      )
-
-      /* ---------- Save ---------- */
-
-      const buffer = await workbook.xlsx.writeBuffer()
-
-      const blob = new Blob([buffer], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      })
-
+      const blob = await exportReportsExcel(payload)
+      const stamp = dateFrom.value + '_' + dateTo.value
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
-
       link.href = url
-      link.download = `تقرير_التحليلات_من_${formatFileDate(dateFrom.value)}_إلى_${formatFileDate(dateTo.value)}.xlsx`
-
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-
+      link.download = 'تقرير_التقارير_والتحليلات_' + stamp + '.xlsx'
+      document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url)
       notification.success('تم تصدير التقرير إلى Excel بنجاح')
     } catch (error) {
       console.error('Excel export failed:', error)
-      notification.error('حدث خطأ أثناء تصدير التقرير، حاول مرة أخرى')
+      notification.error(error.message || 'حدث خطأ أثناء تصدير التقرير')
     } finally {
       isExportingExcel.value = false
     }
   }
 
   async function captureReportPdf() {
-    if (!reportRoot.value) {
-      throw new Error('Report root element is not available')
+    if (isExportingPdf.value || isLoading.value) return
+    const failedSection = [overviewError.value, dailyError.value, sourcesError.value, conversionError.value, employeeReportError.value, currentEmployeeError.value].find(Boolean)
+    if (failedSection) {
+      notification.error('تعذر تصدير التقرير لأن جزءاً من البيانات لم يكتمل تحميله')
+      return
     }
-
-    if (isExportingPdf.value) {
-      throw new Error('A PDF export is already in progress')
+    const payload = await exportPayload(false)
+    if (!payload.trend.length && !payload.sources.length && !payload.employeeTable.length && !payload.cards.some(card => card.value !== '')) {
+      notification.error('لا توجد بيانات قابلة للتصدير')
+      return
     }
-
     isExportingPdf.value = true
-    await nextTick()
-
     try {
-      return await generateReportPdfBlob(reportRoot.value)
+      return await exportReportsPdf(payload)
     } finally {
       isExportingPdf.value = false
     }
@@ -1698,6 +1314,9 @@
   })
 
   watch([agentFilter, sourceFilter], invalidatePreparedReport)
+  watch(employeeRows, () => {
+    employeePage.value = 1
+  })
   watch(employeeMetric, invalidatePreparedReport)
   watch([period, dateFrom, dateTo], () => {
     invalidatePreparedReport()
@@ -1719,11 +1338,17 @@
   const isShareBusy = computed(() => isSharePreparing.value || isReportSharing.value)
 
   async function onExportPdfClick() {
-    if (isShareBusy.value || isExportingPdf.value) {
+    if (isShareBusy.value || isExportingPdf.value || isLoading.value || !hasExportData.value) {
       return
     }
 
-    await downloadReport()
+    try {
+      const blob = await captureReportPdf()
+      if (blob) downloadBlob(blob, buildPdfFileName('تقرير-التقارير-والتحليلات-' + dateFrom.value + '-' + dateTo.value))
+    } catch (error) {
+      console.error('Report PDF export failed:', error)
+      notification.error(error.message || 'تعذر تصدير التقرير إلى PDF')
+    }
   }
 </script>
 
@@ -1791,6 +1416,11 @@
     scrollbar-width: thin;
     overscroll-behavior-x: contain;
     flex: 1;
+  }
+  .visit-success-scroll {
+    padding-top: 24px;
+    padding-bottom: 36px;
+    box-sizing: border-box;
   }
   .sources-panel > h3 {
     font-size: 18px;

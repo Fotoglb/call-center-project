@@ -111,19 +111,19 @@
         <div class="flex items-center gap-2 shrink-0">
           <button
             :disabled="isExporting || isLoading || !!loadError || !allCalls.length"
-            @click="exportTable('excel')"
+            @click="openExportDialog('excel')"
             class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileSpreadsheet :size="14" />
-            Excel
+            {{ isExporting ? 'جارٍ التجهيز...' : 'Excel' }}
           </button>
           <button
             :disabled="isExporting || isLoading || !!loadError || !allCalls.length"
-            @click="exportTable('pdf')"
+            @click="openExportDialog('pdf')"
             class="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileText :size="14" />
-            PDF
+            {{ isExporting ? 'جارٍ التجهيز...' : 'PDF' }}
           </button>
         </div>
       </div>
@@ -275,6 +275,28 @@
       </div>
     </div>
     </div>
+    <div v-if="exportDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" @click.self="closeExportDialog">
+      <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl" role="dialog" aria-modal="true">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-base font-bold text-gray-900">نطاق التصدير</h2>
+          <button type="button" class="text-gray-400 hover:text-gray-700" @click="closeExportDialog">×</button>
+        </div>
+        <div class="space-y-3 text-sm text-gray-700">
+          <label class="flex cursor-pointer items-center gap-2"><input v-model="exportScope" type="radio" value="all" /> تصدير جميع الصفحات ({{ totalPages }})</label>
+          <label class="flex cursor-pointer items-center gap-2"><input v-model="exportScope" type="radio" value="current" /> تصدير الصفحة الحالية ({{ currentPage }})</label>
+          <label class="flex cursor-pointer items-center gap-2"><input v-model="exportScope" type="radio" value="range" /> تصدير نطاق صفحات</label>
+          <div v-if="exportScope === 'range'" class="grid grid-cols-2 gap-2">
+            <label class="text-xs text-gray-500">من صفحة<input v-model.number="exportFromPage" type="number" min="1" :max="totalPages" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" /></label>
+            <label class="text-xs text-gray-500">إلى صفحة<input v-model.number="exportToPage" type="number" min="1" :max="totalPages" class="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" /></label>
+          </div>
+          <p v-if="exportRangeError" class="text-xs text-red-500">{{ exportRangeError }}</p>
+        </div>
+        <div class="mt-5 flex justify-end gap-2">
+          <button type="button" class="rounded-lg border border-gray-200 px-4 py-2 text-xs text-gray-600" @click="closeExportDialog">إلغاء</button>
+          <button type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-xs text-white disabled:opacity-50" :disabled="isExporting" @click="confirmExport">تصدير</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -308,14 +330,95 @@
 
   const notification = useNotification()
   const isExporting = ref(false)
-  async function exportTable(format) {
+  const exportDialogOpen = ref(false)
+  const exportScope = ref('all')
+  const exportFromPage = ref(1)
+  const exportToPage = ref(1)
+  const exportFormat = ref('excel')
+  const exportRangeError = ref('')
+
+  function openExportDialog(format) {
+    if (isExporting.value || isLoading.value || loadError.value || !allCalls.value.length) return
+    exportFormat.value = format
+    exportScope.value = 'all'
+    exportFromPage.value = currentPage.value
+    exportToPage.value = currentPage.value
+    exportRangeError.value = ''
+    exportDialogOpen.value = true
+  }
+
+  function closeExportDialog() {
+    if (!isExporting.value) exportDialogOpen.value = false
+  }
+
+  function confirmExport() {
+    const maxPage = totalPages.value
+    let from = 1
+    let to = maxPage
+    if (exportScope.value === 'current') from = to = currentPage.value
+    if (exportScope.value === 'range') {
+      from = Number(exportFromPage.value); to = Number(exportToPage.value)
+      if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from || to > maxPage) {
+        exportRangeError.value = `النطاق يجب أن يكون بين 1 و${maxPage}، وأن تكون صفحة البداية قبل صفحة النهاية`
+        return
+      }
+    }
+    exportRangeError.value = ''
+    exportDialogOpen.value = false
+    exportTable(exportFormat.value, from, to)
+  }
+
+  async function exportTable(format, fromPage = 1, toPage = totalPages.value) {
     if (isExporting.value || isLoading.value || loadError.value || !allCalls.value.length) return
     isExporting.value = true
-    const rows = allCalls.value.map(call => [call.name, call.phone, call.agent, call.type, call.date, call.lastContact, formatDuration(call.durationSec), call.status, call.note])
     try {
+      const exportItems = []
+      const seenIds = new Set()
+      let page = fromPage
+      let total = null
+      do {
+        const isCurrentPage = page === currentPage.value
+        const response = isCurrentPage ? { items: allCalls.value, total: serverTotal.value } : await callsService.getList({
+          page,
+          limit: pageSize.value,
+          q: searchQuery.value,
+          status: statusFilter.value,
+          type: typeFilter.value,
+          userId: agentFilter.value,
+        })
+        const freshItems = response.items.filter(item => {
+          const id = item.id ?? item._id
+          if (!id || seenIds.has(id)) return !id
+          seenIds.add(id)
+          return true
+        })
+        exportItems.push(...freshItems)
+        total = response.total
+        if (!response.items.length || response.items.length < (isCurrentPage ? pageSize.value : pageSize.value) || !freshItems.length || page >= toPage) break
+        page += 1
+      } while (page <= toPage)
+
+      if (!exportItems.length) {
+        notification.error('لا توجد بيانات لتصديرها')
+        return
+      }
+
+      const rows = exportItems.map(call => [call.name, call.phone, call.agent, call.type, call.date, call.lastContact, formatDuration(call.durationSec), call.status, call.note])
+      const selectedAgent = agentsList.value.find(agent => agent.id === agentFilter.value)
+      const selectedStatus = stats.value.find(stat => stat.key === statusFilter.value)
       const { exportCallsExcel, exportCallsPdf } = await import('@/utils/exportCalls')
-      const blob = await (format === 'excel' ? exportCallsExcel(rows) : exportCallsPdf(rows))
-      downloadBlob(blob, `سجل_المكالمات.${format === 'excel' ? 'xlsx' : 'pdf'}`)
+      const exportOptions = {
+        title: 'سجل المكالمات',
+        filters: {
+          search: searchQuery.value.trim(),
+          type: typeFilter.value,
+          agent: selectedAgent?.name || agentFilter.value,
+          status: selectedStatus?.label || statusFilter.value,
+        },
+      }
+      const blob = await (format === 'excel' ? exportCallsExcel(rows, exportOptions) : exportCallsPdf(rows, exportOptions))
+      const stamp = new Date().toISOString().slice(0, 10)
+      downloadBlob(blob, `سجل_المكالمات_${stamp}.${format === 'excel' ? 'xlsx' : 'pdf'}`)
     } catch (error) {
       notification.error(error.message || 'تعذّر تصدير سجل المكالمات')
     } finally {

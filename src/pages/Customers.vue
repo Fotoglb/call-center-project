@@ -28,9 +28,9 @@
           </button>
           <button
             type="button"
-            :disabled="isDownloadingTemplate"
+            :disabled="isDownloadingTemplate || isLoading || !!loadError || !paginatedCustomers.length"
             :aria-busy="isDownloadingTemplate"
-            @click="downloadTemplate"
+            @click="openCustomerExportDialog"
             class="flex items-center gap-1.5 text-xs font-medium text-blue bg-blue-light rounded-lg sm:px-3 px-1 py-2 hover:opacity-90 cursor-pointer transition-colors"
           >
             <Plus :size="14" />
@@ -302,7 +302,7 @@
       </div>
     </div>
 
-    <ConfirmDialog
+      <ConfirmDialog
       v-model="isDeleteDialogOpen"
       title="حذف العميل"
       :message="`هل أنت متأكد من حذف “${customerToDelete?.name}”؟`"
@@ -310,7 +310,26 @@
       cancel-text="إلغاء"
       @confirm="confirmDelete"
       @cancel="customerToDelete = null"
-    />
+      />
+      <div v-if="customerExportDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" @click.self="customerExportDialogOpen = false">
+        <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl" role="dialog" aria-modal="true">
+          <h2 class="mb-4 text-base font-bold text-gray-900">نطاق تصدير العملاء</h2>
+          <div class="space-y-3 text-sm text-gray-700">
+            <label class="flex items-center gap-2"><input v-model="customerExportScope" type="radio" value="all" /> تصدير جميع الصفحات ({{ totalPages }})</label>
+            <label class="flex items-center gap-2"><input v-model="customerExportScope" type="radio" value="current" /> تصدير الصفحة الحالية ({{ currentPage }})</label>
+            <label class="flex items-center gap-2"><input v-model="customerExportScope" type="radio" value="range" /> تصدير نطاق صفحات</label>
+            <div v-if="customerExportScope === 'range'" class="grid grid-cols-2 gap-2">
+              <input v-model.number="customerExportFrom" type="number" min="1" :max="totalPages" placeholder="من صفحة" class="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+              <input v-model.number="customerExportTo" type="number" min="1" :max="totalPages" placeholder="إلى صفحة" class="rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+            </div>
+            <p v-if="customerExportError" class="text-xs text-red-500">{{ customerExportError }}</p>
+          </div>
+          <div class="mt-5 flex justify-end gap-2">
+            <button type="button" class="rounded-lg border border-gray-200 px-4 py-2 text-xs text-gray-600" @click="customerExportDialogOpen = false">إلغاء</button>
+            <button type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-xs text-white" :disabled="isDownloadingTemplate" @click="confirmCustomerExport">تصدير</button>
+          </div>
+        </div>
+      </div>
   </div>
 </template>
 
@@ -352,7 +371,25 @@
     }
   }
   const isDownloadingTemplate = ref(false)
-  async function downloadTemplate() {
+  const customerExportDialogOpen = ref(false)
+  const customerExportScope = ref('all')
+  const customerExportFrom = ref(1)
+  const customerExportTo = ref(1)
+  const customerExportError = ref('')
+  function openCustomerExportDialog() {
+    if (isDownloadingTemplate.value || isLoading.value || loadError.value || !paginatedCustomers.value.length) return
+    customerExportScope.value = 'all'; customerExportFrom.value = currentPage.value; customerExportTo.value = currentPage.value; customerExportError.value = ''; customerExportDialogOpen.value = true
+  }
+  function confirmCustomerExport() {
+    let from = 1; let to = totalPages.value
+    if (customerExportScope.value === 'current') from = to = currentPage.value
+    if (customerExportScope.value === 'range') {
+      from = Number(customerExportFrom.value); to = Number(customerExportTo.value)
+      if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from || to > totalPages.value) { customerExportError.value = `النطاق يجب أن يكون بين 1 و${totalPages.value}`; return }
+    }
+    customerExportError.value = ''; customerExportDialogOpen.value = false; downloadTemplate(from, to)
+  }
+  async function downloadTemplate(fromPage = 1, toPage = totalPages.value) {
     if (isDownloadingTemplate.value) return
     isDownloadingTemplate.value = true
     try {
@@ -360,8 +397,10 @@
       const rows = []
       const seen = new Set()
       let fetched = 0
-      for (let page = 1; ; page++) {
-        const result = await customersService.getList({ ...params, page, limit: 100 })
+      for (let page = fromPage; page <= toPage; page++) {
+        const result = page === currentPage.value
+          ? { items: paginatedCustomers.value, total: totalCustomers.value }
+          : await customersService.getList({ ...params, page, limit: pageSize.value })
         let added = 0
         for (const row of result.items) {
           if (row.id && seen.has(row.id)) continue
@@ -370,9 +409,9 @@
           rows.push(row)
         }
         fetched += result.items.length
-        if (!result.items.length || (result.total !== null && fetched >= result.total)) break
+        if (!result.items.length || page >= toPage || (result.total !== null && fetched >= result.total)) break
         if (!added) throw new Error('تعذّر جلب جميع العملاء للتصدير')
-        if (result.total === null && result.items.length < 100) break
+        if (result.total === null && result.items.length < pageSize.value) break
       }
       if (!rows.length) {
         notification.error('لا توجد بيانات للتصدير')
