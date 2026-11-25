@@ -327,6 +327,7 @@
   import { usersService } from '@/services/users.service'
   import { downloadBlob } from '@/utils/downloadFile'
   import { useNotification } from '@/composables/useNotification'
+  import { exportCallsExcel, exportCallsPdf } from '@/utils/exportCalls'
 
   const notification = useNotification()
   const isExporting = ref(false)
@@ -414,7 +415,6 @@
       const rows = exportItems.map(call => [call.name, call.phone, call.agent, call.type, call.date, call.lastContact, formatDuration(call.durationSec), call.status, call.note])
       const selectedAgent = agentsList.value.find(agent => agent.id === agentFilter.value)
       const selectedStatus = stats.value.find(stat => stat.key === statusFilter.value)
-      const { exportCallsExcel, exportCallsPdf } = await import('@/utils/exportCalls')
       const exportOptions = {
         title: 'سجل المكالمات',
         filters: {
