@@ -337,9 +337,17 @@
   const exportFormat = ref('excel')
   const exportRangeError = ref('')
 
+  function hasCallExportFilters() {
+    return Boolean(searchQuery.value.trim() || typeFilter.value || agentFilter.value || statusFilter.value)
+  }
+
   function openExportDialog(format) {
     if (isExporting.value || isLoading.value || loadError.value || !allCalls.value.length) return
     exportFormat.value = format
+    if (hasCallExportFilters()) {
+      exportTable(format, 1, totalPages.value)
+      return
+    }
     exportScope.value = 'all'
     exportFromPage.value = currentPage.value
     exportToPage.value = currentPage.value

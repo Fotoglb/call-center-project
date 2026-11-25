@@ -119,7 +119,7 @@
                 >
                   {{ call.priority }}
                 </span>
-                <span class="flex items-center gap-2 text-xs text-gray-400" title="مدة آخر مكالمة مسجلة"><Clock :size="14" /><span>{{ formatCallDuration(call.lastDurationSec) }}</span></span>
+                <span class="flex items-center gap-2 text-xs text-gray-400" title="مدة آخر مكالمة مسجلة"><Clock :size="14" /><span>{{ formatCallDuration(call.lastCallDurationSec ?? call.lastDurationSec) }}</span></span>
               </div>
             </div>
 
@@ -314,7 +314,7 @@
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="space-y-1.5">
                       <Label for="dataAgent">الموظف المسؤول</Label>
-                      <select id="dataAgent" v-model="selectedCall.assignedTo" :disabled="isSaving || !permissions.can('employees.manage')" class="w-full border border-gray-200 rounded-lg bg-white">
+                      <select id="dataAgent" v-model="selectedCall.assignedTo" disabled class="w-full border border-gray-200 rounded-lg bg-white">
                         <option value="">اختر الموظف المسؤول</option>
                         <option v-if="selectedCall.assignedTo && !employeeOptions.some(item => item.id === selectedCall.assignedTo)" :value="selectedCall.assignedTo">{{ selectedCall.agent }}</option>
                         <option v-for="employee in employeeOptions" :key="employee.id" :value="employee.id">{{ employee.name }}</option>
@@ -323,7 +323,7 @@
                     </div>
                     <div class="space-y-1.5">
                       <Label for="dataDirection">نوع المكالمة</Label>
-                      <select id="dataDirection" v-model="callDirection" :disabled="isSaving" class="w-full border border-gray-200 rounded-lg bg-white">
+                      <select id="dataDirection" v-model="callDirection" disabled class="w-full border border-gray-200 rounded-lg bg-white">
                         <option value="outbound">صادر</option>
                         <option value="inbound">وارد</option>
                       </select>
@@ -331,7 +331,7 @@
                     <div class="space-y-1.5">
                       <Label for="dataFullName">الاسم بالكامل <span class="text-red-400">*</span></Label>
                       <div class="relative">
-                        <Input id="dataFullName" v-model="selectedCall.name" type="text" class="ps-10" />
+                        <Input id="dataFullName" v-model="selectedCall.name" disabled type="text" class="ps-10" />
                         <span class="absolute inset-y-0 inset-s-3 flex items-center text-gray-400 pointer-events-none">
                           <UserRound :size="16" />
                         </span>
@@ -341,7 +341,7 @@
                     <div class="space-y-1.5">
                       <Label for="dataPhone">رقم الجوال <span class="text-red-400">*</span></Label>
                       <div class="relative">
-                        <Input id="dataPhone" v-model="selectedCall.phone" type="text" dir="ltr" class="text-right" />
+                        <Input id="dataPhone" v-model="selectedCall.phone" disabled type="text" dir="ltr" class="text-right" />
                         <span class="absolute inset-y-0 inset-s-3 flex items-center text-gray-400 pointer-events-none">
                           <Phone :size="16" />
                         </span>
@@ -350,12 +350,12 @@
 
                     <div class="space-y-1.5">
                       <Label for="dataWorkType">نوع العمل</Label>
-                      <Input id="dataWorkType" v-model="selectedCall.workType" type="text" />
+                      <Input id="dataWorkType" v-model="selectedCall.workType" disabled type="text" />
                     </div>
 
                     <div class="space-y-1.5">
                       <Label for="dataSource">مصدر العميل</Label>
-                      <select id="dataSource" v-model="selectedCall.sourceId" :disabled="isSaving" class="w-full border border-gray-200 rounded-lg bg-white">
+                      <select id="dataSource" v-model="selectedCall.sourceId" disabled class="w-full border border-gray-200 rounded-lg bg-white">
                         <option value="">اختر المصدر</option>
                         <option v-if="selectedCall.sourceId && !sourceOptions.some(item => item.value === selectedCall.sourceId)" :value="selectedCall.sourceId">{{ selectedCall.source }}</option>
                         <option v-for="source in sourceOptions" :key="source.value" :value="source.value">{{ source.label }}</option>
@@ -366,7 +366,7 @@
                     <div class="space-y-1.5">
                       <Label for="dataCreatedAt">تاريخ الإنشاء</Label>
                       <div class="relative">
-                        <Input id="dataCreatedAt" v-model="selectedCall.projectCreatedAt" type="date" dir="ltr" :disabled="isSaving" />
+                        <Input id="dataCreatedAt" v-model="selectedCall.projectCreatedAt" disabled type="date" dir="ltr" />
                       </div>
                     </div>
 
@@ -376,6 +376,7 @@
                         <select
                           id="dataProjectType"
                           v-model="selectedCall.projectType"
+                          disabled
                           class="flex h-10 w-full appearance-none rounded-md border border-gray-200 bg-white ps-3 pe-10 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary"
                         >
                           <option v-for="type in projectTypes" :key="type" :value="type">{{ type }}</option>
@@ -395,18 +396,18 @@
 
                     <div class="space-y-1.5">
                       <Label for="dataTalkTime">وقت الحديث</Label>
-                      <Input id="dataTalkTime" v-model="selectedCall.talkDurationSec" :disabled="isSaving" />
+                      <Input id="dataTalkTime" v-model="selectedCall.priority" disabled />
                     </div>
                     <div class="space-y-1.5">
                       <Label for="dataOutcome">الحالة</Label>
-                      <select id="dataOutcome" v-model="selectedOutcome" :disabled="isSaving" class="w-full border border-gray-200 rounded-lg bg-white">
+                      <select id="dataOutcome" v-model="selectedOutcome" disabled class="w-full border border-gray-200 rounded-lg bg-white">
                         <option value="">اختر الحالة</option>
                         <option v-for="outcome in callOutcomes" :key="outcome.key" :value="outcome.key">{{ outcome.label }}</option>
                       </select>
                     </div>
                     <div class="space-y-1.5">
                       <Label for="dataNotes">ملاحظات</Label>
-                      <Input id="dataNotes" v-model="resultNote" :disabled="isSaving" />
+                      <Input id="dataNotes" v-model="resultNote" disabled />
                     </div>
                   </div>
                 </div>
@@ -965,7 +966,7 @@
       const savedCall = response?.data?.call
       const savedDetails = savedLeadId ? {
         ...savedLead,
-        ...(savedCall?.leadId === savedLeadId ? { lastDurationSec: savedCall.durationSec } : {}),
+        ...(savedCall?.leadId === savedLeadId ? { lastCallDurationSec: savedCall.durationSec, lastDurationSec: savedCall.durationSec } : {}),
       } : null
       if (savedDetails) {
         const savedIndex = callsList.value.findIndex(call => call.leadId === savedLeadId)

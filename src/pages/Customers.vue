@@ -376,8 +376,15 @@
   const customerExportFrom = ref(1)
   const customerExportTo = ref(1)
   const customerExportError = ref('')
+  function hasCustomerExportFilters() {
+    return Boolean(normalizeCustomerSearch(searchQuery.value) || Object.entries(activeFilters.value).some(([key, value]) => value !== defaultFilters[key]))
+  }
   function openCustomerExportDialog() {
     if (isDownloadingTemplate.value || isLoading.value || loadError.value || !paginatedCustomers.value.length) return
+    if (hasCustomerExportFilters()) {
+      downloadTemplate(1, totalPages.value)
+      return
+    }
     customerExportScope.value = 'all'; customerExportFrom.value = currentPage.value; customerExportTo.value = currentPage.value; customerExportError.value = ''; customerExportDialogOpen.value = true
   }
   function confirmCustomerExport() {
