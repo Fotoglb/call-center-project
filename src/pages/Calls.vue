@@ -588,7 +588,7 @@
     { key: 'history', label: 'تاريخ التواصل' },
     { key: 'data', label: 'بيانات العميل' }
   ]
-  const permittedFilterTabs = computed(() => filterTabs.filter(tab => permissions.can('callCenter.queue')))
+  const permittedFilterTabs = computed(() => filterTabs.filter(tab => tab.key !== 'visit' && permissions.can('callCenter.queue')))
 
   const projectTypes = ['B2B', 'B2C', 'SME', 'Enterprise', 'Startup', 'E-commerce', 'Retail', 'Manufacturing', 'Service', 'Non-profit', 'Education']
   const sourceOptions = ref([])
