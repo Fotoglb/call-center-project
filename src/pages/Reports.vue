@@ -3,7 +3,7 @@
     <!-- Page Header -->
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 class="text-xl font-bold text-gray-900">التقارير والتحليلات</h1>
+        <h1 class="text-xl font-bold text-gray-900">***التقارير والتحليلات</h1>
 
         <p class="mt-1 text-xs text-gray-400">تقرير مفصل قابل للتصدير والفلترة</p>
       </div>
@@ -111,7 +111,9 @@
               />
             </div>
 
-            <p v-if="dateRangeError" role="alert" class="text-xs text-red-600">{{ dateRangeError }}</p>
+            <p v-if="dateRangeError" role="alert" class="text-xs text-red-600">
+              {{ dateRangeError }}
+            </p>
             <button
               type="button"
               class="w-full cursor-pointer rounded-lg bg-gray-900 py-1.5 text-xs text-white transition-colors hover:bg-gray-700"
@@ -131,8 +133,12 @@
             class="w-60 max-w-full cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white py-2 pe-7 ps-3 text-xs text-gray-600 hover:border-gray-300 focus:border-indigo-400 focus:outline-none"
           >
             <option value="">أداء الموظفين: الكل</option>
-            <option v-if="employeeReportLoading || currentEmployeeLoading" disabled>جارٍ تحميل الموظفين...</option>
-            <option v-else-if="!reportEmployeeOptions.length" disabled>{{ employeeReportError || currentEmployeeError || 'لا يوجد موظفون في التقارير' }}</option>
+            <option v-if="employeeReportLoading || currentEmployeeLoading" disabled>
+              جارٍ تحميل الموظفين...
+            </option>
+            <option v-else-if="!reportEmployeeOptions.length" disabled>
+              {{ employeeReportError || currentEmployeeError || 'لا يوجد موظفون في التقارير' }}
+            </option>
 
             <option
               v-for="employee in reportEmployeeOptions"
@@ -157,7 +163,11 @@
           >
             <option value="">توزيع المصادر: الكل</option>
 
-            <option v-for="source in sourceLegend" :key="source.sourceId ?? source.label" :value="source.sourceId ?? source.label">
+            <option
+              v-for="source in sourceLegend"
+              :key="source.sourceId ?? source.label"
+              :value="source.sourceId ?? source.label"
+            >
               {{ source.label }}
             </option>
           </select>
@@ -221,7 +231,14 @@
         :key="stat.label"
         class="min-w-0 space-y-2 rounded-2xl bg-white p-6"
       >
-        <p class="min-h-9" :class="typeof stat.value === 'number' ? 'text-[28px] font-bold text-gray-900' : 'text-xs font-normal leading-5 text-gray-400'">
+        <p
+          class="min-h-9"
+          :class="
+            typeof stat.value === 'number'
+              ? 'text-[28px] font-bold text-gray-900'
+              : 'text-xs font-normal leading-5 text-gray-400'
+          "
+        >
           {{ stat.value }}{{ typeof stat.value === 'number' ? stat.unit || '' : '' }}
         </p>
 
@@ -236,27 +253,53 @@
       <!-- Conversion Trend -->
       <div class="conversion-panel min-w-0 overflow-hidden bg-white">
         <!-- Header like Figma -->
-        <div class="conversion-heading flex flex-wrap items-center justify-between gap-x-8 gap-y-3" dir="rtl">
+        <div
+          class="conversion-heading flex flex-wrap items-center justify-between gap-x-8 gap-y-3"
+          dir="rtl"
+        >
           <!-- Title on the right -->
           <div class="shrink-0">
             <h3 class="text-sm font-bold text-gray-900">معدل التحويل — الاتجاه الزمني</h3>
 
-            <p class="mt-1 text-[10px] leading-4 text-slate-400">العملاء الجدد والتحويلات حسب اليوم</p>
+            <p class="mt-1 text-[10px] leading-4 text-slate-400">
+              العملاء الجدد والتحويلات حسب اليوم
+            </p>
           </div>
 
           <div class="flex flex-wrap items-center gap-5 text-[10px] text-gray-600">
-            <span class="flex items-center gap-2"><span class="h-1 w-5 rounded-full bg-[#8180FF]"></span>عملاء جدد</span>
-            <span class="flex items-center gap-2"><span class="h-1 w-5 rounded-full bg-[#E898FF]"></span>التحويلات</span>
+            <span class="flex items-center gap-2"
+              ><span class="h-1 w-5 rounded-full bg-[#8180FF]"></span>عملاء جدد</span
+            >
+            <span class="flex items-center gap-2"
+              ><span class="h-1 w-5 rounded-full bg-[#E898FF]"></span>التحويلات</span
+            >
           </div>
         </div>
-        <p v-if="conversionError" role="alert" class="mb-3 text-xs text-red-600">{{ conversionError }}</p>
+        <p v-if="conversionError" role="alert" class="mb-3 text-xs text-red-600">
+          {{ conversionError }}
+        </p>
 
         <!-- Chart -->
         <div class="chart-scroll" dir="ltr" tabindex="0" aria-label="تمرير مخطط التحويل">
-        <div class="conversion-canvas chart-container relative" :style="{ width: `${Math.max(720, conversionTrendData.labels.length * 110)}px` }">
-          <Line v-if="hasChartData(conversionTrendData)" ref="conversionChartRef" :data="conversionTrendData" :options="lineOptions" />
-          <p v-else class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
-        </div>
+          <div
+            class="conversion-canvas chart-container relative"
+            :style="{ width: `${Math.max(720, conversionTrendData.labels.length * 110)}px` }"
+          >
+            <Line
+              v-if="hasChartData(conversionTrendData)"
+              ref="conversionChartRef"
+              :data="conversionTrendData"
+              :options="lineOptions"
+            />
+            <p
+              v-else
+              class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400"
+              dir="rtl"
+              role="status"
+            >
+              {{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -269,11 +312,27 @@
 
         <div class="sources-content flex min-w-0 flex-col items-center gap-4">
           <div class="source-ring relative h-40 w-40 shrink-0">
-            <Doughnut v-if="hasChartData(sourceChartData)" ref="sourceChartRef" :data="sourceChartData" :options="donutOptions" />
-          <p v-else class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
+            <Doughnut
+              v-if="hasChartData(sourceChartData)"
+              ref="sourceChartRef"
+              :data="sourceChartData"
+              :options="donutOptions"
+            />
+            <p
+              v-else
+              class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400"
+              dir="rtl"
+              role="status"
+            >
+              {{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}
+            </p>
           </div>
 
-          <ul class="sources-list w-full min-w-0 space-y-3 text-xs" tabindex="0" aria-label="مصادر العملاء">
+          <ul
+            class="sources-list w-full min-w-0 space-y-3 text-xs"
+            tabindex="0"
+            aria-label="مصادر العملاء"
+          >
             <li
               v-for="item in filteredSources"
               :key="item.sourceId ?? item.label"
@@ -309,15 +368,33 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500" dir="ltr">
-            <button type="button" class="flex items-center gap-2 cursor-pointer" dir="rtl" :aria-pressed="employeeMetric === 'calls'" @click="employeeMetric = 'calls'">
+            <button
+              type="button"
+              class="flex items-center gap-2 cursor-pointer"
+              dir="rtl"
+              :aria-pressed="employeeMetric === 'calls'"
+              @click="employeeMetric = 'calls'"
+            >
               <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
               المكالمات
             </button>
-            <button type="button" class="flex items-center gap-2 cursor-pointer" dir="rtl" :aria-pressed="employeeMetric === 'newCustomers'" @click="employeeMetric = 'newCustomers'">
+            <button
+              type="button"
+              class="flex items-center gap-2 cursor-pointer"
+              dir="rtl"
+              :aria-pressed="employeeMetric === 'newCustomers'"
+              @click="employeeMetric = 'newCustomers'"
+            >
               <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
               عملاء جدد
             </button>
-            <button type="button" class="flex items-center gap-2 cursor-pointer" dir="rtl" :aria-pressed="employeeMetric === 'conversions'" @click="employeeMetric = 'conversions'">
+            <button
+              type="button"
+              class="flex items-center gap-2 cursor-pointer"
+              dir="rtl"
+              :aria-pressed="employeeMetric === 'conversions'"
+              @click="employeeMetric = 'conversions'"
+            >
               <span class="h-2 w-2 rounded-full bg-amber-400"></span>
               التحويلات
             </button>
@@ -325,16 +402,54 @@
         </div>
 
         <div class="employee-ring chart-container relative mx-auto shrink-0" dir="ltr">
-          <Doughnut v-if="employeeMetricTotal > 0" ref="employeeChartRef" :data="employeeDonutData" :options="donutOptions" />
-          <div v-else class="flex h-full flex-col items-center justify-center gap-2 text-xs text-gray-500" dir="rtl" role="status">
-            <p>{{ currentEmployeeLoading ? 'جارٍ تحميل أداء الموظفين...' : currentEmployeeError || 'لا توجد قيم لهذا المؤشر في التقرير الحالي' }}</p>
-            <button v-if="currentEmployeeError && !isExportingPdf" class="text-blue underline" @click="loadReportData">إعادة المحاولة</button>
+          <Doughnut
+            v-if="employeeMetricTotal > 0"
+            ref="employeeChartRef"
+            :data="employeeDonutData"
+            :options="donutOptions"
+          />
+          <div
+            v-else
+            class="flex h-full flex-col items-center justify-center gap-2 text-xs text-gray-500"
+            dir="rtl"
+            role="status"
+          >
+            <p>
+              {{
+                currentEmployeeLoading
+                  ? 'جارٍ تحميل أداء الموظفين...'
+                  : currentEmployeeError || 'لا توجد قيم لهذا المؤشر في التقرير الحالي'
+              }}
+            </p>
+            <button
+              v-if="currentEmployeeError && !isExportingPdf"
+              class="text-blue underline"
+              @click="loadReportData"
+            >
+              إعادة المحاولة
+            </button>
           </div>
         </div>
-        <ul class="employee-donut-list space-y-4 text-xs text-gray-500" tabindex="0" aria-label="نسب أداء الموظفين">
-          <li v-for="employee in employeeDistribution" :key="employee.id" class="flex items-center justify-between gap-3">
-            <span class="flex items-center gap-1.5"><span class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: employee.color }"></span>{{ employee.name }}</span>
-            <span class="tabular-nums" dir="ltr" :title="String(employee.value)">{{ employee.percent }}%</span>
+        <ul
+          class="employee-donut-list space-y-4 text-xs text-gray-500"
+          tabindex="0"
+          aria-label="نسب أداء الموظفين"
+        >
+          <li
+            v-for="employee in employeeDistribution"
+            :key="employee.id"
+            class="flex items-center justify-between gap-3"
+          >
+            <span class="flex items-center gap-1.5"
+              ><span
+                class="h-2 w-2 shrink-0 rounded-full"
+                :style="{ backgroundColor: employee.color }"
+              ></span
+              >{{ employee.name }}</span
+            >
+            <span class="tabular-nums" dir="ltr" :title="String(employee.value)"
+              >{{ employee.percent }}%</span
+            >
           </li>
         </ul>
       </div>
@@ -353,14 +468,33 @@
               <span class="h-2 w-2 rounded-full bg-teal-500"></span>
               الزيارات
             </span>
-
           </div>
         </div>
 
-        <div class="chart-scroll visit-success-scroll mt-2" dir="ltr" tabindex="0" aria-label="تمرير مخطط نجاح الزيارات">
-          <div class="visit-success-canvas chart-container relative h-72" :style="{ width: `${Math.max(720, visitSuccessData.labels.length * 110)}px` }">
-            <Bar v-if="hasChartData(visitSuccessData)" ref="visitChartRef" :data="visitSuccessData" :options="visitBarOptions" />
-            <p v-else class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400" dir="rtl" role="status">{{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}</p>
+        <div
+          class="chart-scroll visit-success-scroll mt-2"
+          dir="ltr"
+          tabindex="0"
+          aria-label="تمرير مخطط نجاح الزيارات"
+        >
+          <div
+            class="visit-success-canvas chart-container relative h-72"
+            :style="{ width: `${Math.max(720, visitSuccessData.labels.length * 110)}px` }"
+          >
+            <Bar
+              v-if="hasChartData(visitSuccessData)"
+              ref="visitChartRef"
+              :data="visitSuccessData"
+              :options="visitBarOptions"
+            />
+            <p
+              v-else
+              class="flex h-full items-center justify-center text-[10px] leading-4 text-gray-400"
+              dir="rtl"
+              role="status"
+            >
+              {{ isLoading ? 'جارٍ التحميل...' : 'لا يوجد بيانات' }}
+            </p>
           </div>
         </div>
       </div>
@@ -372,8 +506,12 @@
         <h3 class="text-base font-bold text-gray-900">تقرير الأداء الوظيفي</h3>
 
         <p class="mt-1 text-[11px] text-gray-400">مقارنة شاملة لجميع الموظفين - هذا الأسبوع</p>
-        <p v-if="employeeActionError" role="alert" class="mt-2 text-xs text-red-600">{{ employeeActionError }}</p>
-        <p v-if="employeeActionSuccess" role="status" class="mt-2 text-xs text-emerald-600">{{ employeeActionSuccess }}</p>
+        <p v-if="employeeActionError" role="alert" class="mt-2 text-xs text-red-600">
+          {{ employeeActionError }}
+        </p>
+        <p v-if="employeeActionSuccess" role="status" class="mt-2 text-xs text-emerald-600">
+          {{ employeeActionSuccess }}
+        </p>
       </div>
 
       <div class="overflow-x-auto">
@@ -400,15 +538,29 @@
                 معدل التحويل
               </th>
 
-              <th v-for="label in ['الزيارات', 'نجاح الزيارات', 'نقاط الأداء', 'الأداء']" :key="label" class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500">{{ label }}</th>
+              <th
+                v-for="label in ['الزيارات', 'نجاح الزيارات', 'نقاط الأداء', 'الأداء']"
+                :key="label"
+                class="whitespace-nowrap px-4 py-3 text-start font-medium text-gray-500"
+              >
+                {{ label }}
+              </th>
               <th v-if="!isExportingPdf" class="w-16 px-4 py-3">الإجراءات</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-gray-100">
-            <tr v-if="!employeeRows.length"><td :colspan="isExportingPdf ? 9 : 10" class="px-4 py-8 text-center text-xs text-gray-400" role="status">{{ isLoading ? 'جارٍ التحميل...' : employeeReportError || 'لا يوجد بيانات' }}</td></tr>
+            <tr v-if="!employeeRows.length">
+              <td
+                :colspan="isExportingPdf ? 9 : 10"
+                class="px-4 py-8 text-center text-xs text-gray-400"
+                role="status"
+              >
+                {{ isLoading ? 'جارٍ التحميل...' : employeeReportError || 'لا يوجد بيانات' }}
+              </td>
+            </tr>
             <tr
-              v-for="employee in (isExportingPdf ? employeeRows : employeePageRows)"
+              v-for="employee in isExportingPdf ? employeeRows : employeePageRows"
               :key="employee.id"
               class="transition-colors hover:bg-gray-50"
             >
@@ -432,12 +584,23 @@
                 {{ employee.conversions ?? '' }}
               </td>
 
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.conversionRate == null ? '' : `${employee.conversionRate}%` }}</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">
+                {{ employee.conversionRate == null ? '' : `${employee.conversionRate}%` }}
+              </td>
 
               <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visits ?? '' }}</td>
-              <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.visitSuccessRate == null ? '' : `${employee.visitSuccessRate}%` }}</td>
+              <td class="px-4 py-3 text-gray-600 tabular-nums">
+                {{ employee.visitSuccessRate == null ? '' : `${employee.visitSuccessRate}%` }}
+              </td>
               <td class="px-4 py-3 text-gray-600 tabular-nums">{{ employee.score ?? '' }}</td>
-              <td class="px-4 py-3"><span v-if="employee.performance" class="inline-flex whitespace-nowrap rounded-md px-3 py-1.5" :class="performanceClass(employee.performance)">{{ employee.performance }}</span></td>
+              <td class="px-4 py-3">
+                <span
+                  v-if="employee.performance"
+                  class="inline-flex whitespace-nowrap rounded-md px-3 py-1.5"
+                  :class="performanceClass(employee.performance)"
+                  >{{ employee.performance }}</span
+                >
+              </td>
               <td v-if="!isExportingPdf" class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <button
@@ -463,14 +626,36 @@
               </td>
             </tr>
           </tbody>
-        </table>      <div v-if="!isExportingPdf && employeeRows.length" class="flex items-center justify-between gap-3 border-t border-gray-100 px-5 py-3 text-xs text-gray-500" dir="rtl">
-        <span>عرض {{ employeePageStart }}-{{ employeePageEnd }} من أصل {{ employeeRows.length }} موظف</span>
-        <div class="flex items-center gap-2" dir="ltr">
-          <button type="button" class="rounded-md border border-gray-200 px-3 py-1.5 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" :disabled="employeePage <= 1" @click="employeePage--">السابق</button>
-          <span class="tabular-nums">{{ employeePage }} / {{ employeeTotalPages }}</span>
-          <button type="button" class="rounded-md border border-gray-200 px-3 py-1.5 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" :disabled="employeePage >= employeeTotalPages" @click="employeePage++">التالي</button>
+        </table>
+        <div
+          v-if="!isExportingPdf && employeeRows.length"
+          class="flex items-center justify-between gap-3 border-t border-gray-100 px-5 py-3 text-xs text-gray-500"
+          dir="rtl"
+        >
+          <span
+            >عرض {{ employeePageStart }}-{{ employeePageEnd }} من أصل
+            {{ employeeRows.length }} موظف</span
+          >
+          <div class="flex items-center gap-2" dir="ltr">
+            <button
+              type="button"
+              class="rounded-md border border-gray-200 px-3 py-1.5 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="employeePage <= 1"
+              @click="employeePage--"
+            >
+              السابق
+            </button>
+            <span class="tabular-nums">{{ employeePage }} / {{ employeeTotalPages }}</span>
+            <button
+              type="button"
+              class="rounded-md border border-gray-200 px-3 py-1.5 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="employeePage >= employeeTotalPages"
+              @click="employeePage++"
+            >
+              التالي
+            </button>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   </div>
@@ -533,7 +718,6 @@
   const sourceFilter = ref('')
   const isLoading = ref(true)
 
-
   const periodLabels = {
     daily: 'يومي',
     weekly: 'أسبوعي',
@@ -552,7 +736,8 @@
   const shareMenuRef = ref(null)
 
   const reportToday = new Date()
-  const localDate = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  const localDate = date =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   const dateFrom = ref(localDate(reportToday))
   const dateTo = ref(localDate(reportToday))
   const draftDateFrom = ref(dateFrom.value)
@@ -573,7 +758,8 @@
   }
   function applyDateRange() {
     if (!draftDateFrom.value || !draftDateTo.value || draftDateFrom.value > draftDateTo.value) {
-      dateRangeError.value = 'اختر تاريخ البداية والنهاية، على أن تكون البداية قبل النهاية أو مساوية لها.'
+      dateRangeError.value =
+        'اختر تاريخ البداية والنهاية، على أن تكون البداية قبل النهاية أو مساوية لها.'
       return
     }
     dateRangeError.value = ''
@@ -631,7 +817,16 @@
   const overviewError = ref('')
   const dailyError = ref('')
   const displayedStats = computed(() => {
-    const cards = stats.value.length ? stats.value : ['إجمالي العملاء', 'تم التحويل المشروع', 'معدل التحويل', 'إجمالي المكالمات', 'الزيارة الميدانية', 'متوسط وقت التحويل'].map(label => ({ label }))
+    const cards = stats.value.length
+      ? stats.value
+      : [
+          'إجمالي العملاء',
+          'تم التحويل المشروع',
+          'معدل التحويل',
+          'إجمالي المكالمات',
+          'الزيارة الميدانية',
+          'متوسط وقت التحويل'
+        ].map(label => ({ label }))
     return cards.map(stat => ({ ...stat, value: stat.value ?? '' }))
   })
 
@@ -640,7 +835,11 @@
    * -------------------------------------- */
 
   const sourceLegend = ref([])
-  const filteredSources = computed(() => sourceLegend.value.filter(source => !sourceFilter.value || (source.sourceId ?? source.label) === sourceFilter.value))
+  const filteredSources = computed(() =>
+    sourceLegend.value.filter(
+      source => !sourceFilter.value || (source.sourceId ?? source.label) === sourceFilter.value
+    )
+  )
   const sourcesTotal = ref(null)
   const sourcesError = ref('')
 
@@ -684,9 +883,29 @@
   const conversionTrendData = computed(() => ({
     labels: conversionTrendRaw.value.labels,
     datasets: [
-      { label: 'عملاء جدد', data: conversionTrendRaw.value.leads, borderColor: '#8180FF', backgroundColor: '#8180FF', borderWidth: 1, tension: 0.4, fill: false, pointRadius: 4, pointHoverRadius: 6 },
-      { label: 'التحويلات', data: conversionTrendRaw.value.conversions, borderColor: '#E898FF', backgroundColor: '#E898FF', borderWidth: 1, tension: 0.4, fill: false, pointRadius: 4, pointHoverRadius: 6 },
-    ],
+      {
+        label: 'عملاء جدد',
+        data: conversionTrendRaw.value.leads,
+        borderColor: '#8180FF',
+        backgroundColor: '#8180FF',
+        borderWidth: 1,
+        tension: 0.4,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      },
+      {
+        label: 'التحويلات',
+        data: conversionTrendRaw.value.conversions,
+        borderColor: '#E898FF',
+        backgroundColor: '#E898FF',
+        borderWidth: 1,
+        tension: 0.4,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }
+    ]
   }))
 
   const lineOptions = {
@@ -817,14 +1036,12 @@
         borderSkipped: false,
         maxBarThickness: 18
       }
-      
     ]
   }))
 
   /* ----------------------------------------
    * Employee trend chart
    * -------------------------------------- */
-
 
   const employeeTrendDataAll = computed(() => ({
     labels: currentEmployeePerformance.value.map(employee => employee.name),
@@ -982,7 +1199,12 @@
       ...barOptions.scales,
       x: {
         ...barOptions.scales.x,
-        title: { display: true, text: 'التاريخ', color: '#6B7280', font: { size: 11, family: 'Tajawal' } }
+        title: {
+          display: true,
+          text: 'التاريخ',
+          color: '#6B7280',
+          font: { size: 11, family: 'Tajawal' }
+        }
       },
       y: {
         ...barOptions.scales.y,
@@ -990,7 +1212,12 @@
         beginAtZero: true,
         grace: '20%',
         ticks: { ...barOptions.scales.y.ticks, stepSize: 1, precision: 0 },
-        title: { display: true, text: 'العدد', color: '#6B7280', font: { size: 11, family: 'Tajawal' } }
+        title: {
+          display: true,
+          text: 'العدد',
+          color: '#6B7280',
+          font: { size: 11, family: 'Tajawal' }
+        }
       }
     }
   }
@@ -1003,51 +1230,93 @@
   const currentEmployeePerformance = ref([])
   const currentEmployeeLoading = ref(false)
   const currentEmployeeError = ref('')
-  const reportEmployeeOptions = computed(() => [...new Map([...employeePerformance.value, ...currentEmployeePerformance.value].map(employee => [employee.id, employee])).values()])
-  const currentEmployeeRows = computed(() => currentEmployeePerformance.value.filter(employee => !agentFilter.value || employee.id === agentFilter.value))
+  const reportEmployeeOptions = computed(() => [
+    ...new Map(
+      [...employeePerformance.value, ...currentEmployeePerformance.value].map(employee => [
+        employee.id,
+        employee
+      ])
+    ).values()
+  ])
+  const currentEmployeeRows = computed(() =>
+    currentEmployeePerformance.value.filter(
+      employee => !agentFilter.value || employee.id === agentFilter.value
+    )
+  )
   const employeeReportLoading = ref(false)
   const {
     employees,
-    loading: employeesLoading, error: employeesError, updatingId, resettingId,
-    actionError: employeeActionError, actionSuccess: employeeActionSuccess,
+    loading: employeesLoading,
+    error: employeesError,
+    updatingId,
+    resettingId,
+    actionError: employeeActionError,
+    actionSuccess: employeeActionSuccess,
     loadEmployees,
-    deactivateEmployee, resetEmployeePassword,
+    deactivateEmployee,
+    resetEmployeePassword
   } = useEmployees()
   const employeeBusy = computed(() => !!updatingId.value || !!resettingId.value)
   const employeeReportError = ref('')
-  const employeeRows = computed(() => employeePerformance.value.filter(employee => !agentFilter.value || employee.id === agentFilter.value))
+  const employeeRows = computed(() =>
+    employeePerformance.value.filter(
+      employee => !agentFilter.value || employee.id === agentFilter.value
+    )
+  )
   const employeePage = ref(1)
   const employeePageSize = 10
-  const employeeTotalPages = computed(() => Math.max(1, Math.ceil(employeeRows.value.length / employeePageSize)))
+  const employeeTotalPages = computed(() =>
+    Math.max(1, Math.ceil(employeeRows.value.length / employeePageSize))
+  )
   const employeePageRows = computed(() => {
     const start = (employeePage.value - 1) * employeePageSize
     return employeeRows.value.slice(start, start + employeePageSize)
   })
-  const employeePageStart = computed(() => employeeRows.value.length ? (employeePage.value - 1) * employeePageSize + 1 : 0)
-  const employeePageEnd = computed(() => Math.min(employeePage.value * employeePageSize, employeeRows.value.length))
+  const employeePageStart = computed(() =>
+    employeeRows.value.length ? (employeePage.value - 1) * employeePageSize + 1 : 0
+  )
+  const employeePageEnd = computed(() =>
+    Math.min(employeePage.value * employeePageSize, employeeRows.value.length)
+  )
   const employeeMetric = ref('calls')
-  const employeeMetricTotal = computed(() => currentEmployeeRows.value.reduce((sum, employee) => sum + Math.max(0, Number(employee[employeeMetric.value]) || 0), 0))
-  const employeeDistribution = computed(() => currentEmployeeRows.value.map((employee, index) => {
-    const value = Math.max(0, Number(employee[employeeMetric.value]) || 0)
-    return {
-      id: employee.id,
-      name: employee.name,
-      value,
-      percent: employeeMetricTotal.value ? Math.round(value / employeeMetricTotal.value * 1000) / 10 : 0,
-      color: ['#2563eb', '#9333ea', '#10b981', '#f59e0b', '#ef4444'][index % 5],
-    }
-  }))
+  const employeeMetricTotal = computed(() =>
+    currentEmployeeRows.value.reduce(
+      (sum, employee) => sum + Math.max(0, Number(employee[employeeMetric.value]) || 0),
+      0
+    )
+  )
+  const employeeDistribution = computed(() =>
+    currentEmployeeRows.value.map((employee, index) => {
+      const value = Math.max(0, Number(employee[employeeMetric.value]) || 0)
+      return {
+        id: employee.id,
+        name: employee.name,
+        value,
+        percent: employeeMetricTotal.value
+          ? Math.round((value / employeeMetricTotal.value) * 1000) / 10
+          : 0,
+        color: ['#2563eb', '#9333ea', '#10b981', '#f59e0b', '#ef4444'][index % 5]
+      }
+    })
+  )
   const employeeDonutData = computed(() => ({
     labels: employeeDistribution.value.map(employee => employee.name),
-    datasets: [{
-      label: employeeMetric.value === 'calls' ? 'المكالمات' : employeeMetric.value === 'newCustomers' ? 'عملاء جدد' : 'التحويلات',
-      data: employeeDistribution.value.map(employee => employee.value),
-      backgroundColor: employeeDistribution.value.map(employee => employee.color),
-      hoverBackgroundColor: employeeDistribution.value.map(employee => employee.color),
-      borderColor: '#ffffff',
-      borderWidth: 3,
-      borderRadius: 5,
-    }],
+    datasets: [
+      {
+        label:
+          employeeMetric.value === 'calls'
+            ? 'المكالمات'
+            : employeeMetric.value === 'newCustomers'
+              ? 'عملاء جدد'
+              : 'التحويلات',
+        data: employeeDistribution.value.map(employee => employee.value),
+        backgroundColor: employeeDistribution.value.map(employee => employee.color),
+        hoverBackgroundColor: employeeDistribution.value.map(employee => employee.color),
+        borderColor: '#ffffff',
+        borderWidth: 3,
+        borderRadius: 5
+      }
+    ]
   }))
 
   /* ----------------------------------------
@@ -1088,69 +1357,129 @@
     const params = reportParams()
     const sections = [
       [dailyData, () => reportsService.getDaily(dateTo.value), {}],
-      [overviewData, () => reportsService.getOverview(params), { cards: {}, sources: {}, trend: [] }],
-      [currentEmployeePerformance, async () => {
-        try {
-          return await reportsService.getEmployeePerformance()
-        } finally {
-          if (request === reportRequest) currentEmployeeLoading.value = false
-        }
-      }, []],
-      [employeePerformance, async () => {
-        try {
-          const rows = await reportsService.getEmployeePerformance(params)
-          return rows
-        } finally {
-          if (request === reportRequest) employeeReportLoading.value = false
-        }
-      }, []],
+      [
+        overviewData,
+        () => reportsService.getOverview(params),
+        { cards: {}, sources: {}, trend: [] }
+      ],
+      [
+        currentEmployeePerformance,
+        async () => {
+          try {
+            return await reportsService.getEmployeePerformance()
+          } finally {
+            if (request === reportRequest) currentEmployeeLoading.value = false
+          }
+        },
+        []
+      ],
+      [
+        employeePerformance,
+        async () => {
+          try {
+            const rows = await reportsService.getEmployeePerformance(params)
+            return rows
+          } finally {
+            if (request === reportRequest) employeeReportLoading.value = false
+          }
+        },
+        []
+      ]
     ]
-    await Promise.all(sections.map(async ([target, fetch, empty]) => {
-      target.value = empty
-      try {
-        const result = await fetch()
-        if (request !== reportRequest) return
-        target.value = target === overviewData || target === dailyData ? result : Array.isArray(empty)
-          ? (Array.isArray(result) ? result : [])
-          : Object.fromEntries(Object.keys(empty).map(key => [key, Array.isArray(result?.[key]) ? result[key] : []]))
-      } catch (error) {
-        if (request === reportRequest) target.value = empty
-        if (request === reportRequest && target === overviewData) {
-          overviewError.value = error.message || 'تعذّر تحميل ملخص التقارير'
-          dailyError.value = overviewError.value
-          sourcesError.value = overviewError.value
-          conversionError.value = overviewError.value
+    await Promise.all(
+      sections.map(async ([target, fetch, empty]) => {
+        target.value = empty
+        try {
+          const result = await fetch()
+          if (request !== reportRequest) return
+          target.value =
+            target === overviewData || target === dailyData
+              ? result
+              : Array.isArray(empty)
+                ? Array.isArray(result)
+                  ? result
+                  : []
+                : Object.fromEntries(
+                    Object.keys(empty).map(key => [
+                      key,
+                      Array.isArray(result?.[key]) ? result[key] : []
+                    ])
+                  )
+        } catch (error) {
+          if (request === reportRequest) target.value = empty
+          if (request === reportRequest && target === overviewData) {
+            overviewError.value = error.message || 'تعذّر تحميل ملخص التقارير'
+            dailyError.value = overviewError.value
+            sourcesError.value = overviewError.value
+            conversionError.value = overviewError.value
+          }
+          if (request === reportRequest && target === dailyData)
+            dailyError.value = error.message || 'تعذّر تحميل التقرير اليومي'
+          if (request === reportRequest && target === employeePerformance)
+            employeeReportError.value = error.message || 'تعذّر تحميل أداء الموظفين'
+          if (request === reportRequest && target === currentEmployeePerformance)
+            currentEmployeeError.value = error.message || 'تعذّر تحميل أداء الموظفين الحالي'
+          if (request === reportRequest && target === stats)
+            dailyError.value = error.message || 'تعذّر تحميل التقرير اليومي'
         }
-        if (request === reportRequest && target === dailyData) dailyError.value = error.message || 'تعذّر تحميل التقرير اليومي'
-        if (request === reportRequest && target === employeePerformance) employeeReportError.value = error.message || 'تعذّر تحميل أداء الموظفين'
-        if (request === reportRequest && target === currentEmployeePerformance) currentEmployeeError.value = error.message || 'تعذّر تحميل أداء الموظفين الحالي'
-        if (request === reportRequest && target === stats) dailyError.value = error.message || 'تعذّر تحميل التقرير اليومي'
-      }
-    }))
+      })
+    )
     if (request === reportRequest) {
       const overview = overviewData.value
       const cards = overview.cards ?? {}
       const daily = dailyData.value ?? {}
       stats.value = [
-        { label: 'إجمالي العملاء', value: cards.totalLeads ?? daily.totalLeads ?? daily.newLeads ?? '' },
+        {
+          label: 'إجمالي العملاء',
+          value: cards.totalLeads ?? daily.totalLeads ?? daily.newLeads ?? ''
+        },
         { label: 'تم التحويل المشروع', value: cards.converted ?? daily.converted ?? '' },
-        { label: 'معدل التحويل', value: cards.conversionRate ?? daily.conversionRate ?? '', unit: '%' },
+        {
+          label: 'معدل التحويل',
+          value: cards.conversionRate ?? daily.conversionRate ?? '',
+          unit: '%'
+        },
         { label: 'إجمالي المكالمات', value: cards.totalCalls ?? daily.totalCalls ?? '' },
-        { label: 'الزيارة الميدانية', value: cards.fieldVisitRate ?? daily.visits ?? daily.fieldVisitRate ?? '', unit: cards.fieldVisitRate != null && daily.visits == null ? '%' : '' },
-        { label: 'متوسط وقت التحويل', value: cards.avgConversionDays ?? daily.avgConversionDays ?? '', unit: 'يوم' },
+        {
+          label: 'الزيارة الميدانية',
+          value: cards.fieldVisitRate ?? daily.visits ?? daily.fieldVisitRate ?? '',
+          unit: cards.fieldVisitRate != null && daily.visits == null ? '%' : ''
+        },
+        {
+          label: 'متوسط وقت التحويل',
+          value: cards.avgConversionDays ?? daily.avgConversionDays ?? '',
+          unit: 'يوم'
+        }
       ]
       const sourceRows = Array.isArray(overview.sources?.rows) ? overview.sources.rows : []
-      sourceLegend.value = sourceRows.map(row => ({ ...row, label: row.name, color: row.color || '#94a3b8' }))
+      sourceLegend.value = sourceRows.map(row => ({
+        ...row,
+        label: row.name,
+        color: row.color || '#94a3b8'
+      }))
       sourcesTotal.value = overview.sources?.total ?? null
       if (!sourceRows.some(row => row.sourceId === sourceFilter.value)) sourceFilter.value = ''
       const trend = overview.trend ?? []
-      conversionTrendRaw.value = { labels: trend.map(row => row.date), leads: trend.map(row => row.leads), conversions: trend.map(row => row.converted) }
-      visitSuccessRaw.value = { labels: trend.map(row => row.date), visits: trend.map(row => row.visits), newCustomers: trend.map(row => row.leads) }
-      conversionSummary.value = { totalLeads: cards.totalLeads, converted: cards.converted, conversionRate: cards.conversionRate }
+      conversionTrendRaw.value = {
+        labels: trend.map(row => row.date),
+        leads: trend.map(row => row.leads),
+        conversions: trend.map(row => row.converted)
+      }
+      visitSuccessRaw.value = {
+        labels: trend.map(row => row.date),
+        visits: trend.map(row => row.visits),
+        newCustomers: trend.map(row => row.leads)
+      }
+      conversionSummary.value = {
+        totalLeads: cards.totalLeads,
+        converted: cards.converted,
+        conversionRate: cards.conversionRate
+      }
     }
     if (request === reportRequest) {
       isLoading.value = false
-      if (!reportEmployeeOptions.value.some(employee => employee.id === agentFilter.value)) agentFilter.value = ''
+      if (!reportEmployeeOptions.value.some(employee => employee.id === agentFilter.value))
+        agentFilter.value = ''
     }
   }
 
@@ -1183,12 +1512,20 @@
 
   const isExportingExcel = ref(false)
   const notification = useNotification()
-  const hasExportData = computed(() => Boolean(overviewData.value?.trend?.length || overviewData.value?.sources?.rows?.length || employeeRows.value.length || displayedStats.value.some(stat => stat.value !== '')))
+  const hasExportData = computed(() =>
+    Boolean(
+      overviewData.value?.trend?.length ||
+      overviewData.value?.sources?.rows?.length ||
+      employeeRows.value.length ||
+      displayedStats.value.some(stat => stat.value !== '')
+    )
+  )
 
   function getChartInstance(componentRef) {
     const component = componentRef?.value
     const canvas = component?.canvas ?? component?.$el ?? component?.$refs?.canvas
-    if (canvas instanceof HTMLCanvasElement) return ChartJS.getChart(canvas) ?? component?.chart ?? null
+    if (canvas instanceof HTMLCanvasElement)
+      return ChartJS.getChart(canvas) ?? component?.chart ?? null
     return component?.chart ?? null
   }
 
@@ -1199,7 +1536,8 @@
 
   async function highResolutionChartImage(type, data, options, itemCount) {
     await document.fonts?.ready
-    const baseWidth = type === 'doughnut' ? 900 : Math.max(1500, Math.min(3000, 900 + itemCount * 110))
+    const baseWidth =
+      type === 'doughnut' ? 900 : Math.max(1500, Math.min(3000, 900 + itemCount * 110))
     const baseHeight = type === 'doughnut' ? 760 : 720
     const host = document.createElement('div')
     host.style.cssText = `position:absolute;left:-20000px;top:0;width:${baseWidth}px;height:${baseHeight}px;background:#fff;`
@@ -1215,7 +1553,11 @@
     exportOptions.maintainAspectRatio = false
     exportOptions.animation = false
     exportOptions.devicePixelRatio = 3
-    const chart = new ChartJS(canvas, { type, data: JSON.parse(JSON.stringify(data)), options: exportOptions })
+    const chart = new ChartJS(canvas, {
+      type,
+      data: JSON.parse(JSON.stringify(data)),
+      options: exportOptions
+    })
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
     const image = chart.toBase64Image('image/png', 1)
     chart.destroy()
@@ -1227,36 +1569,143 @@
     const meta = {
       from: dateFrom.value,
       to: dateTo.value,
-      filters: 'الفترة: ' + periodLabel.value + ' | الموظف: ' + (reportEmployeeOptions.value.find(employee => employee.id === agentFilter.value)?.name || 'الكل') + ' | المصدر: ' + (sourceLegend.value.find(source => (source.sourceId ?? source.label) === sourceFilter.value)?.label || 'الكل'),
-      exportedAt: new Date().toLocaleString('ar', { calendar: 'gregory', dateStyle: 'medium', timeStyle: 'short' })
+      filters:
+        'الفترة: ' +
+        periodLabel.value +
+        ' | الموظف: ' +
+        (reportEmployeeOptions.value.find(employee => employee.id === agentFilter.value)?.name ||
+          'الكل') +
+        ' | المصدر: ' +
+        (sourceLegend.value.find(source => (source.sourceId ?? source.label) === sourceFilter.value)
+          ?.label || 'الكل'),
+      exportedAt: new Date().toLocaleString('ar', {
+        calendar: 'gregory',
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      })
     }
-    const cards = displayedStats.value.map(stat => ({ label: stat.label, value: stat.value, unit: stat.unit }))
-    const trend = (overviewData.value?.trend ?? []).map(row => ({ date: row.date, leads: row.leads, converted: row.converted, calls: row.calls, visits: row.visits }))
-    const sources = (overviewData.value?.sources?.rows ?? []).filter(row => !sourceFilter.value || row.sourceId === sourceFilter.value)
-    const employees = currentEmployeeRows.value.map(row => ({ name: row.name, calls: row.calls, newCustomers: row.newCustomers, conversions: row.conversions }))
-    const employeeTable = employeeRows.value.map(row => ({ name: row.name, calls: row.calls, newCustomers: row.newCustomers, conversions: row.conversions, conversionRate: row.conversionRate, interested: row.interested, noAnswer: row.noAnswer, avgDurationSec: row.avgDurationSec, visits: row.visits, visitSuccessRate: row.visitSuccessRate, score: row.score, performance: row.performance }))
+    const cards = displayedStats.value.map(stat => ({
+      label: stat.label,
+      value: stat.value,
+      unit: stat.unit
+    }))
+    const trend = (overviewData.value?.trend ?? []).map(row => ({
+      date: row.date,
+      leads: row.leads,
+      converted: row.converted,
+      calls: row.calls,
+      visits: row.visits
+    }))
+    const sources = (overviewData.value?.sources?.rows ?? []).filter(
+      row => !sourceFilter.value || row.sourceId === sourceFilter.value
+    )
+    const employees = currentEmployeeRows.value.map(row => ({
+      name: row.name,
+      calls: row.calls,
+      newCustomers: row.newCustomers,
+      conversions: row.conversions
+    }))
+    const employeeTable = employeeRows.value.map(row => ({
+      name: row.name,
+      calls: row.calls,
+      newCustomers: row.newCustomers,
+      conversions: row.conversions,
+      conversionRate: row.conversionRate,
+      interested: row.interested,
+      noAnswer: row.noAnswer,
+      avgDurationSec: row.avgDurationSec,
+      visits: row.visits,
+      visitSuccessRate: row.visitSuccessRate,
+      score: row.score,
+      performance: row.performance
+    }))
     const charts = highResolution
       ? {
-          conversion: await highResolutionChartImage('line', conversionTrendData.value, lineOptions, trend.length),
-          sources: await highResolutionChartImage('doughnut', sourceChartData.value, donutOptions, sources.length),
-          employees: await highResolutionChartImage('doughnut', employeeDonutData.value, donutOptions, employees.length),
-          visits: await highResolutionChartImage('bar', visitSuccessData.value, visitBarOptions, trend.length),
+          conversion: await highResolutionChartImage(
+            'line',
+            conversionTrendData.value,
+            lineOptions,
+            trend.length
+          ),
+          sources: await highResolutionChartImage(
+            'doughnut',
+            sourceChartData.value,
+            donutOptions,
+            sources.length
+          ),
+          employees: await highResolutionChartImage(
+            'doughnut',
+            employeeDonutData.value,
+            donutOptions,
+            employees.length
+          ),
+          visits: await highResolutionChartImage(
+            'bar',
+            visitSuccessData.value,
+            visitBarOptions,
+            trend.length
+          )
         }
-      : { conversion: chartImage(conversionChartRef), sources: chartImage(sourceChartRef), employees: chartImage(employeeChartRef), visits: chartImage(visitChartRef) }
+      : {
+          conversion: chartImage(conversionChartRef),
+          sources: chartImage(sourceChartRef),
+          employees: chartImage(employeeChartRef),
+          visits: chartImage(visitChartRef)
+        }
     const clone = value => JSON.parse(JSON.stringify(value))
     const exportCharts = {
-      conversion: { type: 'line', title: '\u0645\u0639\u062f\u0644 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', ...clone(conversionTrendData.value), options: clone(lineOptions) },
-      sources: { type: 'doughnut', title: '\u062a\u0648\u0632\u064a\u0639 \u0645\u0635\u0627\u062f\u0631 \u0627\u0644\u0639\u0645\u0644\u0627\u0621', ...clone(sourceChartData.value), options: clone(donutOptions) },
-      employees: { type: 'doughnut', title: '\u0623\u062f\u0627\u0621 \u0627\u0644\u0645\u0648\u0638\u0641\u064a\u0646', ...clone(employeeDonutData.value), options: clone(donutOptions) },
-      visits: { type: 'bar', title: '\u0645\u0639\u062f\u0644 \u0646\u062c\u0627\u062d \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a', ...clone(visitSuccessData.value), options: clone(visitBarOptions) }
+      conversion: {
+        type: 'line',
+        title: '\u0645\u0639\u062f\u0644 \u0627\u0644\u062a\u062d\u0648\u064a\u0644',
+        ...clone(conversionTrendData.value),
+        options: clone(lineOptions)
+      },
+      sources: {
+        type: 'doughnut',
+        title:
+          '\u062a\u0648\u0632\u064a\u0639 \u0645\u0635\u0627\u062f\u0631 \u0627\u0644\u0639\u0645\u0644\u0627\u0621',
+        ...clone(sourceChartData.value),
+        options: clone(donutOptions)
+      },
+      employees: {
+        type: 'doughnut',
+        title: '\u0623\u062f\u0627\u0621 \u0627\u0644\u0645\u0648\u0638\u0641\u064a\u0646',
+        ...clone(employeeDonutData.value),
+        options: clone(donutOptions)
+      },
+      visits: {
+        type: 'bar',
+        title:
+          '\u0645\u0639\u062f\u0644 \u0646\u062c\u0627\u062d \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a',
+        ...clone(visitSuccessData.value),
+        options: clone(visitBarOptions)
+      }
     }
     const pdfFontUrl = new URL('fonts/report-arabic.ttf', document.baseURI).toString()
-    return { meta, pdfFontUrl, cards, trend, sources, employees, visitTrend: trend.map(row => ({ date: row.date, visits: row.visits })), employeeTable, exportCharts, charts }
+    return {
+      meta,
+      pdfFontUrl,
+      cards,
+      trend,
+      sources,
+      employees,
+      visitTrend: trend.map(row => ({ date: row.date, visits: row.visits })),
+      employeeTable,
+      exportCharts,
+      charts
+    }
   }
 
   async function exportExcel() {
     if (isExportingExcel.value || isLoading.value) return
-    const failedSection = [overviewError.value, dailyError.value, sourcesError.value, conversionError.value, employeeReportError.value, currentEmployeeError.value].find(Boolean)
+    const failedSection = [
+      overviewError.value,
+      dailyError.value,
+      sourcesError.value,
+      conversionError.value,
+      employeeReportError.value,
+      currentEmployeeError.value
+    ].find(Boolean)
     if (failedSection) {
       notification.error('تعذر تصدير التقرير لأن جزءاً من البيانات لم يكتمل تحميله')
       return
@@ -1264,7 +1713,12 @@
     isExportingExcel.value = true
     try {
       const payload = await exportPayload(true)
-      if (!payload.trend.length && !payload.sources.length && !payload.employeeTable.length && !payload.cards.some(card => card.value !== '')) {
+      if (
+        !payload.trend.length &&
+        !payload.sources.length &&
+        !payload.employeeTable.length &&
+        !payload.cards.some(card => card.value !== '')
+      ) {
         notification.error('لا توجد بيانات قابلة للتصدير')
         return
       }
@@ -1274,7 +1728,10 @@
       const link = document.createElement('a')
       link.href = url
       link.download = 'تقرير_التقارير_والتحليلات_' + stamp + '.xlsx'
-      document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
       notification.success('تم تصدير التقرير إلى Excel بنجاح')
     } catch (error) {
       console.error('Excel export failed:', error)
@@ -1286,13 +1743,25 @@
 
   async function captureReportPdf() {
     if (isExportingPdf.value || isLoading.value) return
-    const failedSection = [overviewError.value, dailyError.value, sourcesError.value, conversionError.value, employeeReportError.value, currentEmployeeError.value].find(Boolean)
+    const failedSection = [
+      overviewError.value,
+      dailyError.value,
+      sourcesError.value,
+      conversionError.value,
+      employeeReportError.value,
+      currentEmployeeError.value
+    ].find(Boolean)
     if (failedSection) {
       notification.error('تعذر تصدير التقرير لأن جزءاً من البيانات لم يكتمل تحميله')
       return
     }
     const payload = await exportPayload(false)
-    if (!payload.trend.length && !payload.sources.length && !payload.employeeTable.length && !payload.cards.some(card => card.value !== '')) {
+    if (
+      !payload.trend.length &&
+      !payload.sources.length &&
+      !payload.employeeTable.length &&
+      !payload.cards.some(card => card.value !== '')
+    ) {
       notification.error('لا توجد بيانات قابلة للتصدير')
       return
     }
@@ -1353,7 +1822,11 @@
 
     try {
       const blob = await captureReportPdf()
-      if (blob) downloadBlob(blob, buildPdfFileName('تقرير-التقارير-والتحليلات-' + dateFrom.value + '-' + dateTo.value))
+      if (blob)
+        downloadBlob(
+          blob,
+          buildPdfFileName('تقرير-التقارير-والتحليلات-' + dateFrom.value + '-' + dateTo.value)
+        )
     } catch (error) {
       console.error('Report PDF export failed:', error)
       notification.error(error.message || 'تعذر تصدير التقرير إلى PDF')
