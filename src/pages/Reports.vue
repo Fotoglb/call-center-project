@@ -50,13 +50,14 @@
 
         <button
           type="button"
-          class="cursor-pointer rounded-lg bg-blue-dark px-8 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          class="rounded-lg bg-blue-dark px-8 py-2 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          :class="isExportingExcel ? 'cursor-not-allowed' : 'cursor-pointer'"
           :disabled="isExportingExcel || isLoading || !hasExportData"
           @click="exportExcel"
         >
           <span v-if="isExportingExcel" class="flex items-center gap-1.5">
             <Loader2 :size="14" class="animate-spin" />
-            ...جاري التصدير
+            ...جاري التجهيز
           </span>
 
           <span v-else>Excel</span>
@@ -985,8 +986,8 @@
       },
       y: {
         ...barOptions.scales.y,
-        min: 1,
-        beginAtZero: false,
+        min: 0,
+        beginAtZero: true,
         grace: '20%',
         ticks: { ...barOptions.scales.y.ticks, stepSize: 1, precision: 0 },
         title: { display: true, text: 'العدد', color: '#6B7280', font: { size: 11, family: 'Tajawal' } }
@@ -1242,7 +1243,15 @@
           visits: await highResolutionChartImage('bar', visitSuccessData.value, visitBarOptions, trend.length),
         }
       : { conversion: chartImage(conversionChartRef), sources: chartImage(sourceChartRef), employees: chartImage(employeeChartRef), visits: chartImage(visitChartRef) }
-    return { meta, cards, trend, sources, employees, visitTrend: trend.map(row => ({ date: row.date, visits: row.visits })), employeeTable, charts }
+    const clone = value => JSON.parse(JSON.stringify(value))
+    const exportCharts = {
+      conversion: { type: 'line', title: '\u0645\u0639\u062f\u0644 \u0627\u0644\u062a\u062d\u0648\u064a\u0644', ...clone(conversionTrendData.value), options: clone(lineOptions) },
+      sources: { type: 'doughnut', title: '\u062a\u0648\u0632\u064a\u0639 \u0645\u0635\u0627\u062f\u0631 \u0627\u0644\u0639\u0645\u0644\u0627\u0621', ...clone(sourceChartData.value), options: clone(donutOptions) },
+      employees: { type: 'doughnut', title: '\u0623\u062f\u0627\u0621 \u0627\u0644\u0645\u0648\u0638\u0641\u064a\u0646', ...clone(employeeDonutData.value), options: clone(donutOptions) },
+      visits: { type: 'bar', title: '\u0645\u0639\u062f\u0644 \u0646\u062c\u0627\u062d \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a', ...clone(visitSuccessData.value), options: clone(visitBarOptions) }
+    }
+    const pdfFontUrl = new URL('fonts/report-arabic.ttf', document.baseURI).toString()
+    return { meta, pdfFontUrl, cards, trend, sources, employees, visitTrend: trend.map(row => ({ date: row.date, visits: row.visits })), employeeTable, exportCharts, charts }
   }
 
   async function exportExcel() {
@@ -1252,13 +1261,13 @@
       notification.error('تعذر تصدير التقرير لأن جزءاً من البيانات لم يكتمل تحميله')
       return
     }
-    const payload = await exportPayload(true)
-    if (!payload.trend.length && !payload.sources.length && !payload.employeeTable.length && !payload.cards.some(card => card.value !== '')) {
-      notification.error('لا توجد بيانات قابلة للتصدير')
-      return
-    }
     isExportingExcel.value = true
     try {
+      const payload = await exportPayload(true)
+      if (!payload.trend.length && !payload.sources.length && !payload.employeeTable.length && !payload.cards.some(card => card.value !== '')) {
+        notification.error('لا توجد بيانات قابلة للتصدير')
+        return
+      }
       const blob = await exportReportsExcel(payload)
       const stamp = dateFrom.value + '_' + dateTo.value
       const url = URL.createObjectURL(blob)
