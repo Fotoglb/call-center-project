@@ -3,7 +3,7 @@
     <!-- Page Header -->
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 class="text-xl font-bold text-gray-900">***التقارير والتحليلات</h1>
+        <h1 class="text-xl font-bold text-gray-900">التقارير والتحليلات</h1>
 
         <p class="mt-1 text-xs text-gray-400">تقرير مفصل قابل للتصدير والفلترة</p>
       </div>
