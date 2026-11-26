@@ -119,7 +119,6 @@
                 >
                   {{ call.priority }}
                 </span>
-                <span class="flex items-center gap-2 text-xs text-gray-400" title="مدة آخر مكالمة مسجلة"><Clock :size="14" /><span>{{ formatCallDuration(call.lastCallDurationSec ?? call.lastDurationSec) }}</span></span>
               </div>
             </div>
 
@@ -516,6 +515,7 @@
   import { callsService } from '@/services/calls.service'
   import { customersService } from '@/services/customers.service'
   import { usersService } from '@/services/users.service'
+  import { lookupsService } from '@/services/lookups.service'
   import { useNotification } from '@/composables/useNotification'
   import { useCallDial } from '@/composables/useCallDial'
 
@@ -580,13 +580,19 @@
   ]
   const permittedFilterTabs = computed(() => filterTabs.filter(tab => tab.key !== 'visit' && permissions.can('callCenter.queue')))
 
-  const projectTypes = ['B2B', 'B2C', 'SME', 'Enterprise', 'Startup', 'E-commerce', 'Retail', 'Manufacturing', 'Service', 'Non-profit', 'Education']
+  const projectTypes = ref(['B2B', 'B2C', 'SME', 'Enterprise', 'Startup', 'E-commerce', 'Retail', 'Manufacturing', 'Service', 'Non-profit', 'Education'])
   const sourceOptions = ref([])
   const employeeOptions = ref([])
   const sourceOptionsError = ref('')
   const employeeOptionsError = ref('')
   onMounted(async () => {
     await Promise.allSettled([
+      lookupsService.get().then(result => {
+        const types = (result.projectTypes ?? []).map(item => typeof item === 'string' ? item : item.value ?? item.label).filter(Boolean)
+        if (types.length) projectTypes.value = types
+        const labels = new Map((result.callOutcomes ?? []).map(item => [item.value, item.label]))
+        callOutcomes.forEach(outcome => { if (labels.has(outcome.key)) outcome.label = labels.get(outcome.key) })
+      }).catch(() => {}),
       (async () => {
         if (!permissions.can('customers.list|customers.create|customers.viewEdit')) return
         try { sourceOptions.value = (await customersService.getMeta()).sources }

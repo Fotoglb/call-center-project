@@ -103,37 +103,37 @@
     <!-- Table Card -->
     <div class="bg-white border border-gray-100 rounded-xl overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-xs">
+        <table class="w-full text-xs text-center">
           <thead class="bg-white border-b border-gray-200">
             <tr>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="text-center px-4 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 اسم العميل
               </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="text-center px-4 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 رقم الهاتف
               </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="w-32 text-center px-2 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 البريد الإلكتروني
               </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="text-center px-4 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 المصدر
               </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="w-24 text-center px-2 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 النوع
               </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="text-center px-4 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 المدينة
               </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="text-center px-4 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 الموظف المسؤول
               </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="text-center px-4 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 التاريخ
               </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="text-center px-4 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 مسودة
               </th>
-              <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
+              <th class="text-center px-4 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 الإجراءات
               </th>
             </tr>
@@ -163,7 +163,7 @@
               >
                 <td class="px-4 py-3">
                   <div
-                    class="flex items-center gap-2 cursor-pointer"
+                    class="flex items-center justify-center gap-2 cursor-pointer"
                     @click="router.push({ name: 'CustomerProfile', params: { id: customer.id } })"
                   >
                     <span
@@ -173,8 +173,8 @@
                     >
                   </div>
                 </td>
-                <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.phone }}</td>
-                <td class="px-4 py-3 text-gray-500 tabular-nums" dir="ltr">{{ customer.email }}</td>
+                <td class="px-4 py-3 text-gray-900 tabular-nums" dir="ltr">{{ customer.phone }}</td>
+                <td class="w-32 max-w-[140px] truncate px-2 py-3 text-gray-900 tabular-nums" dir="ltr" :title="customer.email">{{ customer.email }}</td>
                 <td class="px-4 py-3">
                   <span
                     class="inline-block w-32 truncate align-middle text-center px-2 py-0.5 rounded text-xs font-medium"
@@ -192,13 +192,13 @@
                     }}
                   </span>
                 </td>
-                <td class="px-4 py-3 text-gray-500">{{ customer.type }}</td>
-                <td class="px-4 py-3 text-gray-500">{{ customer.city }}</td>
-                <td class="px-4 py-3 text-gray-600">{{ customer.agent }}</td>
-                <td class="px-4 py-3 text-gray-400 tabular-nums whitespace-nowrap">
+                <td class="w-24 max-w-[96px] truncate px-2 py-3 text-gray-900" :title="customer.type">{{ customer.type }}</td>
+                <td class="px-4 py-3 text-gray-900">{{ customer.city }}</td>
+                <td class="px-4 py-3 text-gray-900">{{ customer.agent }}</td>
+                <td class="px-4 py-3 text-gray-900 tabular-nums whitespace-nowrap">
                   {{ customer.date }}
                 </td>
-                <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
+                <td class="px-4 py-3 text-gray-900 whitespace-nowrap">
                   {{
                     customer.isDraft === true ? 'مسودة' : customer.isDraft === false ? 'مكتمل' : '—'
                   }}
