@@ -107,7 +107,8 @@ const authStore = useAuthStore()
 const notification = useNotification()
 
 const showPassword = ref(false)
-const rememberMe = ref(false)
+// Keep the session available when the user opens another tab/window.
+const rememberMe = ref(true)
 const isSubmitting = ref(false)
 
 const form = ref({

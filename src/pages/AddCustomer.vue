@@ -442,7 +442,7 @@
     if (!form.value.name.trim()) e.name = 'الاسم مطلوب'
     else if (form.value.name.trim().length < 3) e.name = 'الاسم يجب أن يكون 3 أحرف على الأقل'
     if (!form.value.phone.trim()) e.phone = 'رقم الجوال مطلوب'
-    else if (!/^\+[1-9]\d{1,14}$/.test(internationalPhone(form.value.phone, form.value.countryCode))) e.phone = 'أدخل رقم هاتف دوليًا صحيحًا'
+    else if (!/^\+[1-9]\d{1,14}$/.test(internationalPhone(form.value.phone, form.value.countryCode))) e.phone = 'أدخل رقم جوال دوليًا صحيحًا'
     if (!form.value.source) e.source = 'المصدر مطلوب'
     if (!projectTypes.includes(form.value.projectType)) e.projectType = 'اختر نوع مشروع العميل'
     if (form.value.createdAt) {

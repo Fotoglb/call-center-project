@@ -4,7 +4,7 @@ export async function exportCustomers(rows) {
   const workbook = new ExcelJS.Workbook()
   const sheet = workbook.addWorksheet('العملاء', { views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }] })
   const columns = [
-    ['name', 'اسم العميل'], ['phone', 'رقم الهاتف'],
+    ['name', 'اسم العميل'], ['phone', 'رقم الجوال'],
     ['email', 'البريد الإلكتروني'], ['source', 'المصدر'],
     ['type', 'النوع'], ['city', 'المدينة'],
     ['agent', 'الموظف المسؤول'], ['date', 'التاريخ'],

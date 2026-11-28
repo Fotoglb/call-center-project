@@ -59,7 +59,7 @@
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="ابحث في الصفحة عن عميل، رقم هاتف، موظف..."
+              placeholder="البحث عن عميل، رقم الجوال، موظف..."
               class="w-full h-9 ps-3 pe-8 bg-muted border border-accent/50 rounded-lg text-xs text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
             />
             <Search
@@ -136,7 +136,7 @@
                 اسم العميل
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
-                رقم الهاتف
+                رقم الجوال
               </th>
               <th class="text-start px-4 py-3 text-gray-500 font-medium whitespace-nowrap">
                 الموظف المسؤول

@@ -7,7 +7,7 @@
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="ابحث عن عميل بالرقم هاتفه..."
+        placeholder="البحث عن عميل..."
         class="w-full h-10 ps-4 pe-10 bg-muted border border-accent/50 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-colors"
         @focus="showResults = true"
       />

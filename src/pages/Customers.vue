@@ -110,7 +110,7 @@
                 اسم العميل
               </th>
               <th class="text-center px-4 py-3 text-gray-900 font-semibold whitespace-nowrap">
-                رقم الهاتف
+                رقم الجوال
               </th>
               <th class="w-32 text-center px-2 py-3 text-gray-900 font-semibold whitespace-nowrap">
                 البريد الإلكتروني
@@ -341,6 +341,7 @@
   import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Pencil, Trash2 } from '@lucide/vue'
   import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
   import { customersService } from '@/services/customers.service'
+  import { lookupsService } from '@/services/lookups.service'
   import { usersService } from '@/services/users.service'
   import { customerDateRange } from '@/utils/customerDateRange'
   import { normalizeCustomerSearch } from '@/utils/customerSearch'
@@ -438,11 +439,12 @@
   const pageSize = ref(10)
   const searchQuery = ref('')
 
-  const defaultFilters = { date: '', status: '', city: '', agent: '', source: '', isDraft: '' }
+  const defaultFilters = { date: '', status: '', city: '', agent: '', source: '', projectType: '', isDraft: '' }
   const activeFilters = ref({ ...defaultFilters })
 
   const meta = ref({
     sources: [],
+    projectTypes: [],
     cities: [],
     agents: [],
     statuses: [
@@ -462,6 +464,7 @@
 
   const filters = computed(() => [
     { key: 'source', label: 'المصدر', options: meta.value.sources },
+    { key: 'projectType', label: 'نوع المشروع', options: meta.value.projectTypes },
     { key: 'agent', label: 'الموظف', options: meta.value.agents },
     { key: 'city', label: 'المدينة', options: meta.value.cities },
     { key: 'status', label: 'الحالة', options: meta.value.statuses },
@@ -488,6 +491,7 @@
       assignedTo: activeFilters.value.agent || undefined,
       city: activeFilters.value.city || undefined,
       callStatus: activeFilters.value.status || undefined,
+      projectType: activeFilters.value.projectType || undefined,
       isDraft:
         activeFilters.value.isDraft === '' ? undefined : activeFilters.value.isDraft === 'true',
       ...customerDateRange(activeFilters.value.date),
@@ -528,6 +532,10 @@
       paginatedCustomers.value = items
       totalCustomers.value = total
       meta.value.cities = [...new Set(items.map(item => item.city).filter(Boolean))]
+      meta.value.projectTypes = [...new Set([
+        ...meta.value.projectTypes,
+        ...items.map(item => item.projectType).filter(Boolean)
+      ])].map(value => ({ value, label: value }))
       if (!permissions.can('employees.manage')) {
         const agents = new Map(meta.value.agents.map(item => [item.value, item.label]))
         for (const item of items) {
@@ -556,8 +564,12 @@
 
   async function loadMeta() {
     try {
-      const result = await customersService.getMeta()
-      meta.value.sources = result.sources
+      const [customerMeta, lookupMeta] = await Promise.all([
+        customersService.getMeta(),
+        lookupsService.get()
+      ])
+      meta.value.sources = customerMeta.sources
+      meta.value.projectTypes = lookupMeta.projectTypes
       return true
     } catch (error) {
       notification.error(error.message || 'تعذّر تحميل مصادر العملاء')

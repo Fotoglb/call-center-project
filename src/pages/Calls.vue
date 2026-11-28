@@ -41,7 +41,7 @@
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="ابحث عن عميل، رقم هاتف، موظف..."
+              placeholder="البحث عن عميل، رقم الجوال، موظف..."
               class="w-full h-[52px] ps-10 pe-3 bg-white border border-gray-300 rounded-[10px] text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-secondary"
             />
             <Search
@@ -201,9 +201,7 @@
                         class="summary-tag"
                         >· {{ tag }}</span
                       >
-                      <span
-                        >· آخر تواصل: {{ lastContactLabel }}</span
-                      >
+                      <span v-if="activeFilter !== 'all'">· آخر تواصل: {{ lastContactLabel }}</span>
                     </div>
                   </div>
                 </div>

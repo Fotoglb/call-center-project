@@ -545,14 +545,13 @@
               >
                 {{ label }}
               </th>
-              <th v-if="!isExportingPdf" class="w-16 px-4 py-3">الإجراءات</th>
             </tr>
           </thead>
 
           <tbody class="divide-y divide-gray-100">
             <tr v-if="!employeeRows.length">
               <td
-                :colspan="isExportingPdf ? 9 : 10"
+                colspan="9"
                 class="px-4 py-8 text-center text-xs text-gray-400"
                 role="status"
               >
@@ -600,29 +599,6 @@
                   :class="performanceClass(employee.performance)"
                   >{{ employee.performance }}</span
                 >
-              </td>
-              <td v-if="!isExportingPdf" class="px-4 py-3">
-                <div class="flex items-center gap-2">
-                  <button
-                    type="button"
-                    title="إعادة تعيين كلمة المرور"
-                    :aria-label="`إعادة تعيين كلمة مرور ${employee.name}`"
-                    disabled
-                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 cursor-not-allowed opacity-40"
-                  >
-                    <Pencil :size="16" aria-hidden="true" />
-                  </button>
-
-                  <button
-                    type="button"
-                    title="تعطيل الموظف"
-                    :aria-label="`تعطيل الموظف ${employee.name}`"
-                    disabled
-                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 cursor-not-allowed opacity-40"
-                  >
-                    <Trash2 :size="16" aria-hidden="true" />
-                  </button>
-                </div>
               </td>
             </tr>
           </tbody>
@@ -686,9 +662,7 @@
     ChevronDown,
     Download,
     Loader2,
-    Pencil,
-    Share2,
-    Trash2
+    Share2
   } from '@lucide/vue'
 
   import { useNotification } from '@/composables/useNotification'
@@ -821,7 +795,7 @@
       ? stats.value
       : [
           'إجمالي العملاء',
-          'تم التحويل المشروع',
+          'تم التحويل للزيارة',
           'معدل التحويل',
           'إجمالي المكالمات',
           'الزيارة الميدانية',
@@ -1433,7 +1407,7 @@
           label: 'إجمالي العملاء',
           value: cards.totalLeads ?? daily.totalLeads ?? daily.newLeads ?? ''
         },
-        { label: 'تم التحويل المشروع', value: cards.converted ?? daily.converted ?? '' },
+        { label: 'تم التحويل للزيارة', value: cards.converted ?? daily.converted ?? '' },
         {
           label: 'معدل التحويل',
           value: cards.conversionRate ?? daily.conversionRate ?? '',

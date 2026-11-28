@@ -21,7 +21,7 @@ export const reportsService = {
     const data = await this.getDaily(params.dateTo)
     return [
       { label: 'إجمالي العملاء', value: data.totalLeads ?? null },
-      { label: 'تم التحويل المشروع', value: data.converted ?? null },
+      { label: 'تم التحويل للزيارة', value: data.converted ?? null },
       { label: 'معدل التحويل', value: data.conversionRate ?? null, unit: '%' },
       { label: 'إجمالي المكالمات', value: data.totalCalls ?? null },
       { label: 'الزيارة الميدانية', value: data.visits ?? null },

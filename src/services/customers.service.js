@@ -32,12 +32,22 @@ export const customersService = {
       }
       return { value, label }
     })
+    const projectTypeRows = [
+      data?.projectTypes,
+      data?.data?.projectTypes,
+      data?.data?.data?.projectTypes
+    ].find(Array.isArray) || []
+    const projectTypes = projectTypeRows
+      .map(item => typeof item === 'string' ? item : item?.value ?? item?.name ?? item?.label)
+      .filter(value => typeof value === 'string' && value.trim())
+      .map(value => ({ value: value.trim(), label: value.trim() }))
+      .filter((item, index, list) => list.findIndex(candidate => candidate.value === item.value) === index)
     return {
       sources,
       cities: [],
       agents: [],
       statuses: [],
-      projectTypes: [],
+      projectTypes,
       dateRanges: []
     }
   },
@@ -133,7 +143,7 @@ export const customersService = {
 
   async checkDuplicates(phone) {
     if (typeof phone !== 'string' || !/^\+[1-9]\d{1,14}$/.test(phone)) {
-      throw new Error('رقم الهاتف يجب أن يكون بالصيغة الدولية E.164')
+      throw new Error('رقم الجوال يجب أن يكون بالصيغة الدولية E.164')
     }
     const data = await api.get(ENDPOINTS.customers.duplicates, { params: { phone } })
     if (data?.success === false) throw new Error(data.message || data.error || 'تعذّر فحص تكرار رقم الجوال')
