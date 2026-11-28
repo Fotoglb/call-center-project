@@ -63,8 +63,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (nextUser !== user.value || hasScreens || hasAccess) {
         const nextScreens = hasScreens ? payload.screens : screens.value
         const nextAccess = hasAccess ? payload.access : access.value
-        const remember = !sessionStorage.getItem('auth_token') && !!localStorage.getItem('auth_token')
-        saveSession({ token: token.value, user: nextUser, screens: nextScreens, access: nextAccess }, remember)
+        saveSession({ token: token.value, user: nextUser, screens: nextScreens, access: nextAccess }, true)
         user.value = nextUser
         screens.value = nextScreens
         access.value = nextAccess
