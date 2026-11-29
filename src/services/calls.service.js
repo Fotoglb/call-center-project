@@ -30,13 +30,16 @@ function mapCall(item, queue = false) {
     priority: ({ high: 'عالي الأهمية', medium: 'متوسط الأهمية', low: 'منخفض الأهمية' })[lead.priority ?? item.priority] ?? lead.priority ?? item.priority ?? '—',
     callAttempts: lead.callAttempts ?? item.callAttempts ?? null,
     tags: Array.isArray(item.tags) ? item.tags : [],
+    updatedAt: item.updatedAt ?? lead.updatedAt ?? null,
     lastContactAt: lead.lastContactAt ?? item.lastContactAt ?? null,
     nextCallAt: lead.nextCallAt ?? item.nextCallAt ?? null,
     // Queue responses use lastCallDurationSec; keep the legacy alias for existing views.
     lastCallDurationSec: item.lastCallDurationSec ?? item.lastDurationSec ?? lead.lastCallDurationSec ?? lead.lastDurationSec ?? null,
     lastDurationSec: item.lastCallDurationSec ?? item.lastDurationSec ?? lead.lastCallDurationSec ?? lead.lastDurationSec ?? null,
-    lastContact: Number.isFinite(Date.parse(lead.lastContactAt ?? item.lastContactAt))
-      ? new Date(lead.lastContactAt ?? item.lastContactAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' })
+    lastContact: Number.isFinite(Date.parse(item.updatedAt ?? lead.updatedAt))
+      ? new Date(item.updatedAt ?? lead.updatedAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' })
+      : Number.isFinite(Date.parse(lead.lastContactAt ?? item.lastContactAt))
+        ? new Date(lead.lastContactAt ?? item.lastContactAt).toLocaleString('ar', { calendar: 'gregory', dateStyle: 'short', timeStyle: 'short' })
       : item.lastContact ?? '—',
     agent: item.agent ?? item.userId?.name ?? lead.assignedTo?.name ?? '—',
     type: ({ inbound: 'وارد', outbound: 'صادر' })[item.direction] ?? item.type ?? '—',

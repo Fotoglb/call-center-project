@@ -119,6 +119,14 @@
                 >
                   {{ call.priority }}
                 </span>
+                <span
+                  v-if="call.lastCallDurationSec != null"
+                  class="inline-flex items-center gap-1 text-xs text-gray-400 tabular-nums"
+                  dir="rtl"
+                >
+                  <Clock :size="18" />
+                  {{ formatCallDuration(call.lastCallDurationSec) }}
+                </span>
               </div>
             </div>
 
@@ -201,7 +209,7 @@
                         class="summary-tag"
                         >· {{ tag }}</span
                       >
-                      <span v-if="activeFilter !== 'all'">· آخر تواصل: {{ lastContactLabel }}</span>
+                      <span>· آخر تواصل: {{ lastContactLabel }}</span>
                     </div>
                   </div>
                 </div>
